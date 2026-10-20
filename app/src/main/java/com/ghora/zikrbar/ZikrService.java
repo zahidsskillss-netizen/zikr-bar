@@ -176,7 +176,7 @@ public class ZikrService extends Service {
         if (now - Prefs.lastZikr(this) < gap) return;
         if (now - Prefs.lastReminder(this) < gap) return;
         int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
-        if (hour >= 22 || hour < 6) return; // quiet at night
+        if (hour >= 21 || hour < 6) return; // quiet at night (9pm – 6am)
 
         PendingIntent show = PendingIntent.getService(this, 2,
                 new Intent(this, ZikrService.class).setAction(ACTION_SHOW_TASBIH),

@@ -76,8 +76,9 @@ public class MainActivity extends Activity {
         root.addView(tasbihCard());
         root.addView(reminderCard());
         root.addView(listCard());
+        root.addView(moreCard());
 
-        TextView credit = text("Ghora Graphics — غوره ګرافیکس", 13, MUTED, false);
+        TextView credit = text("جوړونکی: زاهدالله الکوزی · غوره ګرافیکس پروډکشن", 13, MUTED, false);
         credit.setGravity(Gravity.CENTER);
         credit.setPadding(0, dp(24), 0, 0);
         root.addView(credit);
@@ -285,7 +286,7 @@ public class MainActivity extends Activity {
             Prefs.setLastReminder(this, 0);
         }));
 
-        TextView note = text("د شپې له ۱۰ بجو تر سهار ۶ بجو یادونه نه راځي.", 12, MUTED, false);
+        TextView note = text("د شپې له ۹ بجو تر سهار ۶ بجو یادونه نه راځي.", 12, MUTED, false);
         note.setPadding(0, dp(10), 0, 0);
         c.addView(note);
         return c;
@@ -360,6 +361,57 @@ public class MainActivity extends Activity {
         sp.topMargin = dp(12);
         c.addView(save, sp);
         return c;
+    }
+
+    private View moreCard() {
+        LinearLayout c = card("نور", "زموږ په اړه، او له موږ سره ملاتړ");
+        c.addView(navRow("♥", "زموږ ملاتړ (ډونېټ)", "HesabPay · Atoma Pay · Payoneer", InfoActivity.PAGE_DONATE));
+        c.addView(navRow("ﷲ", "د پروګرام په اړه", "موخه، ځانګړتیاوې او محرمیت", InfoActivity.PAGE_ABOUT));
+        c.addView(navRow("غ", "پراختیاکوونکی", "زاهدالله الکوزی · غوره ګرافیکس پروډکشن", InfoActivity.PAGE_DEV));
+
+        TextView share = button("ملګرو ته یې ولېږئ", true);
+        share.setOnClickListener(v -> {
+            String msg = "ذکر بار: د الله تعالی مبارک نوم ستاسو د موبایل په status bar کې، او تسبیح د هر اپ له پاسه.\n"
+                    + "فَاذْكُرُونِي أَذْكُرْكُمْ\n\nوړیا یې ښکته کړئ:\n" + InfoActivity.SHARE_LINK;
+            Intent i = new Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, msg);
+            startActivity(Intent.createChooser(i, "ملګرو ته لېږل"));
+        });
+        LinearLayout.LayoutParams lp = matchWrap();
+        lp.topMargin = dp(12);
+        c.addView(share, lp);
+        return c;
+    }
+
+    private View navRow(String mark, String title, String sub, int page) {
+        LinearLayout r = new LinearLayout(this);
+        r.setOrientation(LinearLayout.HORIZONTAL);
+        r.setGravity(Gravity.CENTER_VERTICAL);
+        r.setPadding(dp(4), dp(10), dp(4), dp(10));
+        r.setBackground(new RippleDrawable(ColorStateList.valueOf(0x201B5E20), null,
+                rounded(Color.WHITE, 12, Color.WHITE)));
+        r.setClickable(true);
+
+        TextView m = new TextView(this);
+        m.setText(mark);
+        m.setTypeface(Ui.amiriBold(this));
+        m.setTextSize(18);
+        m.setTextColor(0xFFF3E3A5);
+        m.setGravity(Gravity.CENTER);
+        GradientDrawable mb = new GradientDrawable(GradientDrawable.Orientation.TL_BR, new int[]{GREEN2, DARK});
+        mb.setCornerRadius(dp(14));
+        m.setBackground(mb);
+        r.addView(m, new LinearLayout.LayoutParams(dp(44), dp(44)));
+
+        LinearLayout tx = new LinearLayout(this);
+        tx.setOrientation(LinearLayout.VERTICAL);
+        tx.setPadding(dp(12), 0, dp(8), 0);
+        tx.addView(text(title, 16, INK, true));
+        tx.addView(text(sub, 12, MUTED, false));
+        r.addView(tx, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+
+        r.addView(text("‹", 22, MUTED, true));
+        r.setOnClickListener(v -> startActivity(new Intent(this, InfoActivity.class).putExtra(InfoActivity.EXTRA_PAGE, page)));
+        return r;
     }
 
     // ============================ actions ============================
