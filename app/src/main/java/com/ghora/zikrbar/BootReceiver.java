@@ -9,7 +9,7 @@ public class BootReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         if (Intent.ACTION_BOOT_COMPLETED.equals(intent.getAction()) && Prefs.running(context)) {
-            context.startForegroundService(new Intent(context, ZikrService.class));
+            Ui.startZikrService(context, new Intent(context, ZikrService.class));
         }
     }
 }

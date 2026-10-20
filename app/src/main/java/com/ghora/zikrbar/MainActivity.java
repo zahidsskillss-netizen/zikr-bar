@@ -508,7 +508,7 @@ public class MainActivity extends Activity {
             return;
         }
         Prefs.setRunning(this, true);
-        startForegroundService(new Intent(this, ZikrService.class).setAction(ZikrService.ACTION_REFRESH));
+        Ui.startZikrService(this, new Intent(this, ZikrService.class).setAction(ZikrService.ACTION_REFRESH));
         refresh();
     }
 
@@ -543,7 +543,7 @@ public class MainActivity extends Activity {
 
     private void refreshService() {
         if (Prefs.running(this)) {
-            startForegroundService(new Intent(this, ZikrService.class).setAction(ZikrService.ACTION_REFRESH));
+            Ui.startZikrService(this, new Intent(this, ZikrService.class).setAction(ZikrService.ACTION_REFRESH));
         }
     }
 

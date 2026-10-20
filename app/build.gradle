@@ -8,10 +8,10 @@ android {
 
     defaultConfig {
         applicationId 'com.ghora.zikrbar'
-        minSdk 26
+        minSdk 23
         targetSdk 34
-        versionCode 7
-        versionName '2.0'
+        versionCode 8
+        versionName '2.1'
     }
 
     // Fixed key so every new build installs as an update over the old one
@@ -32,6 +32,13 @@ android {
             minifyEnabled false
             signingConfig signingConfigs.zikr
         }
+    }
+
+    // Fails the build if any code needs a newer Android than minSdk (keeps Android 6 working)
+    lint {
+        checkOnly 'NewApi', 'InlinedApi'
+        abortOnError true
+        checkReleaseBuilds false
     }
 
     compileOptions {

@@ -95,6 +95,19 @@ public class ZikrService extends Service {
         super.onCreate();
         L.init(this);
         wm = getSystemService(WindowManager.class);
+        if (Build.VERSION.SDK_INT >= 26) createChannels();
+
+        IntentFilter f = new IntentFilter(Intent.ACTION_USER_PRESENT);
+        if (Build.VERSION.SDK_INT >= 33) {
+            registerReceiver(unlockReceiver, f, Context.RECEIVER_EXPORTED);
+        } else {
+            registerReceiver(unlockReceiver, f);
+        }
+    }
+
+    /** Notification channels exist only on Android 8+. */
+    @android.annotation.TargetApi(26)
+    private void createChannels() {
         NotificationManager nm = getSystemService(NotificationManager.class);
         NotificationChannel ch = new NotificationChannel(CHANNEL, L.t("app_name"), NotificationManager.IMPORTANCE_LOW);
         ch.setShowBadge(false);
@@ -104,13 +117,6 @@ public class ZikrService extends Service {
         NotificationChannel rem = new NotificationChannel(CHANNEL_REMIND, L.t("c_rem_t"), NotificationManager.IMPORTANCE_DEFAULT);
         rem.setShowBadge(false);
         nm.createNotificationChannel(rem);
-
-        IntentFilter f = new IntentFilter(Intent.ACTION_USER_PRESENT);
-        if (Build.VERSION.SDK_INT >= 33) {
-            registerReceiver(unlockReceiver, f, Context.RECEIVER_EXPORTED);
-        } else {
-            registerReceiver(unlockReceiver, f);
-        }
     }
 
     @Override
@@ -183,7 +189,7 @@ public class ZikrService extends Service {
         Icon icon = Icon.createWithBitmap(allahIcon());
         String toggleLabel = Prefs.overlay(this) ? L.t("tas_hide") : L.t("tas_show");
 
-        return new Notification.Builder(this, CHANNEL)
+        return Ui.notif(this, CHANNEL, true)
                 .setSmallIcon(icon)
                 .setContentTitle(text)
                 .setStyle(new Notification.BigTextStyle().bigText(text))
@@ -213,7 +219,7 @@ public class ZikrService extends Service {
         String body = hours == 1
                 ? L.t("rem_1h")
                 : L.f("rem_nh", L.num(hours));
-        Notification n = new Notification.Builder(this, CHANNEL_REMIND)
+        Notification n = Ui.notif(this, CHANNEL_REMIND, false)
                 .setSmallIcon(Icon.createWithBitmap(allahIcon()))
                 .setContentTitle("فَاذْكُرُونِي أَذْكُرْكُمْ")
                 .setContentText(body)
@@ -348,7 +354,7 @@ public class ZikrService extends Service {
         WindowManager.LayoutParams p = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                Ui.overlayType(),
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN | flags,
                 PixelFormat.TRANSLUCENT);
         p.gravity = Gravity.TOP | Gravity.START;
@@ -629,7 +635,11 @@ public class ZikrService extends Service {
     private void vibrate(long ms) {
         Vibrator v = getSystemService(Vibrator.class);
         if (v != null && v.hasVibrator()) {
-            v.vibrate(VibrationEffect.createOneShot(ms, VibrationEffect.DEFAULT_AMPLITUDE));
+            if (Build.VERSION.SDK_INT >= 26) {
+                v.vibrate(VibrationEffect.createOneShot(ms, VibrationEffect.DEFAULT_AMPLITUDE));
+            } else {
+                v.vibrate(ms);
+            }
         }
     }
 }

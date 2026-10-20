@@ -52,9 +52,9 @@ final class Kit {
     Kit(Context c) {
         this.c = c;
         d = c.getResources().getDisplayMetrics().density;
-        titr = c.getResources().getFont(R.font.bahij_titr);
-        body = c.getResources().getFont(R.font.bahij_light);
-        strong = c.getResources().getFont(R.font.bahij_body);
+        titr = Ui.font(c, "bahij_titr");
+        body = Ui.font(c, "bahij_light");
+        strong = Ui.font(c, "bahij_body");
         amiri = Ui.amiri(c);
         amiriBold = Ui.amiriBold(c);
     }
