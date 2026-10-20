@@ -10,13 +10,27 @@ android {
         applicationId 'com.ghora.zikrbar'
         minSdk 26
         targetSdk 34
-        versionCode 1
-        versionName '1.0'
+        versionCode 2
+        versionName '1.1'
+    }
+
+    // Fixed key so every new build installs as an update over the old one
+    signingConfigs {
+        zikr {
+            storeFile file('zikrbar.keystore')
+            storePassword 'zikrbar123'
+            keyAlias 'zikrbar'
+            keyPassword 'zikrbar123'
+        }
     }
 
     buildTypes {
+        debug {
+            signingConfig signingConfigs.zikr
+        }
         release {
             minifyEnabled false
+            signingConfig signingConfigs.zikr
         }
     }
 
