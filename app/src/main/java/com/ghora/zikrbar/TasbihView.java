@@ -28,7 +28,8 @@ public class TasbihView extends View {
     private int count;
     private int target = 33;
 
-    private final float d;
+    private final float density;
+    private float d;
     private final Typeface amiriBold;
     private final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final TextPaint tp = new TextPaint(Paint.ANTI_ALIAS_FLAG);
@@ -38,9 +39,19 @@ public class TasbihView extends View {
 
     public TasbihView(Context c) {
         super(c);
-        d = c.getResources().getDisplayMetrics().density;
+        density = c.getResources().getDisplayMetrics().density;
+        d = density;
         amiriBold = Ui.amiriBold(c);
         setLayerType(LAYER_TYPE_SOFTWARE, null);
+    }
+
+    /** Makes the whole design bigger or smaller (1 = normal). */
+    public void setSize(float scale) {
+        float nd = density * scale;
+        if (nd == d) return;
+        d = nd;
+        requestLayout();
+        invalidate();
     }
 
     public void setState(int style, String text, int count, int target) {

@@ -141,4 +141,53 @@ public final class Prefs {
     static void setPos(Context c, int x, int y) {
         sp(c).edit().putInt("ox", x).putInt("oy", y).apply();
     }
+
+    /** Size of the floating tasbih, 0.5 – 2.0. */
+    static float scale(Context c) {
+        return sp(c).getFloat("tScale", 1f);
+    }
+
+    static void setScale(Context c, float s) {
+        sp(c).edit().putFloat("tScale", s).apply();
+    }
+
+    /** 0 = shown, 1 = hidden on the left edge, 2 = hidden on the right edge. */
+    static int mini(Context c) {
+        return sp(c).getInt("mini", 0);
+    }
+
+    static int miniY(Context c) {
+        return sp(c).getInt("miniY", 500);
+    }
+
+    static void setMini(Context c, int side, int y) {
+        sp(c).edit().putInt("mini", side).putInt("miniY", y).apply();
+    }
+
+    // ---- reminder ----
+    static final int[] REMINDER_HOURS = {0, 1, 2, 3};
+
+    static int reminderHours(Context c) {
+        return sp(c).getInt("remH", 2);
+    }
+
+    static void setReminderHours(Context c, int h) {
+        sp(c).edit().putInt("remH", h).apply();
+    }
+
+    static long lastZikr(Context c) {
+        return sp(c).getLong("lastZikr", 0);
+    }
+
+    static void setLastZikr(Context c, long t) {
+        sp(c).edit().putLong("lastZikr", t).apply();
+    }
+
+    static long lastReminder(Context c) {
+        return sp(c).getLong("lastRem", 0);
+    }
+
+    static void setLastReminder(Context c, long t) {
+        sp(c).edit().putLong("lastRem", t).apply();
+    }
 }

@@ -40,7 +40,7 @@ public class MainActivity extends Activity {
 
     private Switch barSwitch, tasbihSwitch;
     private TextView currentZk, countText;
-    private Spinner intervalSpinner, tasbihZkSpinner, targetSpinner;
+    private Spinner intervalSpinner, tasbihZkSpinner, targetSpinner, reminderSpinner;
     private EditText listInput;
     private final List<LinearLayout> tiles = new ArrayList<>();
     private boolean binding;
@@ -74,6 +74,7 @@ public class MainActivity extends Activity {
         root.addView(header());
         root.addView(statusCard());
         root.addView(tasbihCard());
+        root.addView(reminderCard());
         root.addView(listCard());
 
         TextView credit = text("Ghora Graphics — غوره ګرافیکس", 13, MUTED, false);
@@ -217,11 +218,82 @@ public class MainActivity extends Activity {
         countRow.addView(reset);
         c.addView(countRow, matchWrap());
 
-        TextView hint = text("کېکاږئ: شمېرل  ·  کش یې کړئ: ځای بدلول  ·  اوږد یې ونیسئ: صفر کول", 12, MUTED, false);
-        hint.setPadding(0, dp(12), 0, 0);
-        hint.setLineSpacing(0, 1.3f);
-        c.addView(hint);
+        TextView sizeReset = button("اصلي اندازه", false);
+        sizeReset.setOnClickListener(v -> {
+            Prefs.setScale(this, 1f);
+            restartOverlay();
+            Toast.makeText(this, "تسبیح خپلې اصلي اندازې ته راغی", Toast.LENGTH_SHORT).show();
+        });
+        LinearLayout.LayoutParams sr = matchWrap();
+        sr.topMargin = dp(10);
+        c.addView(sizeReset, sr);
+
+        c.addView(label("څنګه یې وکاروئ"));
+        String[][] howTo = {
+                {"کېکاږل", "یو ذکر شمېرل کیږي"},
+                {"کش کول", "هر ځای ته یې یوسئ"},
+                {"دوه ګوتې", "خلاصې یې کړئ: لوی · سره یې نږدې کړئ: کوچنی"},
+                {"څنډې ته کش", "د سکرین ښي یا چپ اخر ته یې یوسئ: پټیږي، یوه کوچنۍ نښه پاتې کیږي؛ هغه کېکاږئ چې بېرته راشي"},
+                {"لاندې ✕ ته کش", "تسبیح بندیږي"},
+                {"اوږد نیول", "شمېر صفر کیږي"}
+        };
+        for (String[] h : howTo) c.addView(howRow(h[0], h[1]));
         return c;
+    }
+
+    private View howRow(String key, String desc) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setPadding(0, dp(4), 0, dp(4));
+        TextView k = text(key, 13, GREEN, true);
+        k.setPadding(dp(10), dp(4), dp(10), dp(4));
+        k.setBackground(rounded(0x141B5E20, 10, 0x331B5E20));
+        row.addView(k, new LinearLayout.LayoutParams(dp(104), LinearLayout.LayoutParams.WRAP_CONTENT));
+        TextView d = text(desc, 13, MUTED, false);
+        d.setPadding(dp(10), dp(4), 0, 0);
+        d.setLineSpacing(0, 1.25f);
+        row.addView(d, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        return row;
+    }
+
+    private View reminderCard() {
+        LinearLayout c = card("د ذکر یادونه", "که په تسبیح کې مو دومره وخت ذکر نه وي کړی، دا خبرتیا درځي:");
+        TextView ayah = new TextView(this);
+        ayah.setText("فَاذْكُرُونِي أَذْكُرْكُمْ");
+        ayah.setTypeface(Ui.amiriBold(this));
+        ayah.setTextSize(22);
+        ayah.setTextColor(GREEN);
+        ayah.setGravity(Gravity.CENTER);
+        ayah.setPadding(dp(12), dp(8), dp(12), dp(10));
+        ayah.setBackground(rounded(SOFT, 14, LINE));
+        LinearLayout.LayoutParams ap = matchWrap();
+        ap.topMargin = dp(8);
+        c.addView(ayah, ap);
+
+        c.addView(label("څو ساعته وروسته"));
+        String[] labels = new String[Prefs.REMINDER_HOURS.length];
+        for (int i = 0; i < labels.length; i++) {
+            int h = Prefs.REMINDER_HOURS[i];
+            labels[i] = h == 0 ? "بنده" : h == 1 ? "۱ ساعت" : Ui.fa(h) + " ساعته";
+        }
+        reminderSpinner = spinner(labels);
+        c.addView(reminderSpinner, matchWrap());
+        reminderSpinner.setOnItemSelectedListener(onSelect(pos -> {
+            int h = Prefs.REMINDER_HOURS[pos];
+            if (h == Prefs.reminderHours(this)) return;
+            Prefs.setReminderHours(this, h);
+            Prefs.setLastReminder(this, 0);
+        }));
+
+        TextView note = text("د شپې له ۱۰ بجو تر سهار ۶ بجو یادونه نه راځي.", 12, MUTED, false);
+        note.setPadding(0, dp(10), 0, 0);
+        c.addView(note);
+        return c;
+    }
+
+    /** Applies the saved size to the floating tasbih. */
+    private void restartOverlay() {
+        refreshService();
     }
 
     private View tile(int style) {
@@ -353,6 +425,9 @@ public class MainActivity extends Activity {
         }
         for (int i = 0; i < Prefs.TARGETS.length; i++) {
             if (Prefs.TARGETS[i] == Prefs.target(this)) targetSpinner.setSelection(i);
+        }
+        for (int i = 0; i < Prefs.REMINDER_HOURS.length; i++) {
+            if (Prefs.REMINDER_HOURS[i] == Prefs.reminderHours(this)) reminderSpinner.setSelection(i);
         }
         List<String> list = Prefs.list(this);
         ArrayAdapter<String> a = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, list);
