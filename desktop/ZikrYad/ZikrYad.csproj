@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <EnableDefaultApplicationDefinition>false</EnableDefaultApplicationDefinition>
+    <StartupObject>ZikrYad.Program</StartupObject>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+    <AssemblyName>ZikrYad</AssemblyName>
+    <RootNamespace>ZikrYad</RootNamespace>
+    <Version>1.0.0</Version>
+    <Product>Zikr Yad</Product>
+    <Company>Ghora Graphics Production</Company>
+    <Authors>Zahid Ullah Alokozay</Authors>
+    <Copyright>Zahid Ullah Alokozay · Ghora Graphics Production</Copyright>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\Fonts\*.ttf" />
+    <Resource Include="Assets\logo.png" />
+    <Resource Include="Assets\developer.png" />
+    <Resource Include="Assets\tray.ico" />
+    <Resource Include="Assets\app.ico" />
+  </ItemGroup>
+
+</Project>
