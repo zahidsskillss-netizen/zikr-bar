@@ -93,14 +93,15 @@ public class ZikrService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        L.init(this);
         wm = getSystemService(WindowManager.class);
         NotificationManager nm = getSystemService(NotificationManager.class);
-        NotificationChannel ch = new NotificationChannel(CHANNEL, "ذکر بار", NotificationManager.IMPORTANCE_LOW);
+        NotificationChannel ch = new NotificationChannel(CHANNEL, L.t("app_name"), NotificationManager.IMPORTANCE_LOW);
         ch.setShowBadge(false);
         ch.setSound(null, null);
         ch.enableVibration(false);
         nm.createNotificationChannel(ch);
-        NotificationChannel rem = new NotificationChannel(CHANNEL_REMIND, "د ذکر یادونه", NotificationManager.IMPORTANCE_DEFAULT);
+        NotificationChannel rem = new NotificationChannel(CHANNEL_REMIND, L.t("c_rem_t"), NotificationManager.IMPORTANCE_DEFAULT);
         rem.setShowBadge(false);
         nm.createNotificationChannel(rem);
 
@@ -114,6 +115,7 @@ public class ZikrService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        L.init(this);
         String action = intent != null ? intent.getAction() : null;
         if (ACTION_TOGGLE_TASBIH.equals(action)) {
             boolean on = !Prefs.overlay(this);
@@ -179,7 +181,7 @@ public class ZikrService extends Service {
                 new Intent(this, ZikrService.class).setAction(ACTION_TOGGLE_TASBIH),
                 PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
         Icon icon = Icon.createWithBitmap(allahIcon());
-        String toggleLabel = Prefs.overlay(this) ? "تسبیح پټول" : "تسبیح ښکاره کول";
+        String toggleLabel = Prefs.overlay(this) ? L.t("tas_hide") : L.t("tas_show");
 
         return new Notification.Builder(this, CHANNEL)
                 .setSmallIcon(icon)
@@ -209,8 +211,8 @@ public class ZikrService extends Service {
                 new Intent(this, ZikrService.class).setAction(ACTION_SHOW_TASBIH),
                 PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
         String body = hours == 1
-                ? "یو ساعت کیږي چې ذکر مو نه دی کړی. راځئ د الله تعالی ذکر وکړو."
-                : Ui.fa(hours) + " ساعته کیږي چې ذکر مو نه دی کړی. راځئ د الله تعالی ذکر وکړو.";
+                ? L.t("rem_1h")
+                : L.f("rem_nh", L.num(hours));
         Notification n = new Notification.Builder(this, CHANNEL_REMIND)
                 .setSmallIcon(Icon.createWithBitmap(allahIcon()))
                 .setContentTitle("فَاذْكُرُونِي أَذْكُرْكُمْ")
@@ -402,7 +404,7 @@ public class ZikrService extends Service {
                 Prefs.setCount(ZikrService.this, 0);
                 refreshTasbih();
                 vibrate(80);
-                Toast.makeText(ZikrService.this, "شمېر صفر شو", Toast.LENGTH_SHORT).show();
+                Toast.makeText(ZikrService.this, L.t("count_reset"), Toast.LENGTH_SHORT).show();
             };
 
             @Override
@@ -515,7 +517,7 @@ public class ZikrService extends Service {
         Prefs.setOverlay(this, false);
         removeTasbih();
         notifyMain();
-        Toast.makeText(this, "تسبیح بند شو. له خبرتیا یا اپ څخه یې بیا روښانه کولی شئ.", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, L.t("tas_closed"), Toast.LENGTH_LONG).show();
     }
 
     private void minimize(int side, int y) {

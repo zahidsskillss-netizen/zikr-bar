@@ -17,9 +17,11 @@ import android.view.View;
 /** Draws the floating tasbih counter in one of six designs. */
 public class TasbihView extends View {
 
-    static final String[] NAMES = {
-            "ګوتمۍ تسبیح", "شنه ګردی", "تسبیح دانې", "تور پټۍ", "زرین کارت", "کوچنی ګردی"
-    };
+    static final int COUNT = 6;
+
+    static String name(int i) {
+        return L.t("d" + i);
+    }
 
     private static final float PAD = 10;
 

@@ -207,4 +207,13 @@ public final class Prefs {
         sp(c).edit().putInt("uIndex", (i + 1) % l.size()).apply();
         return l.get(i);
     }
+
+    // ---- language: 0 ps, 1 fa, 2 en, 3 ur, 4 ar ----
+    static int lang(Context c) {
+        return sp(c).getInt("lang", 0);
+    }
+
+    static void setLang(Context c, int l) {
+        sp(c).edit().putInt("lang", l).apply();
+    }
 }

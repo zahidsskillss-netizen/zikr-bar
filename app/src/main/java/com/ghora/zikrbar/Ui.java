@@ -19,13 +19,8 @@ final class Ui {
         return amiriBold;
     }
 
-    /** Writes a number with Pashto digits (۰۱۲۳...). */
+    /** Writes a number with the digits of the chosen language. */
     static String fa(int n) {
-        String s = String.valueOf(n);
-        StringBuilder b = new StringBuilder();
-        for (char ch : s.toCharArray()) {
-            b.append(ch >= '0' && ch <= '9' ? (char) ('۰' + (ch - '0')) : ch);
-        }
-        return b.toString();
+        return L.num(n);
     }
 }

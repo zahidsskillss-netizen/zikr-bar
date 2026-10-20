@@ -27,17 +27,17 @@ jobs:
         run: gradle assembleDebug --no-daemon
 
       - name: Rename APK
-        run: cp app/build/outputs/apk/debug/app-debug.apk ZikrBar.apk
+        run: cp app/build/outputs/apk/debug/app-debug.apk ZikrYad.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ZikrBar-apk
-          path: ZikrBar.apk
+          name: ZikrYad-apk
+          path: ZikrYad.apk
 
       - name: Publish release (direct download link)
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
-          name: Zikr Bar (build ${{ github.run_number }})
-          files: ZikrBar.apk
+          name: Zikr Yad (build ${{ github.run_number }})
+          files: ZikrYad.apk
           make_latest: true

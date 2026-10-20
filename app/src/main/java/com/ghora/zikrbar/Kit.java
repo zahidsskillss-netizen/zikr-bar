@@ -41,7 +41,7 @@ final class Kit {
         try {
             c.startActivity(new android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url)));
         } catch (RuntimeException e) {
-            android.widget.Toast.makeText(c, "لینک خلاص نه شو", android.widget.Toast.LENGTH_SHORT).show();
+            android.widget.Toast.makeText(c, L.t("link_fail"), android.widget.Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -142,7 +142,7 @@ final class Kit {
         int p = dp(Math.max(2f, sizeDp / 32f));
         iv.setPadding(p, p, p, p);
         iv.setLayoutParams(new LinearLayout.LayoutParams(dp(sizeDp), dp(sizeDp)));
-        iv.setContentDescription("د زاهدالله الکوزی فیسبوک");
+        iv.setContentDescription(L.t("facebook"));
         iv.setOnClickListener(v -> open(c, FACEBOOK));
         return iv;
     }
