@@ -6,7 +6,10 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.ServiceInfo;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -74,6 +77,18 @@ public class ZikrService extends Service {
     private WindowManager.LayoutParams tabLp;
     private OverlayParts.CloseTarget closeTarget;
     private float scale = 1f;
+    private View unlockPopup;
+
+    private final BroadcastReceiver unlockReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (Intent.ACTION_USER_PRESENT.equals(intent.getAction())
+                    && Prefs.unlockPopup(ZikrService.this)
+                    && Settings.canDrawOverlays(ZikrService.this)) {
+                showUnlockPopup();
+            }
+        }
+    };
 
     @Override
     public void onCreate() {
@@ -88,6 +103,13 @@ public class ZikrService extends Service {
         NotificationChannel rem = new NotificationChannel(CHANNEL_REMIND, "د ذکر یادونه", NotificationManager.IMPORTANCE_DEFAULT);
         rem.setShowBadge(false);
         nm.createNotificationChannel(rem);
+
+        IntentFilter f = new IntentFilter(Intent.ACTION_USER_PRESENT);
+        if (Build.VERSION.SDK_INT >= 33) {
+            registerReceiver(unlockReceiver, f, Context.RECEIVER_EXPORTED);
+        } else {
+            registerReceiver(unlockReceiver, f);
+        }
     }
 
     @Override
@@ -126,6 +148,11 @@ public class ZikrService extends Service {
 
     @Override
     public void onDestroy() {
+        try {
+            unregisterReceiver(unlockReceiver);
+        } catch (RuntimeException ignored) {
+        }
+        removeUnlockPopup();
         handler.removeCallbacksAndMessages(null);
         removeTasbih();
         removeTab();
@@ -216,6 +243,76 @@ public class ZikrService extends Service {
         canvas.drawText(word, size / 2f - b.exactCenterX(), size / 2f - b.exactCenterY(), p);
         iconCache = bmp;
         return bmp;
+    }
+
+    // ---------------- unlock popup ----------------
+
+    /** Shows a dhikr card in the middle of the screen for 2 seconds after the phone is unlocked. */
+    private void showUnlockPopup() {
+        removeUnlockPopup();
+        Kit k = new Kit(this);
+        Point s = screen();
+
+        android.widget.LinearLayout card = new android.widget.LinearLayout(this);
+        card.setOrientation(android.widget.LinearLayout.VERTICAL);
+        card.setGravity(Gravity.CENTER_HORIZONTAL);
+        card.setPadding(k.dp(24), k.dp(22), k.dp(24), k.dp(24));
+        android.graphics.drawable.GradientDrawable bg = new android.graphics.drawable.GradientDrawable(
+                android.graphics.drawable.GradientDrawable.Orientation.TL_BR, new int[]{0xF22E7D32, 0xF20B3319});
+        bg.setCornerRadius(k.dp(28));
+        bg.setStroke(k.dp(1.5f), 0xCCC9A227);
+        card.setBackground(bg);
+        card.setElevation(k.dp(10));
+
+        android.widget.TextView glyph = k.arabic("\uFDF2", 34, Kit.GOLD);
+        glyph.setIncludeFontPadding(false);
+        android.graphics.drawable.GradientDrawable ring = new android.graphics.drawable.GradientDrawable();
+        ring.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+        ring.setColor(0x22000000);
+        ring.setStroke(k.dp(1.5f), 0x99F3E3A5);
+        glyph.setBackground(ring);
+        card.addView(glyph, new android.widget.LinearLayout.LayoutParams(k.dp(70), k.dp(70)));
+
+        android.widget.TextView zk = k.arabic(Prefs.nextUnlockText(this), 25, Color.WHITE);
+        zk.setPadding(0, k.dp(14), 0, k.dp(6));
+        zk.setLineSpacing(0, 1.15f);
+        card.addView(zk);
+
+        android.widget.TextView ayah = k.arabic("فَاذْكُرُونِي أَذْكُرْكُمْ", 15, 0xCCF3E3A5);
+        card.addView(ayah);
+
+        WindowManager.LayoutParams p = overlayParams(0);
+        p.width = Math.min(s.x - k.dp(48), k.dp(380));
+        p.gravity = Gravity.CENTER;
+        card.setOnClickListener(v -> removeUnlockPopup());
+        card.setAlpha(0f);
+        card.setScaleX(0.92f);
+        card.setScaleY(0.92f);
+        try {
+            wm.addView(card, p);
+        } catch (RuntimeException e) {
+            return;
+        }
+        unlockPopup = card;
+        card.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(220).start();
+        final View shown = card;
+        handler.postDelayed(() -> {
+            if (unlockPopup != shown) return;
+            shown.animate().alpha(0f).scaleX(0.96f).scaleY(0.96f).setDuration(250)
+                    .withEndAction(() -> {
+                        if (unlockPopup == shown) removeUnlockPopup();
+                    }).start();
+        }, 2000);
+    }
+
+    private void removeUnlockPopup() {
+        if (unlockPopup != null) {
+            try {
+                wm.removeView(unlockPopup);
+            } catch (RuntimeException ignored) {
+            }
+            unlockPopup = null;
+        }
     }
 
     // ---------------- overlay ----------------

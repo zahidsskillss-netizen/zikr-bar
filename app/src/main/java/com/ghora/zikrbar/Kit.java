@@ -32,15 +32,29 @@ final class Kit {
     static final int BG = 0xFFF1F4EF, SOFT = 0xFFF6F8F4, GOLD = 0xFFF3E3A5, GOLD_LINE = 0xFFC9A227;
     static final int WHITE = 0xFFFFFFFF;
 
+    static final String FACEBOOK = "https://www.facebook.com/zahid.alkozai";
+    static final String TELEGRAM = "https://t.me/zahid_af";
+    static final String PHONE = "0780630100";
+    static final String WHATSAPP_LINK = "https://wa.me/93780630100";
+
+    static void open(Context c, String url) {
+        try {
+            c.startActivity(new android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url)));
+        } catch (RuntimeException e) {
+            android.widget.Toast.makeText(c, "لینک خلاص نه شو", android.widget.Toast.LENGTH_SHORT).show();
+        }
+    }
+
     private final Context c;
     private final float d;
-    final Typeface titr, body, amiri, amiriBold;
+    final Typeface titr, body, strong, amiri, amiriBold;
 
     Kit(Context c) {
         this.c = c;
         d = c.getResources().getDisplayMetrics().density;
         titr = c.getResources().getFont(R.font.bahij_titr);
-        body = c.getResources().getFont(R.font.bahij_body);
+        body = c.getResources().getFont(R.font.bahij_light);
+        strong = c.getResources().getFont(R.font.bahij_body);
         amiri = Ui.amiri(c);
         amiriBold = Ui.amiriBold(c);
     }
@@ -67,6 +81,13 @@ final class Kit {
         t.setTextSize(sp);
         t.setTextColor(color);
         t.setLineSpacing(0, 1.3f);
+        return t;
+    }
+
+    /** Heavier body text for buttons, chips and small labels. */
+    TextView strong(String s, float sp, int color) {
+        TextView t = text(s, sp, color);
+        t.setTypeface(strong);
         return t;
     }
 
@@ -121,6 +142,8 @@ final class Kit {
         int p = dp(Math.max(2f, sizeDp / 32f));
         iv.setPadding(p, p, p, p);
         iv.setLayoutParams(new LinearLayout.LayoutParams(dp(sizeDp), dp(sizeDp)));
+        iv.setContentDescription("د زاهدالله الکوزی فیسبوک");
+        iv.setOnClickListener(v -> open(c, FACEBOOK));
         return iv;
     }
 
@@ -143,7 +166,7 @@ final class Kit {
         tx.setPadding(glyph != null ? dp(12) : 0, 0, 0, 0);
         tx.addView(title(title, 19, INK));
         if (sub != null) {
-            TextView s = text(sub, 12.5f, MUTED);
+            TextView s = text(sub, 13.5f, MUTED);
             s.setPadding(0, dp(3), 0, 0);
             tx.addView(s);
         }
@@ -159,7 +182,7 @@ final class Kit {
     }
 
     TextView button(String s, boolean filled, View.OnClickListener l) {
-        TextView b = text(s, 15, filled ? WHITE : GREEN);
+        TextView b = strong(s, 15, filled ? WHITE : GREEN);
         b.setGravity(Gravity.CENTER);
         b.setPadding(dp(16), dp(11), dp(16), dp(13));
         Drawable shape = filled ? greenGradient(16) : rounded(WHITE, 16, GREEN);
@@ -171,7 +194,7 @@ final class Kit {
     }
 
     TextView goldButton(String s, View.OnClickListener l) {
-        TextView b = text(s, 16, 0xFF2D2002);
+        TextView b = strong(s, 16, 0xFF2D2002);
         b.setGravity(Gravity.CENTER);
         b.setPadding(dp(16), dp(12), dp(16), dp(14));
         GradientDrawable shape = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, new int[]{0xFFF6DD7D, 0xFFC9A227});
@@ -204,7 +227,7 @@ final class Kit {
 
             private TextView style(TextView t) {
                 t.setTypeface(arabicFont ? amiriBold : body);
-                t.setTextSize(arabicFont ? 17 : 15);
+                t.setTextSize(arabicFont ? 17 : 16);
                 t.setTextColor(INK);
                 t.setSingleLine(true);
                 t.setEllipsize(android.text.TextUtils.TruncateAt.END);

@@ -35,13 +35,14 @@ import static com.ghora.zikrbar.Kit.*;
 public class MainActivity extends Activity {
 
     private Kit k;
-    private Switch barSwitch, tasbihSwitch;
+    private Switch barSwitch, tasbihSwitch, unlockSwitch;
     private TextView currentZk, countText, statBar, statCount, statGoal;
     private Spinner intervalSpinner, tasbihZkSpinner, targetSpinner, reminderSpinner;
     private EditText listInput;
     private final List<LinearLayout> tiles = new ArrayList<>();
     private boolean binding;
     private boolean waitingOverlay;
+    private boolean waitingUnlock;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,6 +58,13 @@ public class MainActivity extends Activity {
         if (waitingOverlay) {
             waitingOverlay = false;
             if (Settings.canDrawOverlays(this)) turnTasbihOn();
+        }
+        if (waitingUnlock) {
+            waitingUnlock = false;
+            if (Settings.canDrawOverlays(this)) {
+                Prefs.setUnlockPopup(this, true);
+                if (!Prefs.running(this)) startBar();
+            }
         }
         refresh();
     }
@@ -74,10 +82,11 @@ public class MainActivity extends Activity {
         root.addView(statusCard());
         root.addView(tasbihCard());
         root.addView(reminderCard());
+        root.addView(unlockCard());
         root.addView(listCard());
         root.addView(moreCard());
 
-        TextView credit = k.text("جوړونکی: زاهدالله الکوزی · غوره ګرافیکس پروډکشن", 12, MUTED);
+        TextView credit = k.text("جوړونکی: زاهدالله الکوزی · غوره ګرافیکس پروډکشن", 13, MUTED);
         credit.setGravity(Gravity.CENTER);
         credit.setPadding(0, k.dp(22), 0, 0);
         root.addView(credit);
@@ -139,7 +148,7 @@ public class MainActivity extends Activity {
         TextView v = k.title("", 20, GREEN);
         v.setGravity(Gravity.CENTER);
         cell.addView(v);
-        TextView l = k.text(label, 12, MUTED);
+        TextView l = k.strong(label, 12, MUTED);
         l.setGravity(Gravity.CENTER);
         cell.addView(l);
         parent.addView(cell, k.weight());
@@ -263,12 +272,12 @@ public class MainActivity extends Activity {
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setPadding(0, k.dp(4), 0, k.dp(4));
-        TextView kk = k.text(key, 12.5f, GREEN);
+        TextView kk = k.strong(key, 12.5f, GREEN);
         kk.setGravity(Gravity.CENTER);
         kk.setPadding(k.dp(8), k.dp(4), k.dp(8), k.dp(6));
         kk.setBackground(k.rounded(0x141B5E20, 10, 0));
         row.addView(kk, new LinearLayout.LayoutParams(k.dp(100), LinearLayout.LayoutParams.WRAP_CONTENT));
-        TextView d = k.text(desc, 13, MUTED);
+        TextView d = k.text(desc, 14, MUTED);
         d.setPadding(k.dp(10), k.dp(2), 0, 0);
         row.addView(d, k.weight());
         return row;
@@ -290,7 +299,7 @@ public class MainActivity extends Activity {
         box.addView(preview);
         t.addView(box, new LinearLayout.LayoutParams(k.dp(140), k.dp(160)));
 
-        TextView name = k.text(Ui.fa(style + 1) + " · " + TasbihView.NAMES[style], 13, INK);
+        TextView name = k.strong(Ui.fa(style + 1) + " · " + TasbihView.NAMES[style], 13, INK);
         name.setGravity(Gravity.CENTER);
         name.setPadding(0, k.dp(6), 0, 0);
         t.addView(name);
@@ -330,7 +339,35 @@ public class MainActivity extends Activity {
             Prefs.setLastReminder(this, 0);
         }));
 
-        TextView note = k.text("د شپې له ۹ بجو تر سهار ۶ بجو یادونه نه راځي.", 12, MUTED);
+        TextView note = k.text("د شپې له ۹ بجو تر سهار ۶ بجو یادونه نه راځي.", 13, MUTED);
+        note.setPadding(0, k.dp(10), 0, 0);
+        c.addView(note);
+        return c;
+    }
+
+    private View unlockCard() {
+        LinearLayout c = k.card("☀", "د قلف خلاصېدو ذکر", "هر ځل چې د موبایل قلف خلاص کړئ، د ۲ ثانیو لپاره یو ذکر ښکاري");
+        unlockSwitch = new Switch(this);
+        c.addView(switchRow("روښانه", unlockSwitch));
+        unlockSwitch.setOnCheckedChangeListener((b, on) -> {
+            if (binding) return;
+            if (!on) {
+                Prefs.setUnlockPopup(this, false);
+                refresh();
+                return;
+            }
+            if (!Settings.canDrawOverlays(this)) {
+                waitingUnlock = true;
+                Toast.makeText(this, "Zikr Bar ته اجازه ورکړئ چې د نورو اپونو له پاسه ښکاره شي", Toast.LENGTH_LONG).show();
+                startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName())));
+                refresh();
+                return;
+            }
+            Prefs.setUnlockPopup(this, true);
+            if (!Prefs.running(this)) startBar();
+            refresh();
+        });
+        TextView note = k.text("ذکرونه ستاسو د ذکرونو له لست څخه په نوبت راځي. په ذکر کېکاږئ چې ژر بند شي. دا برخه د «ذکر بار» سره کار کوي.", 13, MUTED);
         note.setPadding(0, k.dp(10), 0, 0);
         c.addView(note);
         return c;
@@ -367,6 +404,7 @@ public class MainActivity extends Activity {
         c.addView(navRow(k.badge("♥", 46), "زموږ ملاتړ (ډونېټ)", "HesabPay · Atoma Pay · Payoneer", InfoActivity.PAGE_DONATE));
         c.addView(navRow(k.badge("ﷲ", 46), "د پروګرام په اړه", "موخه، ځانګړتیاوې او محرمیت", InfoActivity.PAGE_ABOUT));
         ImageView ph = k.photo(46);
+        ph.setOnClickListener(v -> Kit.open(this, Kit.FACEBOOK));
         c.addView(navRow(ph, "پراختیاکوونکی", "زاهدالله الکوزی · غوره ګرافیکس پروډکشن", InfoActivity.PAGE_DEV));
 
         c.addView(k.button("ملګرو ته یې ولېږئ", true, v -> InfoActivity.share(this)), k.topMargin(12));
@@ -384,7 +422,7 @@ public class MainActivity extends Activity {
         tx.setOrientation(LinearLayout.VERTICAL);
         tx.setPadding(k.dp(12), 0, k.dp(8), 0);
         tx.addView(k.title(title, 16, INK));
-        tx.addView(k.text(sub, 12, MUTED));
+        tx.addView(k.text(sub, 13, MUTED));
         r.addView(tx, k.weight());
 
         r.addView(k.text("‹", 24, MUTED));
@@ -462,6 +500,7 @@ public class MainActivity extends Activity {
         boolean running = Prefs.running(this);
         barSwitch.setChecked(running);
         tasbihSwitch.setChecked(Prefs.overlay(this) && Settings.canDrawOverlays(this) && running);
+        unlockSwitch.setChecked(Prefs.unlockPopup(this) && Settings.canDrawOverlays(this) && running);
         currentZk.setText(Prefs.current(this));
         countText.setText(Ui.fa(Prefs.count(this)));
 

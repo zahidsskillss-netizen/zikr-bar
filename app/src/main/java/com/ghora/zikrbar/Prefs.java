@@ -190,4 +190,21 @@ public final class Prefs {
     static void setLastReminder(Context c, long t) {
         sp(c).edit().putLong("lastRem", t).apply();
     }
+
+    // ---- dhikr popup when the phone is unlocked ----
+    static boolean unlockPopup(Context c) {
+        return sp(c).getBoolean("unlock", true);
+    }
+
+    static void setUnlockPopup(Context c, boolean on) {
+        sp(c).edit().putBoolean("unlock", on).apply();
+    }
+
+    /** Next dhikr for the unlock popup (rotates through the list). */
+    static String nextUnlockText(Context c) {
+        List<String> l = list(c);
+        int i = Math.floorMod(sp(c).getInt("uIndex", 0), l.size());
+        sp(c).edit().putInt("uIndex", (i + 1) % l.size()).apply();
+        return l.get(i);
+    }
 }

@@ -28,8 +28,6 @@ public class InfoActivity extends Activity {
     static final String HESAB = "0780630100";
     static final String ATOMA = "0773233182";
     static final String PAYONEER = "zahidalkozii@gmail.com";
-    static final String WHATSAPP = "0773233182";
-    static final String WHATSAPP_LINK = "https://wa.me/93773233182";
 
     private Kit k;
 
@@ -107,7 +105,7 @@ public class InfoActivity extends Activity {
     }
 
     private void buildDeveloper(LinearLayout root) {
-        root.addView(header(k.photo(120), "زاهدالله الکوزی", "Zahid Ullah Alokozay"));
+        root.addView(header(k.photo(120), "زاهدالله الکوزی", "Zahid Ullah Alokozay · په عکس کېکاږئ: فیسبوک"));
 
         LinearLayout me = k.card("✎", "زما په اړه", null);
         me.addView(para("ګرافیک ډیزاینر او ویډیو ایډیټر، له درې کالو ډېره تجربه، "
@@ -120,7 +118,17 @@ public class InfoActivity extends Activity {
         chips.addView(k.gap(6));
         chips.addView(chip("اپ جوړول"));
         me.addView(chips);
+        TextView tapHint = k.text("په عکس کېکاږئ چې فیسبوک پاڼه مې خلاصه شي", 12.5f, MUTED);
+        tapHint.setPadding(0, k.dp(10), 0, 0);
+        me.addView(tapHint);
         root.addView(me);
+
+        LinearLayout contact = k.card("☎", "اړیکه", null);
+        contact.addView(contactRow("واټساپ", PHONE, WHATSAPP_LINK));
+        contact.addView(contactRow("ټلګرام", "t.me/zahid_af", TELEGRAM));
+        contact.addView(contactRow("فیسبوک", "zahid.alkozai", FACEBOOK));
+        contact.addView(contactRow("زنګ", PHONE, "tel:" + PHONE));
+        root.addView(contact);
 
         root.addView(ghoraAd());
 
@@ -177,11 +185,12 @@ public class InfoActivity extends Activity {
         call.setGravity(Gravity.CENTER);
         call.setPadding(0, k.dp(16), 0, k.dp(10));
         ad.addView(call);
-        ad.addView(k.goldButton("واټساپ: " + WHATSAPP, v -> open(WHATSAPP_LINK)), k.matchWrap());
-        TextView fb = k.text("فیسبوک پاڼه: Ghora Graphics", 13, 0xCCFFFFFF);
-        fb.setGravity(Gravity.CENTER);
-        fb.setPadding(0, k.dp(10), 0, 0);
-        ad.addView(fb);
+        ad.addView(k.goldButton("واټساپ: " + PHONE, v -> open(WHATSAPP_LINK)), k.matchWrap());
+        LinearLayout more = k.row();
+        more.addView(darkButton("ټلګرام", v -> open(TELEGRAM)), k.weight());
+        more.addView(k.gap(8));
+        more.addView(darkButton("فیسبوک", v -> open(FACEBOOK)), k.weight());
+        ad.addView(more, k.topMargin(10));
         return ad;
     }
 
@@ -238,11 +247,7 @@ public class InfoActivity extends Activity {
     }
 
     private void open(String url) {
-        try {
-            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
-        } catch (RuntimeException e) {
-            Toast.makeText(this, "لینک خلاص نه شو", Toast.LENGTH_SHORT).show();
-        }
+        Kit.open(this, url);
     }
 
     private void openPage(int page) {
@@ -306,13 +311,42 @@ public class InfoActivity extends Activity {
     }
 
     private TextView para(String s) {
-        TextView t = k.text(s, 15, INK);
+        TextView t = k.text(s, 16, INK);
         t.setLineSpacing(0, 1.5f);
         return t;
     }
 
+    private View contactRow(String label, String value, String url) {
+        LinearLayout r = k.row();
+        r.setPadding(k.dp(14), k.dp(10), k.dp(14), k.dp(12));
+        r.setBackground(new android.graphics.drawable.RippleDrawable(
+                android.content.res.ColorStateList.valueOf(0x201B5E20), k.rounded(SOFT, 16, LINE), null));
+        r.setClickable(true);
+        r.setOnClickListener(v -> open(url));
+        r.addView(k.title(label, 15, INK), new LinearLayout.LayoutParams(k.dp(80), LinearLayout.LayoutParams.WRAP_CONTENT));
+        TextView val = k.text(value, 15, GREEN);
+        val.setTextDirection(View.TEXT_DIRECTION_LTR);
+        val.setGravity(Gravity.END);
+        r.addView(val, k.weight());
+        r.addView(k.text("  ‹", 20, MUTED));
+        LinearLayout.LayoutParams lp = k.topMargin(8);
+        r.setLayoutParams(lp);
+        return r;
+    }
+
+    private TextView darkButton(String s, View.OnClickListener l) {
+        TextView b = k.strong(s, 14, GOLD);
+        b.setGravity(Gravity.CENTER);
+        b.setPadding(k.dp(12), k.dp(10), k.dp(12), k.dp(12));
+        b.setBackground(new android.graphics.drawable.RippleDrawable(
+                android.content.res.ColorStateList.valueOf(0x30F3E3A5), k.rounded(0x1AFFFFFF, 14, 0x66F3E3A5), null));
+        b.setClickable(true);
+        b.setOnClickListener(l);
+        return b;
+    }
+
     private TextView chip(String s) {
-        TextView t = k.text(s, 12.5f, GREEN);
+        TextView t = k.strong(s, 12.5f, GREEN);
         t.setPadding(k.dp(12), k.dp(4), k.dp(12), k.dp(6));
         t.setBackground(k.rounded(0x141B5E20, 14, 0));
         return t;
@@ -323,7 +357,7 @@ public class InfoActivity extends Activity {
         r.setPadding(0, k.dp(6), 0, k.dp(6));
         TextView m = k.badge(mark, 32);
         r.addView(m);
-        TextView t = k.text(s, 14, INK);
+        TextView t = k.text(s, 15, INK);
         t.setPadding(k.dp(12), 0, 0, 0);
         r.addView(t, k.weight());
         return r;
