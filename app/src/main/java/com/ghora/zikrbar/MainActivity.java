@@ -6,8 +6,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
-import android.graphics.Color;
-import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.RippleDrawable;
 import android.net.Uri;
@@ -18,10 +16,10 @@ import android.text.InputType;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.Spinner;
@@ -32,14 +30,13 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.ghora.zikrbar.Kit.*;
+
 public class MainActivity extends Activity {
 
-    private static final int GREEN = 0xFF1B5E20, GREEN2 = 0xFF2E7D32, DARK = 0xFF0F3D1F;
-    private static final int INK = 0xFF16231A, MUTED = 0xFF5B695E, LINE = 0xFFDBE4DA;
-    private static final int BG = 0xFFF2F5F1, SOFT = 0xFFF5F8F4, GOLD = 0xFFF3E3A5, GOLD_LINE = 0xFFC9A227;
-
+    private Kit k;
     private Switch barSwitch, tasbihSwitch;
-    private TextView currentZk, countText;
+    private TextView currentZk, countText, statBar, statCount, statGoal;
     private Spinner intervalSpinner, tasbihZkSpinner, targetSpinner, reminderSpinner;
     private EditText listInput;
     private final List<LinearLayout> tiles = new ArrayList<>();
@@ -49,6 +46,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        k = new Kit(this);
         setContentView(build());
         askNotificationPermission();
     }
@@ -69,18 +67,19 @@ public class MainActivity extends Activity {
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        root.setPadding(0, 0, 0, dp(28));
+        root.setPadding(0, 0, 0, k.dp(28));
 
         root.addView(header());
+        root.addView(stats());
         root.addView(statusCard());
         root.addView(tasbihCard());
         root.addView(reminderCard());
         root.addView(listCard());
         root.addView(moreCard());
 
-        TextView credit = text("جوړونکی: زاهدالله الکوزی · غوره ګرافیکس پروډکشن", 13, MUTED, false);
+        TextView credit = k.text("جوړونکی: زاهدالله الکوزی · غوره ګرافیکس پروډکشن", 12, MUTED);
         credit.setGravity(Gravity.CENTER);
-        credit.setPadding(0, dp(24), 0, 0);
+        credit.setPadding(0, k.dp(22), 0, 0);
         root.addView(credit);
 
         ScrollView scroll = new ScrollView(this);
@@ -93,40 +92,69 @@ public class MainActivity extends Activity {
         LinearLayout h = new LinearLayout(this);
         h.setOrientation(LinearLayout.VERTICAL);
         h.setGravity(Gravity.CENTER_HORIZONTAL);
-        h.setPadding(dp(24), dp(28), dp(24), dp(26));
-        GradientDrawable bg = new GradientDrawable(GradientDrawable.Orientation.TL_BR, new int[]{GREEN2, DARK});
-        float rr = dp(32);
-        bg.setCornerRadii(new float[]{0, 0, 0, 0, rr, rr, rr, rr});
-        h.setBackground(bg);
+        h.setPadding(k.dp(24), k.dp(26), k.dp(24), k.dp(56));
+        h.setBackground(k.headerBackground());
 
-        TextView glyph = new TextView(this);
-        glyph.setText("ﷲ");
-        glyph.setTypeface(Ui.amiriBold(this));
-        glyph.setTextSize(58);
-        glyph.setTextColor(GOLD);
-        glyph.setGravity(Gravity.CENTER);
-        h.addView(glyph);
+        TextView glyph = k.arabic("ﷲ", 44, GOLD);
+        GradientDrawable ring = new GradientDrawable();
+        ring.setShape(GradientDrawable.OVAL);
+        ring.setColor(0x22000000);
+        ring.setStroke(k.dp(1.5f), 0x99F3E3A5);
+        glyph.setBackground(ring);
+        glyph.setIncludeFontPadding(false);
+        h.addView(glyph, new LinearLayout.LayoutParams(k.dp(92), k.dp(92)));
 
-        TextView title = new TextView(this);
-        title.setText("ذکر بار");
-        title.setTypeface(Ui.amiriBold(this));
-        title.setTextSize(30);
-        title.setTextColor(Color.WHITE);
+        TextView title = k.title("ذکر بار", 34, WHITE);
         title.setGravity(Gravity.CENTER);
+        title.setPadding(0, k.dp(12), 0, k.dp(4));
         h.addView(title);
 
-        TextView sub = new TextView(this);
-        sub.setText("فَاذْكُرُونِي أَذْكُرْكُمْ");
-        sub.setTypeface(Ui.amiri(this));
-        sub.setTextSize(18);
-        sub.setTextColor(0xD9FFFFFF);
-        sub.setGravity(Gravity.CENTER);
+        TextView sub = k.arabic("فَاذْكُرُونِي أَذْكُرْكُمْ", 19, 0xE6FFFFFF);
         h.addView(sub);
         return h;
     }
 
+    /** Summary strip overlapping the header. */
+    private View stats() {
+        LinearLayout s = k.row();
+        s.setPadding(k.dp(8), k.dp(14), k.dp(8), k.dp(14));
+        s.setBackground(k.rounded(WHITE, 22, LINE));
+        s.setElevation(k.dp(4));
+        LinearLayout.LayoutParams lp = k.matchWrap();
+        lp.setMargins(k.dp(20), -k.dp(38), k.dp(20), 0);
+        s.setLayoutParams(lp);
+
+        statBar = statCell(s, "ذکر بار");
+        s.addView(divider());
+        statCount = statCell(s, "تسبیح");
+        s.addView(divider());
+        statGoal = statCell(s, "هدف");
+        return s;
+    }
+
+    private TextView statCell(LinearLayout parent, String label) {
+        LinearLayout cell = new LinearLayout(this);
+        cell.setOrientation(LinearLayout.VERTICAL);
+        cell.setGravity(Gravity.CENTER);
+        TextView v = k.title("", 20, GREEN);
+        v.setGravity(Gravity.CENTER);
+        cell.addView(v);
+        TextView l = k.text(label, 12, MUTED);
+        l.setGravity(Gravity.CENTER);
+        cell.addView(l);
+        parent.addView(cell, k.weight());
+        return v;
+    }
+
+    private View divider() {
+        View v = new View(this);
+        v.setBackgroundColor(LINE);
+        v.setLayoutParams(new LinearLayout.LayoutParams(k.dp(1), k.dp(36)));
+        return v;
+    }
+
     private View statusCard() {
-        LinearLayout c = card("ذکر بار", "د الله تعالی مبارک نوم په status bar کې، او ذکر په خبرتیا کې");
+        LinearLayout c = k.card("ﷲ", "ذکر بار", "د الله تعالی مبارک نوم په status bar کې، او ذکر په خبرتیا کې");
 
         barSwitch = new Switch(this);
         c.addView(switchRow("روښانه", barSwitch));
@@ -135,21 +163,17 @@ public class MainActivity extends Activity {
             if (on) startBar(); else stopBar();
         });
 
-        c.addView(label("اوسنی ذکر"));
-        currentZk = new TextView(this);
-        currentZk.setTypeface(Ui.amiriBold(this));
-        currentZk.setTextSize(19);
-        currentZk.setTextColor(GREEN);
-        currentZk.setGravity(Gravity.CENTER);
-        currentZk.setPadding(dp(14), dp(10), dp(14), dp(12));
-        currentZk.setBackground(rounded(SOFT, 14, LINE));
-        c.addView(currentZk, matchWrap());
+        c.addView(k.label("اوسنی ذکر"));
+        currentZk = k.arabic("", 20, GREEN);
+        currentZk.setPadding(k.dp(14), k.dp(12), k.dp(14), k.dp(14));
+        currentZk.setBackground(k.rounded(SOFT, 16, LINE));
+        c.addView(currentZk, k.matchWrap());
 
-        c.addView(label("ذکر هر څو دقیقې وروسته بدل شي"));
+        c.addView(k.label("ذکر هر څو دقیقې وروسته بدل شي"));
         String[] labels = new String[Prefs.INTERVALS.length];
         for (int i = 0; i < labels.length; i++) labels[i] = Ui.fa(Prefs.INTERVALS[i]) + " دقیقې";
-        intervalSpinner = spinner(labels);
-        c.addView(intervalSpinner, matchWrap());
+        intervalSpinner = k.spinner(labels, false);
+        c.addView(intervalSpinner, k.matchWrap());
         intervalSpinner.setOnItemSelectedListener(onSelect(pos -> {
             int m = Prefs.INTERVALS[pos];
             if (m == Prefs.intervalMinutes(this)) return;
@@ -160,7 +184,7 @@ public class MainActivity extends Activity {
     }
 
     private View tasbihCard() {
-        LinearLayout c = card("تسبیح بټن", "د نورو اپونو له پاسه ښکاري؛ کېکاږئ چې وشمېرل شي");
+        LinearLayout c = k.card("۳۳", "تسبیح بټن", "د نورو اپونو له پاسه ښکاري؛ کېکاږئ چې وشمېرل شي");
 
         tasbihSwitch = new Switch(this);
         c.addView(switchRow("روښانه", tasbihSwitch));
@@ -169,18 +193,18 @@ public class MainActivity extends Activity {
             if (on) requestTasbih(); else turnTasbihOff();
         });
 
-        c.addView(label("ډیزاین غوره کړئ"));
+        c.addView(k.label("ډیزاین غوره کړئ"));
         HorizontalScrollView hs = new HorizontalScrollView(this);
         hs.setHorizontalScrollBarEnabled(false);
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
         for (int i = 0; i < TasbihView.NAMES.length; i++) row.addView(tile(i));
         hs.addView(row);
-        c.addView(hs, matchWrap());
+        c.addView(hs, k.matchWrap());
 
-        c.addView(label("د تسبیح ذکر"));
-        tasbihZkSpinner = spinner(new String[0]);
-        c.addView(tasbihZkSpinner, matchWrap());
+        c.addView(k.label("د تسبیح ذکر"));
+        tasbihZkSpinner = k.spinner(new String[0], true);
+        c.addView(tasbihZkSpinner, k.matchWrap());
         tasbihZkSpinner.setOnItemSelectedListener(onSelect(pos -> {
             if (pos == Prefs.tasbihIndex(this)) return;
             Prefs.setTasbihIndex(this, pos);
@@ -189,53 +213,46 @@ public class MainActivity extends Activity {
             refreshService();
         }));
 
-        c.addView(label("هدف (څو ځله)"));
+        c.addView(k.label("هدف (څو ځله)"));
         String[] tl = new String[Prefs.TARGETS.length];
         for (int i = 0; i < tl.length; i++) tl[i] = Prefs.TARGETS[i] == 0 ? "بې حده" : Ui.fa(Prefs.TARGETS[i]) + " ځله";
-        targetSpinner = spinner(tl);
-        c.addView(targetSpinner, matchWrap());
+        targetSpinner = k.spinner(tl, false);
+        c.addView(targetSpinner, k.matchWrap());
         targetSpinner.setOnItemSelectedListener(onSelect(pos -> {
             int t = Prefs.TARGETS[pos];
             if (t == Prefs.target(this)) return;
             Prefs.setTarget(this, t);
+            refresh();
             refreshService();
         }));
 
-        LinearLayout countRow = new LinearLayout(this);
-        countRow.setOrientation(LinearLayout.HORIZONTAL);
-        countRow.setGravity(Gravity.CENTER_VERTICAL);
-        countRow.setPadding(0, dp(16), 0, 0);
-        TextView cl = text("شمېر:", 16, INK, true);
-        countRow.addView(cl);
-        countText = text("۰", 30, GREEN, true);
-        countText.setPadding(dp(10), 0, dp(10), 0);
-        countRow.addView(countText, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
-        TextView reset = button("صفر کول", false);
-        reset.setOnClickListener(v -> {
+        LinearLayout countRow = k.row();
+        countRow.setPadding(k.dp(14), k.dp(10), k.dp(14), k.dp(10));
+        countRow.setBackground(k.rounded(SOFT, 16, LINE));
+        countRow.addView(k.title("شمېر", 15, INK));
+        countText = k.title("۰", 30, GREEN);
+        countText.setPadding(k.dp(12), 0, k.dp(12), 0);
+        countRow.addView(countText, k.weight());
+        countRow.addView(k.button("صفر کول", false, v -> {
             Prefs.setCount(this, 0);
             refresh();
             refreshService();
-        });
-        countRow.addView(reset);
-        c.addView(countRow, matchWrap());
+        }));
+        c.addView(countRow, k.topMargin(16));
 
-        TextView sizeReset = button("اصلي اندازه", false);
-        sizeReset.setOnClickListener(v -> {
+        c.addView(k.button("اصلي اندازه", false, v -> {
             Prefs.setScale(this, 1f);
-            restartOverlay();
+            refreshService();
             Toast.makeText(this, "تسبیح خپلې اصلي اندازې ته راغی", Toast.LENGTH_SHORT).show();
-        });
-        LinearLayout.LayoutParams sr = matchWrap();
-        sr.topMargin = dp(10);
-        c.addView(sizeReset, sr);
+        }), k.topMargin(10));
 
-        c.addView(label("څنګه یې وکاروئ"));
+        c.addView(k.label("څنګه یې وکاروئ"));
         String[][] howTo = {
                 {"کېکاږل", "یو ذکر شمېرل کیږي"},
                 {"کش کول", "هر ځای ته یې یوسئ"},
                 {"دوه ګوتې", "خلاصې یې کړئ: لوی · سره یې نږدې کړئ: کوچنی"},
-                {"څنډې ته کش", "د سکرین ښي یا چپ اخر ته یې یوسئ: پټیږي، یوه کوچنۍ نښه پاتې کیږي؛ هغه کېکاږئ چې بېرته راشي"},
-                {"لاندې ✕ ته کش", "تسبیح بندیږي"},
+                {"څنډې ته کش", "د سکرین ښي یا چپ اخر ته یې یوسئ: پټیږي او یوه کوچنۍ نښه پاتې کیږي؛ هغه کېکاږئ چې بېرته راشي"},
+                {"لاندې ✕ ته", "تسبیح بندیږي"},
                 {"اوږد نیول", "شمېر صفر کیږي"}
         };
         for (String[] h : howTo) c.addView(howRow(h[0], h[1]));
@@ -245,77 +262,37 @@ public class MainActivity extends Activity {
     private View howRow(String key, String desc) {
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
-        row.setPadding(0, dp(4), 0, dp(4));
-        TextView k = text(key, 13, GREEN, true);
-        k.setPadding(dp(10), dp(4), dp(10), dp(4));
-        k.setBackground(rounded(0x141B5E20, 10, 0x331B5E20));
-        row.addView(k, new LinearLayout.LayoutParams(dp(104), LinearLayout.LayoutParams.WRAP_CONTENT));
-        TextView d = text(desc, 13, MUTED, false);
-        d.setPadding(dp(10), dp(4), 0, 0);
-        d.setLineSpacing(0, 1.25f);
-        row.addView(d, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        row.setPadding(0, k.dp(4), 0, k.dp(4));
+        TextView kk = k.text(key, 12.5f, GREEN);
+        kk.setGravity(Gravity.CENTER);
+        kk.setPadding(k.dp(8), k.dp(4), k.dp(8), k.dp(6));
+        kk.setBackground(k.rounded(0x141B5E20, 10, 0));
+        row.addView(kk, new LinearLayout.LayoutParams(k.dp(100), LinearLayout.LayoutParams.WRAP_CONTENT));
+        TextView d = k.text(desc, 13, MUTED);
+        d.setPadding(k.dp(10), k.dp(2), 0, 0);
+        row.addView(d, k.weight());
         return row;
-    }
-
-    private View reminderCard() {
-        LinearLayout c = card("د ذکر یادونه", "که په تسبیح کې مو دومره وخت ذکر نه وي کړی، دا خبرتیا درځي:");
-        TextView ayah = new TextView(this);
-        ayah.setText("فَاذْكُرُونِي أَذْكُرْكُمْ");
-        ayah.setTypeface(Ui.amiriBold(this));
-        ayah.setTextSize(22);
-        ayah.setTextColor(GREEN);
-        ayah.setGravity(Gravity.CENTER);
-        ayah.setPadding(dp(12), dp(8), dp(12), dp(10));
-        ayah.setBackground(rounded(SOFT, 14, LINE));
-        LinearLayout.LayoutParams ap = matchWrap();
-        ap.topMargin = dp(8);
-        c.addView(ayah, ap);
-
-        c.addView(label("څو ساعته وروسته"));
-        String[] labels = new String[Prefs.REMINDER_HOURS.length];
-        for (int i = 0; i < labels.length; i++) {
-            int h = Prefs.REMINDER_HOURS[i];
-            labels[i] = h == 0 ? "بنده" : h == 1 ? "۱ ساعت" : Ui.fa(h) + " ساعته";
-        }
-        reminderSpinner = spinner(labels);
-        c.addView(reminderSpinner, matchWrap());
-        reminderSpinner.setOnItemSelectedListener(onSelect(pos -> {
-            int h = Prefs.REMINDER_HOURS[pos];
-            if (h == Prefs.reminderHours(this)) return;
-            Prefs.setReminderHours(this, h);
-            Prefs.setLastReminder(this, 0);
-        }));
-
-        TextView note = text("د شپې له ۹ بجو تر سهار ۶ بجو یادونه نه راځي.", 12, MUTED, false);
-        note.setPadding(0, dp(10), 0, 0);
-        c.addView(note);
-        return c;
-    }
-
-    /** Applies the saved size to the floating tasbih. */
-    private void restartOverlay() {
-        refreshService();
     }
 
     private View tile(int style) {
         LinearLayout t = new LinearLayout(this);
         t.setOrientation(LinearLayout.VERTICAL);
         t.setGravity(Gravity.CENTER_HORIZONTAL);
-        t.setPadding(dp(6), dp(6), dp(6), dp(8));
+        t.setPadding(k.dp(6), k.dp(6), k.dp(6), k.dp(8));
 
         ScaledBox box = new ScaledBox(this);
         GradientDrawable boxBg = new GradientDrawable(GradientDrawable.Orientation.TL_BR, new int[]{0xFFE9EEF3, 0xFFCFD8E2});
-        boxBg.setCornerRadius(dp(16));
+        boxBg.setCornerRadius(k.dp(18));
         box.setBackground(boxBg);
         box.setClipToOutline(true);
         TasbihView preview = new TasbihView(this);
         preview.setState(style, "سُبْحَانَ اللَّهِ", 12, 33);
         box.addView(preview);
-        t.addView(box, new LinearLayout.LayoutParams(dp(140), dp(160)));
+        t.addView(box, new LinearLayout.LayoutParams(k.dp(140), k.dp(160)));
 
-        TextView name = text(Ui.fa(style + 1) + " · " + TasbihView.NAMES[style], 13, INK, true);
+        TextView name = k.text(Ui.fa(style + 1) + " · " + TasbihView.NAMES[style], 13, INK);
         name.setGravity(Gravity.CENTER);
-        name.setPadding(0, dp(6), 0, 0);
+        name.setPadding(0, k.dp(6), 0, 0);
         t.addView(name);
 
         t.setOnClickListener(v -> {
@@ -325,17 +302,45 @@ public class MainActivity extends Activity {
         });
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        lp.setMarginEnd(dp(8));
+        lp.setMarginEnd(k.dp(8));
         t.setLayoutParams(lp);
         tiles.add(t);
         return t;
     }
 
+    private View reminderCard() {
+        LinearLayout c = k.card("☾", "د ذکر یادونه", "که په تسبیح کې مو دومره وخت ذکر نه وي کړی، دا خبرتیا درځي:");
+        TextView ayah = k.arabic("فَاذْكُرُونِي أَذْكُرْكُمْ", 22, GREEN);
+        ayah.setPadding(k.dp(12), k.dp(10), k.dp(12), k.dp(12));
+        ayah.setBackground(k.rounded(SOFT, 16, LINE));
+        c.addView(ayah, k.topMargin(6));
+
+        c.addView(k.label("څو ساعته وروسته"));
+        String[] labels = new String[Prefs.REMINDER_HOURS.length];
+        for (int i = 0; i < labels.length; i++) {
+            int h = Prefs.REMINDER_HOURS[i];
+            labels[i] = h == 0 ? "بنده" : h == 1 ? "۱ ساعت" : Ui.fa(h) + " ساعته";
+        }
+        reminderSpinner = k.spinner(labels, false);
+        c.addView(reminderSpinner, k.matchWrap());
+        reminderSpinner.setOnItemSelectedListener(onSelect(pos -> {
+            int h = Prefs.REMINDER_HOURS[pos];
+            if (h == Prefs.reminderHours(this)) return;
+            Prefs.setReminderHours(this, h);
+            Prefs.setLastReminder(this, 0);
+        }));
+
+        TextView note = k.text("د شپې له ۹ بجو تر سهار ۶ بجو یادونه نه راځي.", 12, MUTED);
+        note.setPadding(0, k.dp(10), 0, 0);
+        c.addView(note);
+        return c;
+    }
+
     private View listCard() {
-        LinearLayout c = card("ذکرونه", "هر ذکر په یوه کرښه کې ولیکئ؛ زیات، کم یا بدل یې کړئ");
+        LinearLayout c = k.card("≡", "ذکرونه", "هر ذکر په یوه کرښه کې ولیکئ؛ زیات، کم یا بدل یې کړئ");
         listInput = new EditText(this);
         listInput.setText(Prefs.rawList(this));
-        listInput.setTypeface(Ui.amiri(this));
+        listInput.setTypeface(k.amiri);
         listInput.setTextSize(18);
         listInput.setTextColor(INK);
         listInput.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
@@ -344,74 +349,61 @@ public class MainActivity extends Activity {
         listInput.setMaxLines(14);
         listInput.setGravity(Gravity.TOP | Gravity.START);
         listInput.setTextDirection(View.TEXT_DIRECTION_RTL);
-        listInput.setPadding(dp(14), dp(10), dp(14), dp(10));
-        listInput.setBackground(rounded(SOFT, 14, LINE));
-        LinearLayout.LayoutParams lp = matchWrap();
-        lp.topMargin = dp(12);
-        c.addView(listInput, lp);
+        listInput.setPadding(k.dp(14), k.dp(10), k.dp(14), k.dp(10));
+        listInput.setBackground(k.rounded(SOFT, 16, LINE));
+        c.addView(listInput, k.topMargin(10));
 
-        TextView save = button("ساتل", true);
-        save.setOnClickListener(v -> {
+        c.addView(k.button("ساتل", true, v -> {
             Prefs.saveList(this, listInput.getText().toString());
             Toast.makeText(this, "ذکرونه وساتل شول", Toast.LENGTH_SHORT).show();
             refresh();
             refreshService();
-        });
-        LinearLayout.LayoutParams sp = matchWrap();
-        sp.topMargin = dp(12);
-        c.addView(save, sp);
+        }), k.topMargin(12));
         return c;
     }
 
     private View moreCard() {
-        LinearLayout c = card("نور", "زموږ په اړه، او له موږ سره ملاتړ");
-        c.addView(navRow("♥", "زموږ ملاتړ (ډونېټ)", "HesabPay · Atoma Pay · Payoneer", InfoActivity.PAGE_DONATE));
-        c.addView(navRow("ﷲ", "د پروګرام په اړه", "موخه، ځانګړتیاوې او محرمیت", InfoActivity.PAGE_ABOUT));
-        c.addView(navRow("غ", "پراختیاکوونکی", "زاهدالله الکوزی · غوره ګرافیکس پروډکشن", InfoActivity.PAGE_DEV));
+        LinearLayout c = k.card("✦", "نور", "زموږ په اړه، او زموږ ملاتړ");
+        c.addView(navRow(k.badge("♥", 46), "زموږ ملاتړ (ډونېټ)", "HesabPay · Atoma Pay · Payoneer", InfoActivity.PAGE_DONATE));
+        c.addView(navRow(k.badge("ﷲ", 46), "د پروګرام په اړه", "موخه، ځانګړتیاوې او محرمیت", InfoActivity.PAGE_ABOUT));
+        ImageView ph = k.photo(46);
+        c.addView(navRow(ph, "پراختیاکوونکی", "زاهدالله الکوزی · غوره ګرافیکس پروډکشن", InfoActivity.PAGE_DEV));
 
-        TextView share = button("ملګرو ته یې ولېږئ", true);
-        share.setOnClickListener(v -> {
-            String msg = "ذکر بار: د الله تعالی مبارک نوم ستاسو د موبایل په status bar کې، او تسبیح د هر اپ له پاسه.\n"
-                    + "فَاذْكُرُونِي أَذْكُرْكُمْ\n\nوړیا یې ښکته کړئ:\n" + InfoActivity.SHARE_LINK;
-            Intent i = new Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, msg);
-            startActivity(Intent.createChooser(i, "ملګرو ته لېږل"));
-        });
-        LinearLayout.LayoutParams lp = matchWrap();
-        lp.topMargin = dp(12);
-        c.addView(share, lp);
+        c.addView(k.button("ملګرو ته یې ولېږئ", true, v -> InfoActivity.share(this)), k.topMargin(12));
         return c;
     }
 
-    private View navRow(String mark, String title, String sub, int page) {
-        LinearLayout r = new LinearLayout(this);
-        r.setOrientation(LinearLayout.HORIZONTAL);
-        r.setGravity(Gravity.CENTER_VERTICAL);
-        r.setPadding(dp(4), dp(10), dp(4), dp(10));
-        r.setBackground(new RippleDrawable(ColorStateList.valueOf(0x201B5E20), null,
-                rounded(Color.WHITE, 12, Color.WHITE)));
+    private View navRow(View icon, String title, String sub, int page) {
+        LinearLayout r = k.row();
+        r.setPadding(k.dp(4), k.dp(10), k.dp(4), k.dp(10));
+        r.setBackground(new RippleDrawable(ColorStateList.valueOf(0x201B5E20), null, k.rounded(WHITE, 14, 0)));
         r.setClickable(true);
-
-        TextView m = new TextView(this);
-        m.setText(mark);
-        m.setTypeface(Ui.amiriBold(this));
-        m.setTextSize(18);
-        m.setTextColor(0xFFF3E3A5);
-        m.setGravity(Gravity.CENTER);
-        GradientDrawable mb = new GradientDrawable(GradientDrawable.Orientation.TL_BR, new int[]{GREEN2, DARK});
-        mb.setCornerRadius(dp(14));
-        m.setBackground(mb);
-        r.addView(m, new LinearLayout.LayoutParams(dp(44), dp(44)));
+        r.addView(icon);
 
         LinearLayout tx = new LinearLayout(this);
         tx.setOrientation(LinearLayout.VERTICAL);
-        tx.setPadding(dp(12), 0, dp(8), 0);
-        tx.addView(text(title, 16, INK, true));
-        tx.addView(text(sub, 12, MUTED, false));
-        r.addView(tx, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        tx.setPadding(k.dp(12), 0, k.dp(8), 0);
+        tx.addView(k.title(title, 16, INK));
+        tx.addView(k.text(sub, 12, MUTED));
+        r.addView(tx, k.weight());
 
-        r.addView(text("‹", 22, MUTED, true));
+        r.addView(k.text("‹", 24, MUTED));
         r.setOnClickListener(v -> startActivity(new Intent(this, InfoActivity.class).putExtra(InfoActivity.EXTRA_PAGE, page)));
         return r;
+    }
+
+    private View switchRow(String label, Switch sw) {
+        LinearLayout row = k.row();
+        row.setPadding(k.dp(14), k.dp(8), k.dp(10), k.dp(8));
+        row.setBackground(k.rounded(SOFT, 16, LINE));
+        row.addView(k.title(label, 16, INK), k.weight());
+        int[][] states = {{android.R.attr.state_checked}, {}};
+        sw.setThumbTintList(new ColorStateList(states, new int[]{GREEN, 0xFFF1F1F1}));
+        sw.setTrackTintList(new ColorStateList(states, new int[]{0x801B5E20, 0x40000000}));
+        row.addView(sw);
+        LinearLayout.LayoutParams lp = k.topMargin(8);
+        row.setLayoutParams(lp);
+        return row;
     }
 
     // ============================ actions ============================
@@ -467,99 +459,39 @@ public class MainActivity extends Activity {
     private void refresh() {
         if (barSwitch == null) return;
         binding = true;
-        barSwitch.setChecked(Prefs.running(this));
-        tasbihSwitch.setChecked(Prefs.overlay(this) && Settings.canDrawOverlays(this) && Prefs.running(this));
+        boolean running = Prefs.running(this);
+        barSwitch.setChecked(running);
+        tasbihSwitch.setChecked(Prefs.overlay(this) && Settings.canDrawOverlays(this) && running);
         currentZk.setText(Prefs.current(this));
         countText.setText(Ui.fa(Prefs.count(this)));
+
+        statBar.setText(running ? "روښانه" : "بند");
+        statBar.setTextColor(running ? GREEN : MUTED);
+        statCount.setText(Ui.fa(Prefs.count(this)));
+        int t = Prefs.target(this);
+        statGoal.setText(t == 0 ? "∞" : Ui.fa(t));
 
         for (int i = 0; i < Prefs.INTERVALS.length; i++) {
             if (Prefs.INTERVALS[i] == Prefs.intervalMinutes(this)) intervalSpinner.setSelection(i);
         }
         for (int i = 0; i < Prefs.TARGETS.length; i++) {
-            if (Prefs.TARGETS[i] == Prefs.target(this)) targetSpinner.setSelection(i);
+            if (Prefs.TARGETS[i] == t) targetSpinner.setSelection(i);
         }
         for (int i = 0; i < Prefs.REMINDER_HOURS.length; i++) {
             if (Prefs.REMINDER_HOURS[i] == Prefs.reminderHours(this)) reminderSpinner.setSelection(i);
         }
         List<String> list = Prefs.list(this);
-        ArrayAdapter<String> a = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, list);
-        tasbihZkSpinner.setAdapter(a);
+        tasbihZkSpinner.setAdapter(k.adapter(list.toArray(new String[0]), true));
         tasbihZkSpinner.setSelection(Prefs.tasbihIndex(this));
 
         int sel = Prefs.tasbihStyle(this);
         for (int i = 0; i < tiles.size(); i++) {
-            tiles.get(i).setBackground(i == sel ? rounded(0x141B5E20, 20, GREEN) : null);
+            tiles.get(i).setBackground(i == sel ? k.rounded(0x141B5E20, 22, GREEN) : null);
         }
         binding = false;
     }
 
     // ============================ helpers ============================
-
-    private LinearLayout card(String title, String sub) {
-        LinearLayout c = new LinearLayout(this);
-        c.setOrientation(LinearLayout.VERTICAL);
-        c.setPadding(dp(18), dp(16), dp(18), dp(18));
-        c.setBackground(rounded(Color.WHITE, 22, LINE));
-        c.setElevation(dp(1));
-        LinearLayout.LayoutParams lp = matchWrap();
-        lp.setMargins(dp(16), dp(16), dp(16), 0);
-        c.setLayoutParams(lp);
-
-        TextView t = text(title, 19, INK, true);
-        c.addView(t);
-        TextView s = text(sub, 13, MUTED, false);
-        s.setPadding(0, dp(2), 0, dp(6));
-        c.addView(s);
-        return c;
-    }
-
-    private View switchRow(String label, Switch sw) {
-        LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        row.setGravity(Gravity.CENTER_VERTICAL);
-        row.setPadding(0, dp(6), 0, dp(4));
-        TextView l = text(label, 16, INK, false);
-        row.addView(l, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
-        int[][] states = {{android.R.attr.state_checked}, {}};
-        sw.setThumbTintList(new ColorStateList(states, new int[]{GREEN, 0xFFF1F1F1}));
-        sw.setTrackTintList(new ColorStateList(states, new int[]{0x801B5E20, 0x40000000}));
-        row.addView(sw);
-        return row;
-    }
-
-    private TextView label(String s) {
-        TextView t = text(s, 14, INK, true);
-        t.setPadding(0, dp(14), 0, dp(6));
-        return t;
-    }
-
-    private TextView text(String s, int sp, int color, boolean bold) {
-        TextView t = new TextView(this);
-        t.setText(s);
-        t.setTextSize(sp);
-        t.setTextColor(color);
-        if (bold) t.setTypeface(Typeface.DEFAULT_BOLD);
-        return t;
-    }
-
-    private TextView button(String s, boolean filled) {
-        TextView b = text(s, 15, filled ? Color.WHITE : GREEN, true);
-        b.setGravity(Gravity.CENTER);
-        b.setPadding(dp(20), dp(12), dp(20), dp(12));
-        GradientDrawable shape = rounded(filled ? GREEN : Color.WHITE, 14, filled ? GREEN : GREEN);
-        b.setBackground(new RippleDrawable(ColorStateList.valueOf(filled ? 0x40FFFFFF : 0x201B5E20), shape, null));
-        b.setClickable(true);
-        b.setFocusable(true);
-        return b;
-    }
-
-    private Spinner spinner(String[] items) {
-        Spinner s = new Spinner(this);
-        s.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, items));
-        s.setBackground(rounded(SOFT, 14, LINE));
-        s.setPadding(dp(8), dp(4), dp(8), dp(4));
-        return s;
-    }
 
     private interface OnPos { void on(int pos); }
 
@@ -575,18 +507,6 @@ public class MainActivity extends Activity {
         };
     }
 
-    private GradientDrawable rounded(int fill, int radiusDp, int stroke) {
-        GradientDrawable g = new GradientDrawable();
-        g.setColor(fill);
-        g.setCornerRadius(dp(radiusDp));
-        g.setStroke(dp(1.5f), stroke);
-        return g;
-    }
-
-    private LinearLayout.LayoutParams matchWrap() {
-        return new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-    }
-
     private boolean hasNotificationPermission() {
         return Build.VERSION.SDK_INT < 33
                 || checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED;
@@ -596,10 +516,6 @@ public class MainActivity extends Activity {
         if (!hasNotificationPermission()) {
             requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 1);
         }
-    }
-
-    private int dp(float v) {
-        return Math.round(v * getResources().getDisplayMetrics().density);
     }
 
     /** Shows a child view centered and shrunk to fit, for the design previews. */

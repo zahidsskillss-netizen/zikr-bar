@@ -3,20 +3,20 @@ package com.ghora.zikrbar;
 import android.app.Activity;
 import android.content.ClipData;
 import android.content.ClipboardManager;
+import android.content.Context;
 import android.content.Intent;
-import android.content.res.ColorStateList;
-import android.graphics.Color;
-import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
-import android.graphics.drawable.RippleDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import static com.ghora.zikrbar.Kit.*;
 
 /** About the app, about the developer, and support (donate) pages. */
 public class InfoActivity extends Activity {
@@ -25,25 +25,24 @@ public class InfoActivity extends Activity {
     static final int PAGE_ABOUT = 0, PAGE_DEV = 1, PAGE_DONATE = 2;
 
     static final String SHARE_LINK = "https://github.com/zahidsskillss-netizen/zikr-bar/releases/latest";
-    static final String HESAB_LINK = "https://hesab.com/pay/ZIKARBAR/ps";
+    static final String HESAB = "0780630100";
     static final String ATOMA = "0773233182";
     static final String PAYONEER = "zahidalkozii@gmail.com";
     static final String WHATSAPP = "0773233182";
     static final String WHATSAPP_LINK = "https://wa.me/93773233182";
 
-    private static final int GREEN = 0xFF1B5E20, GREEN2 = 0xFF2E7D32, DARK = 0xFF0F3D1F;
-    private static final int INK = 0xFF16231A, MUTED = 0xFF5B695E, LINE = 0xFFDBE4DA;
-    private static final int BG = 0xFFF2F5F1, SOFT = 0xFFF5F8F4, GOLD = 0xFFF3E3A5;
+    private Kit k;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        k = new Kit(this);
         int page = getIntent().getIntExtra(EXTRA_PAGE, PAGE_ABOUT);
 
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        root.setPadding(0, 0, 0, dp(28));
+        root.setPadding(0, 0, 0, k.dp(32));
 
         if (page == PAGE_DEV) buildDeveloper(root);
         else if (page == PAGE_DONATE) buildDonate(root);
@@ -58,9 +57,9 @@ public class InfoActivity extends Activity {
     // ================= pages =================
 
     private void buildAbout(LinearLayout root) {
-        root.addView(header("ﷲ", "د پروګرام په اړه", "ذکر بار · نسخه " + version()));
+        root.addView(header(glyphCircle("ﷲ"), "د پروګرام په اړه", "ذکر بار · نسخه " + version()));
 
-        LinearLayout goal = card("د دې پروګرام موخه");
+        LinearLayout goal = k.card("✎", "د دې پروګرام موخه", null);
         goal.addView(para(
                 "زما هدف دا و چې نن سبا ډېری ځوانان د موبایل او انټرنېټ له امله د الله تعالی له ذکر څخه غافل شوي دي. "
                 + "نو غوره مې وګڼله چې داسې یو پروګرام جوړ کړم چې د همغه شي په ذریعه چې موږ یې له ذکره غافل کړي یو، "
@@ -68,16 +67,23 @@ public class InfoActivity extends Activity {
                 + "ډېره خوښي احساسوم چې متعال رب پر دې کار بریالی کړم. اوس له تاسو هیله لرم چې زموږ ملاتړ وکړئ، "
                 + "ترڅو د نورو داسې موخو لپاره کار وکړو. هیله ده دا پروګرام خپلو ټولو ملګرو او دوستانو ته ورسوئ "
                 + "او د دارینو ثواب ترلاسه کړئ."));
-        TextView dua = arabic("جَزَاكَ اللَّهُ خَيْرًا كَثِيرًا", 20);
-        dua.setPadding(0, dp(10), 0, 0);
+        TextView dua = k.arabic("جَزَاكَ اللَّهُ خَيْرًا كَثِيرًا", 21, GREEN);
+        dua.setPadding(0, k.dp(12), 0, k.dp(4));
         goal.addView(dua);
-        TextView sign = text("— زاهدالله الکوزی", 13, MUTED, false);
-        sign.setGravity(Gravity.END);
-        sign.setPadding(0, dp(6), 0, 0);
+
+        LinearLayout sign = k.row();
+        sign.setPadding(0, k.dp(10), 0, 0);
+        sign.addView(k.photo(42));
+        LinearLayout st = new LinearLayout(this);
+        st.setOrientation(LinearLayout.VERTICAL);
+        st.setPadding(k.dp(10), 0, 0, 0);
+        st.addView(k.title("زاهدالله الکوزی", 15, INK));
+        st.addView(k.text("د ذکر بار جوړونکی", 12, MUTED));
+        sign.addView(st);
         goal.addView(sign);
         root.addView(goal);
 
-        LinearLayout feat = card("پروګرام څه کوي؟");
+        LinearLayout feat = k.card("✦", "پروګرام څه کوي؟", null);
         String[][] items = {
                 {"ﷲ", "د الله تعالی مبارک نوم تل د موبایل په status bar کې ښکاري"},
                 {"۱", "ذکر په خبرتیا کې ښکاري او هر څو دقیقې وروسته بدلیږي"},
@@ -89,53 +95,65 @@ public class InfoActivity extends Activity {
         for (String[] it : items) feat.addView(bullet(it[0], it[1]));
         root.addView(feat);
 
-        LinearLayout privacy = card("ستاسو محرمیت");
+        LinearLayout privacy = k.card("✓", "ستاسو محرمیت", null);
         privacy.addView(para("دا پروګرام انټرنېټ نه کاروي او ستاسو هیڅ معلومات نه راټولوي او نه چېرته لېږي. "
                 + "ستاسو ذکرونه او شمېر یوازې ستاسو په موبایل کې ساتل کیږي."));
         root.addView(privacy);
 
-        LinearLayout share = card("ملګرو ته یې ولېږئ");
+        LinearLayout share = k.card("↗", "ملګرو ته یې ولېږئ", null);
         share.addView(para("هر څوک چې ستاسو په لاس دا پروګرام وکاروي او ذکر وکړي، ان شاء الله تاسو ته به یې هم ثواب رسیږي."));
-        share.addView(button("ملګرو ته لېږل", true, v -> shareApp()), topMargin(12));
+        share.addView(k.button("ملګرو ته لېږل", true, v -> share(this)), k.topMargin(12));
         root.addView(share);
     }
 
     private void buildDeveloper(LinearLayout root) {
-        root.addView(header("غ", "پراختیاکوونکی", "زاهدالله الکوزی · Zahid Ullah Alokozay"));
+        root.addView(header(k.photo(120), "زاهدالله الکوزی", "Zahid Ullah Alokozay"));
 
-        LinearLayout me = card("زاهدالله الکوزی");
-        me.addView(text("Zahid Ullah Alokozay", 14, MUTED, false));
-        me.addView(para("ګرافیک ډیزاینر او ویډیو ایډیټر، له درې کالو ډېره تجربه. "
-                + "د غوره ګرافیکس پروډکشن بنسټګر."), topMargin(8));
+        LinearLayout me = k.card("✎", "زما په اړه", null);
+        me.addView(para("ګرافیک ډیزاینر او ویډیو ایډیټر، له درې کالو ډېره تجربه، "
+                + "او د غوره ګرافیکس پروډکشن بنسټګر."));
+        LinearLayout chips = k.row();
+        chips.setPadding(0, k.dp(10), 0, 0);
+        chips.addView(chip("ګرافیک ډیزاین"));
+        chips.addView(k.gap(6));
+        chips.addView(chip("ویډیو ایډیټ"));
+        chips.addView(k.gap(6));
+        chips.addView(chip("اپ جوړول"));
+        me.addView(chips);
         root.addView(me);
 
-        // --- Ghora Graphics Production ad ---
+        root.addView(ghoraAd());
+
+        LinearLayout support = k.card("♥", "زموږ ملاتړ", null);
+        support.addView(para("که دا پروګرام مو خوښ شو، زموږ ملاتړ وکړئ چې د نورو داسې ګټورو پروګرامونو لپاره کار وکړو."));
+        support.addView(k.button("ملاتړ (ډونېټ)", true, v -> openPage(PAGE_DONATE)), k.topMargin(12));
+        root.addView(support);
+    }
+
+    private View ghoraAd() {
         LinearLayout ad = new LinearLayout(this);
         ad.setOrientation(LinearLayout.VERTICAL);
-        ad.setPadding(dp(20), dp(20), dp(20), dp(20));
-        GradientDrawable bg = new GradientDrawable(GradientDrawable.Orientation.TL_BR, new int[]{0xFF14432A, 0xFF071F12});
-        bg.setCornerRadius(dp(22));
-        bg.setStroke(dp(1.5f), 0xFFC9A227);
+        ad.setPadding(k.dp(20), k.dp(22), k.dp(20), k.dp(20));
+        GradientDrawable bg = new GradientDrawable(GradientDrawable.Orientation.TL_BR, new int[]{0xFF14432A, 0xFF061A0E});
+        bg.setCornerRadius(k.dp(24));
+        bg.setStroke(k.dp(1.5f), GOLD_LINE);
         ad.setBackground(bg);
-        ad.setElevation(dp(2));
-        LinearLayout.LayoutParams alp = matchWrap();
-        alp.setMargins(dp(16), dp(16), dp(16), 0);
+        ad.setElevation(k.dp(3));
+        LinearLayout.LayoutParams alp = k.matchWrap();
+        alp.setMargins(k.dp(16), k.dp(14), k.dp(16), 0);
         ad.setLayoutParams(alp);
 
-        TextView brand = new TextView(this);
-        brand.setText("غوره ګرافیکس پروډکشن");
-        brand.setTypeface(Ui.amiriBold(this));
-        brand.setTextSize(26);
-        brand.setTextColor(GOLD);
+        TextView brand = k.title("غوره ګرافیکس پروډکشن", 27, GOLD);
         brand.setGravity(Gravity.CENTER);
         ad.addView(brand);
-        TextView en = text("GHORA GRAPHICS PRODUCTION", 11, 0xB3F3E3A5, true);
+        TextView en = k.text("GHORA GRAPHICS PRODUCTION", 11, 0xB3F3E3A5);
         en.setGravity(Gravity.CENTER);
-        en.setLetterSpacing(0.15f);
+        en.setLetterSpacing(0.18f);
+        en.setPadding(0, k.dp(6), 0, 0);
         ad.addView(en);
-        TextView tag = text("ستاسو د کار لپاره ښکلی، مسلکي او اغېزناک ډیزاین", 14, Color.WHITE, false);
+        TextView tag = k.text("ستاسو د کار لپاره ښکلی، مسلکي او اغېزناک ډیزاین", 14, WHITE);
         tag.setGravity(Gravity.CENTER);
-        tag.setPadding(0, dp(12), 0, dp(10));
+        tag.setPadding(0, k.dp(12), 0, k.dp(12));
         ad.addView(tag);
 
         String[] services = {
@@ -146,71 +164,77 @@ public class InfoActivity extends Activity {
                 "د موبایل اپلیکېشن جوړول"
         };
         for (String s : services) {
-            TextView t = text("✦  " + s, 15, Color.WHITE, false);
-            t.setPadding(0, dp(5), 0, dp(5));
-            t.setLineSpacing(0, 1.2f);
-            ad.addView(t);
+            LinearLayout r = k.row();
+            r.setPadding(0, k.dp(5), 0, k.dp(5));
+            TextView dot = k.text("✦", 13, GOLD);
+            r.addView(dot);
+            TextView t = k.text(s, 15, WHITE);
+            t.setPadding(k.dp(10), 0, 0, 0);
+            r.addView(t, k.weight());
+            ad.addView(r);
         }
-        TextView call = text("همدا اوس اړیکه ونیسئ", 14, GOLD, true);
+        TextView call = k.title("همدا اوس اړیکه ونیسئ", 15, GOLD);
         call.setGravity(Gravity.CENTER);
-        call.setPadding(0, dp(14), 0, dp(8));
+        call.setPadding(0, k.dp(16), 0, k.dp(10));
         ad.addView(call);
-        TextView wa = goldButton("واټساپ: " + WHATSAPP, v -> open(WHATSAPP_LINK));
-        ad.addView(wa, matchWrap());
-        TextView fb = text("فیسبوک پاڼه: Ghora Graphics", 13, 0xCCFFFFFF, false);
+        ad.addView(k.goldButton("واټساپ: " + WHATSAPP, v -> open(WHATSAPP_LINK)), k.matchWrap());
+        TextView fb = k.text("فیسبوک پاڼه: Ghora Graphics", 13, 0xCCFFFFFF);
         fb.setGravity(Gravity.CENTER);
-        fb.setPadding(0, dp(10), 0, 0);
+        fb.setPadding(0, k.dp(10), 0, 0);
         ad.addView(fb);
-        root.addView(ad);
-
-        LinearLayout support = card("زموږ ملاتړ");
-        support.addView(para("که دا پروګرام مو خوښ شو، زموږ ملاتړ وکړئ چې د نورو داسې ګټورو پروګرامونو لپاره کار وکړو."));
-        support.addView(button("ملاتړ (ډونېټ)", true, v -> openPage(PAGE_DONATE)), topMargin(12));
-        root.addView(support);
+        return ad;
     }
 
     private void buildDonate(LinearLayout root) {
-        root.addView(header("♥", "زموږ ملاتړ", "ستاسو هره مرسته زموږ د نورو ګټورو کارونو لپاره ده"));
+        root.addView(header(glyphCircle("♥"), "زموږ ملاتړ", "ستاسو هره مرسته د نورو ګټورو کارونو لپاره ده"));
 
-        LinearLayout intro = card("ولې ملاتړ؟");
+        LinearLayout intro = k.card(null, "ولې ملاتړ؟", null);
+        LinearLayout who = k.row();
+        who.setPadding(0, k.dp(4), 0, k.dp(10));
+        who.addView(k.photo(52));
+        LinearLayout wt = new LinearLayout(this);
+        wt.setOrientation(LinearLayout.VERTICAL);
+        wt.setPadding(k.dp(12), 0, 0, 0);
+        wt.addView(k.title("زاهدالله الکوزی", 16, INK));
+        wt.addView(k.text("د ذکر بار جوړونکی · غوره ګرافیکس پروډکشن", 12, MUTED));
+        who.addView(wt, k.weight());
+        intro.addView(who);
         intro.addView(para("ذکر بار وړیا دی او وړیا به پاتې وي. ستاسو ملاتړ له موږ سره مرسته کوي چې دا پروګرام نور هم ښه کړو "
                 + "او د نورو داسې اسلامي او ګټورو پروګرامونو لپاره کار وکړو."));
         root.addView(intro);
 
-        LinearLayout hesab = card("HesabPay · حساب پی");
-        hesab.addView(valueBox(HESAB_LINK, true));
-        LinearLayout hb = row();
-        hb.addView(button("ورکول", true, v -> open(HESAB_LINK)), weight());
-        hb.addView(space());
-        hb.addView(button("کاپي", false, v -> copy("HesabPay", HESAB_LINK)), weight());
-        hesab.addView(hb, topMargin(12));
-        root.addView(hesab);
+        root.addView(payCard("ح", "HesabPay · حساب پی", HESAB, true));
+        root.addView(payCard("ا", "Atoma Pay · اټوما پی", ATOMA, true));
 
-        LinearLayout atoma = card("Atoma Pay · اټوما پی");
-        atoma.addView(valueBox(ATOMA, true));
-        atoma.addView(button("شمېره کاپي کول", false, v -> copy("Atoma Pay", ATOMA)), topMargin(12));
-        root.addView(atoma);
-
-        LinearLayout pay = card("Payoneer · له بهر څخه");
-        pay.addView(para("که له افغانستان بهر یاست، Payoneer ته یې دې ایمیل ته ولېږئ:"));
-        pay.addView(valueBox(PAYONEER, true), topMargin(8));
-        pay.addView(button("ایمیل کاپي کول", false, v -> copy("Payoneer", PAYONEER)), topMargin(12));
+        LinearLayout pay = k.card("P", "Payoneer · له بهر څخه", "که له افغانستان بهر یاست، دې ایمیل ته یې ولېږئ");
+        pay.addView(valueBox(PAYONEER), k.topMargin(8));
+        pay.addView(k.button("ایمیل کاپي کول", false, v -> copy("Payoneer", PAYONEER, PAYONEER)), k.topMargin(12));
         root.addView(pay);
 
-        TextView dua = arabic("جَزَاكُمُ اللَّهُ خَيْرًا", 22);
-        dua.setPadding(0, dp(20), 0, 0);
+        TextView dua = k.arabic("جَزَاكُمُ اللَّهُ خَيْرًا", 24, GREEN);
+        dua.setPadding(0, k.dp(22), 0, 0);
         root.addView(dua);
+    }
+
+    /** A wallet card: shows the full number; copy gives the 9 digits without the leading 0. */
+    private View payCard(String glyph, String title, String number, boolean dropZero) {
+        LinearLayout c = k.card(glyph, title, "د موبایل شمېره");
+        c.addView(valueBox(number), k.topMargin(8));
+        String copyValue = dropZero && number.startsWith("0") ? number.substring(1) : number;
+        c.addView(k.button("کاپي کول (" + copyValue + ")", false, v -> copy(title, copyValue,
+                copyValue + " کاپي شو. په اپ کې یې د ۹ عددي شمېرې ځای کې پیسټ کړئ.")), k.topMargin(12));
+        return c;
     }
 
     // ================= actions =================
 
-    private void shareApp() {
+    static void share(Context c) {
         String msg = "ذکر بار: د الله تعالی مبارک نوم ستاسو د موبایل په status bar کې، او تسبیح د هر اپ له پاسه.\n"
                 + "فَاذْكُرُونِي أَذْكُرْكُمْ\n\nوړیا یې ښکته کړئ:\n" + SHARE_LINK;
         Intent i = new Intent(Intent.ACTION_SEND);
         i.setType("text/plain");
         i.putExtra(Intent.EXTRA_TEXT, msg);
-        startActivity(Intent.createChooser(i, "ملګرو ته لېږل"));
+        c.startActivity(Intent.createChooser(i, "ملګرو ته لېږل"));
     }
 
     private void open(String url) {
@@ -225,10 +249,10 @@ public class InfoActivity extends Activity {
         startActivity(new Intent(this, InfoActivity.class).putExtra(EXTRA_PAGE, page));
     }
 
-    private void copy(String label, String value) {
+    private void copy(String label, String value, String toast) {
         ClipboardManager cm = getSystemService(ClipboardManager.class);
         cm.setPrimaryClip(ClipData.newPlainText(label, value));
-        Toast.makeText(this, label + " کاپي شو", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, toast, Toast.LENGTH_LONG).show();
     }
 
     private String version() {
@@ -239,175 +263,80 @@ public class InfoActivity extends Activity {
         }
     }
 
-    // ================= ui helpers =================
+    // ================= ui pieces =================
 
-    private View header(String glyph, String title, String sub) {
+    private View header(View top, String title, String sub) {
         LinearLayout h = new LinearLayout(this);
         h.setOrientation(LinearLayout.VERTICAL);
         h.setGravity(Gravity.CENTER_HORIZONTAL);
-        h.setPadding(dp(24), dp(16), dp(24), dp(24));
-        GradientDrawable bg = new GradientDrawable(GradientDrawable.Orientation.TL_BR, new int[]{GREEN2, DARK});
-        float rr = dp(32);
-        bg.setCornerRadii(new float[]{0, 0, 0, 0, rr, rr, rr, rr});
-        h.setBackground(bg);
+        h.setPadding(k.dp(20), k.dp(14), k.dp(20), k.dp(28));
+        h.setBackground(k.headerBackground());
 
-        TextView back = text("→ بېرته", 14, 0xCCFFFFFF, true);
-        back.setPadding(0, dp(4), 0, dp(4));
+        TextView back = k.text("→  بېرته", 14, 0xE6FFFFFF);
+        back.setPadding(k.dp(12), k.dp(4), k.dp(14), k.dp(6));
+        back.setBackground(k.rounded(0x26FFFFFF, 14, 0));
         back.setOnClickListener(v -> finish());
         LinearLayout.LayoutParams bp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         bp.gravity = Gravity.START;
+        bp.bottomMargin = k.dp(10);
         h.addView(back, bp);
 
-        TextView g = new TextView(this);
-        g.setText(glyph);
-        g.setTypeface(Ui.amiriBold(this));
-        g.setTextSize(44);
-        g.setTextColor(GOLD);
-        g.setGravity(Gravity.CENTER);
-        h.addView(g);
-        TextView t = new TextView(this);
-        t.setText(title);
-        t.setTypeface(Ui.amiriBold(this));
-        t.setTextSize(26);
-        t.setTextColor(Color.WHITE);
+        h.addView(top);
+        TextView t = k.title(title, 28, WHITE);
         t.setGravity(Gravity.CENTER);
+        t.setPadding(0, k.dp(14), 0, k.dp(4));
         h.addView(t);
-        TextView s = text(sub, 13, 0xD9FFFFFF, false);
+        TextView s = k.text(sub, 13, 0xD9FFFFFF);
         s.setGravity(Gravity.CENTER);
         h.addView(s);
         return h;
     }
 
-    private LinearLayout card(String title) {
-        LinearLayout c = new LinearLayout(this);
-        c.setOrientation(LinearLayout.VERTICAL);
-        c.setPadding(dp(18), dp(16), dp(18), dp(18));
-        c.setBackground(rounded(Color.WHITE, 22, LINE));
-        c.setElevation(dp(1));
-        LinearLayout.LayoutParams lp = matchWrap();
-        lp.setMargins(dp(16), dp(16), dp(16), 0);
-        c.setLayoutParams(lp);
-        TextView t = text(title, 18, INK, true);
-        t.setPadding(0, 0, 0, dp(8));
-        c.addView(t);
-        return c;
+    private View glyphCircle(String glyph) {
+        TextView g = k.arabic(glyph, 40, GOLD);
+        g.setIncludeFontPadding(false);
+        GradientDrawable ring = new GradientDrawable();
+        ring.setShape(GradientDrawable.OVAL);
+        ring.setColor(0x22000000);
+        ring.setStroke(k.dp(1.5f), 0x99F3E3A5);
+        g.setBackground(ring);
+        g.setLayoutParams(new LinearLayout.LayoutParams(k.dp(86), k.dp(86)));
+        return g;
     }
 
     private TextView para(String s) {
-        TextView t = text(s, 15, INK, false);
-        t.setLineSpacing(0, 1.45f);
+        TextView t = k.text(s, 15, INK);
+        t.setLineSpacing(0, 1.5f);
         return t;
     }
 
-    private TextView arabic(String s, int sp) {
-        TextView t = new TextView(this);
-        t.setText(s);
-        t.setTypeface(Ui.amiriBold(this));
-        t.setTextSize(sp);
-        t.setTextColor(GREEN);
-        t.setGravity(Gravity.CENTER);
+    private TextView chip(String s) {
+        TextView t = k.text(s, 12.5f, GREEN);
+        t.setPadding(k.dp(12), k.dp(4), k.dp(12), k.dp(6));
+        t.setBackground(k.rounded(0x141B5E20, 14, 0));
         return t;
     }
 
     private View bullet(String mark, String s) {
-        LinearLayout r = row();
-        r.setPadding(0, dp(5), 0, dp(5));
-        TextView m = new TextView(this);
-        m.setText(mark);
-        m.setTypeface(Ui.amiriBold(this));
-        m.setTextSize(14);
-        m.setTextColor(GREEN);
-        m.setGravity(Gravity.CENTER);
-        m.setBackground(rounded(0x141B5E20, 14, 0x331B5E20));
-        r.addView(m, new LinearLayout.LayoutParams(dp(30), dp(30)));
-        TextView t = text(s, 14, INK, false);
-        t.setPadding(dp(12), dp(4), 0, 0);
-        t.setLineSpacing(0, 1.3f);
-        r.addView(t, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        LinearLayout r = k.row();
+        r.setPadding(0, k.dp(6), 0, k.dp(6));
+        TextView m = k.badge(mark, 32);
+        r.addView(m);
+        TextView t = k.text(s, 14, INK);
+        t.setPadding(k.dp(12), 0, 0, 0);
+        r.addView(t, k.weight());
         return r;
     }
 
-    private TextView valueBox(String v, boolean ltr) {
-        TextView t = text(v, 16, GREEN, true);
+    private TextView valueBox(String v) {
+        TextView t = k.title(v, 22, GREEN);
         t.setGravity(Gravity.CENTER);
         t.setTextIsSelectable(true);
-        if (ltr) t.setTextDirection(View.TEXT_DIRECTION_LTR);
-        t.setPadding(dp(12), dp(12), dp(12), dp(12));
-        t.setBackground(rounded(SOFT, 14, LINE));
-        t.setLayoutParams(matchWrap());
+        t.setTextDirection(View.TEXT_DIRECTION_LTR);
+        t.setLetterSpacing(0.04f);
+        t.setPadding(k.dp(12), k.dp(14), k.dp(12), k.dp(14));
+        t.setBackground(k.rounded(SOFT, 16, LINE));
         return t;
-    }
-
-    private TextView text(String s, int sp, int color, boolean bold) {
-        TextView t = new TextView(this);
-        t.setText(s);
-        t.setTextSize(sp);
-        t.setTextColor(color);
-        if (bold) t.setTypeface(Typeface.DEFAULT_BOLD);
-        return t;
-    }
-
-    private TextView button(String s, boolean filled, View.OnClickListener l) {
-        TextView b = text(s, 15, filled ? Color.WHITE : GREEN, true);
-        b.setGravity(Gravity.CENTER);
-        b.setPadding(dp(16), dp(12), dp(16), dp(12));
-        GradientDrawable shape = rounded(filled ? GREEN : Color.WHITE, 14, GREEN);
-        b.setBackground(new RippleDrawable(ColorStateList.valueOf(filled ? 0x40FFFFFF : 0x201B5E20), shape, null));
-        b.setClickable(true);
-        b.setFocusable(true);
-        b.setOnClickListener(l);
-        return b;
-    }
-
-    private TextView goldButton(String s, View.OnClickListener l) {
-        TextView b = text(s, 16, 0xFF2D2002, true);
-        b.setGravity(Gravity.CENTER);
-        b.setPadding(dp(16), dp(13), dp(16), dp(13));
-        GradientDrawable shape = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, new int[]{0xFFF6DD7D, 0xFFC9A227});
-        shape.setCornerRadius(dp(14));
-        b.setBackground(new RippleDrawable(ColorStateList.valueOf(0x40FFFFFF), shape, null));
-        b.setClickable(true);
-        b.setOnClickListener(l);
-        return b;
-    }
-
-    private LinearLayout row() {
-        LinearLayout r = new LinearLayout(this);
-        r.setOrientation(LinearLayout.HORIZONTAL);
-        r.setGravity(Gravity.CENTER_VERTICAL);
-        return r;
-    }
-
-    private View space() {
-        View v = new View(this);
-        v.setLayoutParams(new LinearLayout.LayoutParams(dp(10), 1));
-        return v;
-    }
-
-    private LinearLayout.LayoutParams weight() {
-        return new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
-    }
-
-    private LinearLayout.LayoutParams topMargin(int dpv) {
-        LinearLayout.LayoutParams lp = matchWrap();
-        lp.topMargin = dp(dpv);
-        return lp;
-    }
-
-    private GradientDrawable rounded(int fill, int radiusDp, int stroke) {
-        GradientDrawable g = new GradientDrawable();
-        g.setColor(fill);
-        g.setCornerRadius(dp(radiusDp));
-        g.setStroke(dp(1.5f), stroke);
-        return g;
-    }
-
-    private LinearLayout.LayoutParams matchWrap() {
-        return new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-    }
-
-    private int dp(float v) {
-        return Math.round(v * getResources().getDisplayMetrics().density);
     }
 }
