@@ -163,7 +163,7 @@ final class Kit {
         if (glyph != null) head.addView(badge(glyph, 40));
         LinearLayout tx = new LinearLayout(c);
         tx.setOrientation(LinearLayout.VERTICAL);
-        tx.setPadding(glyph != null ? dp(12) : 0, 0, 0, 0);
+        tx.setPaddingRelative(glyph != null ? dp(14) : 0, 0, 0, 0);
         tx.addView(title(title, 19, INK));
         if (sub != null) {
             TextView s = text(sub, 13.5f, MUTED);
@@ -234,6 +234,16 @@ final class Kit {
                 return t;
             }
         };
+    }
+
+    /** A chevron that points toward the end of the row in both RTL and LTR. */
+    TextView chevron() {
+        TextView t = text("\u203A", 24, MUTED);
+        t.setTextDirection(View.TEXT_DIRECTION_LTR);
+        t.setGravity(Gravity.CENTER);
+        if (L.rtl()) t.setScaleX(-1f);
+        t.setPaddingRelative(dp(8), 0, 0, 0);
+        return t;
     }
 
     LinearLayout row() {

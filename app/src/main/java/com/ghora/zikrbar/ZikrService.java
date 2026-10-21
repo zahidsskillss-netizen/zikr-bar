@@ -255,62 +255,126 @@ public class ZikrService extends Service {
 
     // ---------------- unlock popup ----------------
 
-    /** Shows a dhikr card in the middle of the screen for 2 seconds after the phone is unlocked. */
+    /**
+     * Shows the dhikr for 2 seconds after the phone is unlocked: three glass panels at different depths
+     * fly in from far away, drift gently in 3D, then fly past the viewer.
+     */
     private void showUnlockPopup() {
         removeUnlockPopup();
         Kit k = new Kit(this);
         Point s = screen();
+        int cw = Math.min(s.x - k.dp(64), k.dp(300));
+        int ch = k.dp(250);
+        int depth = k.dp(16);
 
-        android.widget.LinearLayout card = new android.widget.LinearLayout(this);
-        card.setOrientation(android.widget.LinearLayout.VERTICAL);
-        card.setGravity(Gravity.CENTER_HORIZONTAL);
-        card.setPadding(k.dp(24), k.dp(22), k.dp(24), k.dp(24));
-        android.graphics.drawable.GradientDrawable bg = new android.graphics.drawable.GradientDrawable(
-                android.graphics.drawable.GradientDrawable.Orientation.TL_BR, new int[]{0xF22E7D32, 0xF20B3319});
-        bg.setCornerRadius(k.dp(28));
-        bg.setStroke(k.dp(1.5f), 0xCCC9A227);
-        card.setBackground(bg);
-        card.setElevation(k.dp(10));
+        android.widget.FrameLayout root = new android.widget.FrameLayout(this);
+        root.setClipChildren(false);
+        root.setClipToPadding(false);
+        root.setPadding(k.dp(44), k.dp(44), k.dp(44) + depth, k.dp(44) + depth);
 
-        android.widget.TextView glyph = k.arabic("\uFDF2", 34, Kit.GOLD);
+        android.widget.FrameLayout stack = new android.widget.FrameLayout(this);
+        stack.setClipChildren(false);
+        root.addView(stack, new android.widget.FrameLayout.LayoutParams(cw + depth, ch + depth));
+
+        // back layer (deepest)
+        View l1 = new View(this);
+        android.graphics.drawable.GradientDrawable g1 = new android.graphics.drawable.GradientDrawable();
+        g1.setColor(0x991B5E20);
+        g1.setCornerRadius(k.dp(26));
+        g1.setStroke(k.dp(1), 0x55C9A227);
+        l1.setBackground(g1);
+        android.widget.FrameLayout.LayoutParams p1 = new android.widget.FrameLayout.LayoutParams(cw, ch);
+        p1.leftMargin = depth;
+        p1.topMargin = depth;
+        stack.addView(l1, p1);
+
+        // middle layer
+        View l2 = new View(this);
+        android.graphics.drawable.GradientDrawable g2 = new android.graphics.drawable.GradientDrawable();
+        g2.setColor(0xB32E7D32);
+        g2.setCornerRadius(k.dp(26));
+        g2.setStroke(k.dp(1), 0x88C9A227);
+        l2.setBackground(g2);
+        android.widget.FrameLayout.LayoutParams p2 = new android.widget.FrameLayout.LayoutParams(cw, ch);
+        p2.leftMargin = depth / 2;
+        p2.topMargin = depth / 2;
+        stack.addView(l2, p2);
+
+        // front glass panel with the dhikr
+        android.widget.LinearLayout front = new android.widget.LinearLayout(this);
+        front.setOrientation(android.widget.LinearLayout.VERTICAL);
+        front.setGravity(Gravity.CENTER);
+        front.setPadding(k.dp(20), k.dp(16), k.dp(20), k.dp(18));
+        android.graphics.drawable.GradientDrawable glass = new android.graphics.drawable.GradientDrawable(
+                android.graphics.drawable.GradientDrawable.Orientation.TL_BR, new int[]{0xF0236B3A, 0xF00B3319});
+        glass.setCornerRadius(k.dp(26));
+        glass.setStroke(k.dp(1.5f), 0xCCF3E3A5);
+        android.graphics.drawable.GradientDrawable shine = new android.graphics.drawable.GradientDrawable(
+                android.graphics.drawable.GradientDrawable.Orientation.TL_BR, new int[]{0x30FFFFFF, 0x00FFFFFF, 0x00FFFFFF});
+        shine.setCornerRadius(k.dp(26));
+        front.setBackground(new android.graphics.drawable.LayerDrawable(new android.graphics.drawable.Drawable[]{glass, shine}));
+        front.setElevation(k.dp(14));
+
+        android.widget.TextView glyph = k.arabic("\uFDF2", 40, Kit.GOLD);
         glyph.setIncludeFontPadding(false);
-        android.graphics.drawable.GradientDrawable ring = new android.graphics.drawable.GradientDrawable();
-        ring.setShape(android.graphics.drawable.GradientDrawable.OVAL);
-        ring.setColor(0x22000000);
-        ring.setStroke(k.dp(1.5f), 0x99F3E3A5);
-        glyph.setBackground(ring);
-        card.addView(glyph, new android.widget.LinearLayout.LayoutParams(k.dp(70), k.dp(70)));
-
+        front.addView(glyph);
         android.widget.TextView zk = k.arabic(Prefs.nextUnlockText(this), 25, Color.WHITE);
-        zk.setPadding(0, k.dp(14), 0, k.dp(6));
-        zk.setLineSpacing(0, 1.15f);
-        card.addView(zk);
-
-        android.widget.TextView ayah = k.arabic("فَاذْكُرُونِي أَذْكُرْكُمْ", 15, 0xCCF3E3A5);
-        card.addView(ayah);
+        zk.setPadding(0, k.dp(10), 0, k.dp(6));
+        zk.setLineSpacing(0, 1.12f);
+        zk.setMaxLines(4);
+        front.addView(zk);
+        front.addView(k.arabic("فَاذْكُرُونِي أَذْكُرْكُمْ", 15, 0xD9F3E3A5));
+        stack.addView(front, new android.widget.FrameLayout.LayoutParams(cw, ch));
 
         WindowManager.LayoutParams p = overlayParams(0);
-        p.width = Math.min(s.x - k.dp(48), k.dp(380));
         p.gravity = Gravity.CENTER;
-        card.setOnClickListener(v -> removeUnlockPopup());
-        card.setAlpha(0f);
-        card.setScaleX(0.92f);
-        card.setScaleY(0.92f);
+        root.setOnClickListener(v -> removeUnlockPopup());
+
+        float cam = 9000 * getResources().getDisplayMetrics().density;
+        stack.setCameraDistance(cam);
+        stack.setPivotX((cw + depth) / 2f);
+        stack.setPivotY((ch + depth) / 2f);
+        // start: far away, tilted
+        stack.setAlpha(0f);
+        stack.setScaleX(0.35f);
+        stack.setScaleY(0.35f);
+        stack.setRotationX(30f);
+        stack.setRotationY(-40f);
+        l1.setTranslationX(k.dp(28));
+        l1.setTranslationY(k.dp(28));
+        l2.setTranslationX(k.dp(14));
+        l2.setTranslationY(k.dp(14));
+        front.setScaleX(0.9f);
+        front.setScaleY(0.9f);
+
         try {
-            wm.addView(card, p);
+            wm.addView(root, p);
         } catch (RuntimeException e) {
             return;
         }
-        unlockPopup = card;
-        card.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(220).start();
-        final View shown = card;
+        unlockPopup = root;
+
+        android.view.animation.Interpolator out = new android.view.animation.DecelerateInterpolator(2.2f);
+        // fly in
+        stack.animate().alpha(1f).scaleX(1f).scaleY(1f).rotationX(10f).rotationY(-18f).setDuration(520).setInterpolator(out)
+                .withEndAction(() -> stack.animate().rotationX(-6f).rotationY(16f).setDuration(1500)
+                        .setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator()).start())
+                .start();
+        l1.animate().translationX(0).translationY(0).setDuration(620).setInterpolator(out).start();
+        l2.animate().translationX(0).translationY(0).setDuration(560).setInterpolator(out).start();
+        front.animate().scaleX(1f).scaleY(1f).setDuration(520).setInterpolator(out).start();
+
+        final View shown = root;
         handler.postDelayed(() -> {
             if (unlockPopup != shown) return;
-            shown.animate().alpha(0f).scaleX(0.96f).scaleY(0.96f).setDuration(250)
+            // fly past the viewer
+            stack.animate().cancel();
+            stack.animate().alpha(0f).scaleX(1.45f).scaleY(1.45f).rotationX(-10f).rotationY(30f).setDuration(320)
+                    .setInterpolator(new android.view.animation.AccelerateInterpolator(1.6f))
                     .withEndAction(() -> {
                         if (unlockPopup == shown) removeUnlockPopup();
                     }).start();
-        }, 2000);
+        }, 2100);
     }
 
     private void removeUnlockPopup() {

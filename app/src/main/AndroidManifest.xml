@@ -28,6 +28,10 @@
             android:name=".InfoActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".AdhkarActivity"
+            android:exported="false" />
+
         <service
             android:name=".ZikrService"
             android:exported="false"

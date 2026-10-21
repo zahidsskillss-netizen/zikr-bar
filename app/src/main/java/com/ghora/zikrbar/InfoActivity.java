@@ -125,7 +125,7 @@ public class InfoActivity extends Activity {
 
         root.addView(ghoraAd());
 
-        LinearLayout support = k.card("♥", L.t("support_t"), null);
+        LinearLayout support = k.card("\u2665\uFE0E", L.t("support_t"), null);
         support.addView(para(L.t("support_text")));
         support.addView(k.button(L.t("donate_btn"), true, v -> openPage(PAGE_DONATE)), k.topMargin(12));
         root.addView(support);
@@ -183,7 +183,7 @@ public class InfoActivity extends Activity {
     }
 
     private void buildDonate(LinearLayout root) {
-        root.addView(header(glyphCircle("♥"), L.t("support_t"), L.t("donate_sub")));
+        root.addView(header(glyphCircle("\u2665\uFE0E"), L.t("support_t"), L.t("donate_sub")));
 
         LinearLayout intro = k.card(null, L.t("why_t"), null);
         LinearLayout who = k.row();
@@ -265,7 +265,7 @@ public class InfoActivity extends Activity {
         h.setBackground(k.headerBackground());
 
         TextView back = k.strong((L.rtl() ? "→  " : "←  ") + L.t("back"), 14, 0xE6FFFFFF);
-        back.setPadding(k.dp(14), k.dp(6), k.dp(16), k.dp(8));
+        back.setPaddingRelative(k.dp(14), k.dp(6), k.dp(16), k.dp(8));
         back.setBackground(new RippleDrawable(ColorStateList.valueOf(0x40FFFFFF), k.rounded(0x26FFFFFF, 18, 0x40FFFFFF), null));
         back.setOnClickListener(v -> finish());
         LinearLayout.LayoutParams bp = new LinearLayout.LayoutParams(
@@ -331,7 +331,7 @@ public class InfoActivity extends Activity {
         val.setTextDirection(View.TEXT_DIRECTION_LTR);
         val.setGravity(Gravity.END);
         r.addView(val, k.weight());
-        r.addView(k.text(L.rtl() ? "  ‹" : "  ›", 20, MUTED));
+        r.addView(k.chevron());
         r.setLayoutParams(k.topMargin(8));
         return r;
     }

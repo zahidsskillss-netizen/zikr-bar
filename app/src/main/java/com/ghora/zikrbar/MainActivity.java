@@ -84,6 +84,7 @@ public class MainActivity extends Activity {
 
         root.addView(header());
         root.addView(stats());
+        root.addView(adhkarRow());
         root.addView(statusCard());
         root.addView(tasbihCard());
         root.addView(unlockCard());
@@ -196,6 +197,35 @@ public class MainActivity extends Activity {
         v.setBackgroundColor(LINE);
         v.setLayoutParams(new LinearLayout.LayoutParams(k.dp(1), k.dp(36)));
         return v;
+    }
+
+    /** Three quick tiles: morning adhkar, evening adhkar, the 99 Names. */
+    private View adhkarRow() {
+        LinearLayout row = k.row();
+        LinearLayout.LayoutParams lp = k.matchWrap();
+        lp.setMargins(k.dp(12), k.dp(14), k.dp(12), 0);
+        row.setLayoutParams(lp);
+        String[][] tiles = {{"\u2600\uFE0E", "morning"}, {"\u263E\uFE0E", "evening"}, {"\uFDF2", "names99"}};
+        for (int i = 0; i < tiles.length; i++) {
+            final int tab = i;
+            LinearLayout t = new LinearLayout(this);
+            t.setOrientation(LinearLayout.VERTICAL);
+            t.setGravity(Gravity.CENTER);
+            t.setPadding(k.dp(6), k.dp(14), k.dp(6), k.dp(14));
+            t.setBackground(new RippleDrawable(ColorStateList.valueOf(0x201B5E20), k.rounded(WHITE, 22, LINE), null));
+            t.setElevation(k.dp(1.5f));
+            TextView b = k.badge(tiles[i][0], 44);
+            t.addView(b);
+            TextView name = k.title(L.t(tiles[i][1]), 13.5f, INK);
+            name.setGravity(Gravity.CENTER);
+            name.setPadding(0, k.dp(10), 0, 0);
+            t.addView(name);
+            t.setOnClickListener(v -> startActivity(new Intent(this, AdhkarActivity.class).putExtra(AdhkarActivity.EXTRA_TAB, tab)));
+            LinearLayout.LayoutParams tp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
+            tp.setMargins(k.dp(4), 0, k.dp(4), 0);
+            row.addView(t, tp);
+        }
+        return row;
     }
 
     private View statusCard() {
@@ -451,7 +481,7 @@ public class MainActivity extends Activity {
 
     private View moreCard() {
         LinearLayout c = k.card("✦", L.t("c_more_t"), L.t("c_more_s"));
-        c.addView(navRow(k.badge("♥", 46), L.t("nav_donate"), "HesabPay · Atoma Pay · Payoneer", InfoActivity.PAGE_DONATE));
+        c.addView(navRow(k.badge("\u2665\uFE0E", 46), L.t("nav_donate"), "HesabPay · Atoma Pay · Payoneer", InfoActivity.PAGE_DONATE));
         c.addView(navRow(k.badge("ﷲ", 46), L.t("nav_about"), L.t("nav_about_s"), InfoActivity.PAGE_ABOUT));
         ImageView ph = k.photo(46);
         c.addView(navRow(ph, L.t("nav_dev"), L.t("dev_name") + " · " + L.t("ghora"), InfoActivity.PAGE_DEV));
@@ -468,21 +498,23 @@ public class MainActivity extends Activity {
 
         LinearLayout tx = new LinearLayout(this);
         tx.setOrientation(LinearLayout.VERTICAL);
-        tx.setPadding(k.dp(12), 0, k.dp(8), 0);
+        tx.setPaddingRelative(k.dp(14), 0, k.dp(8), 0);
         tx.addView(k.title(title, 16, INK));
         TextView s = k.text(sub, 13, MUTED);
         s.setPadding(0, k.dp(3), 0, 0);
+        s.setMaxLines(2);
+        s.setEllipsize(android.text.TextUtils.TruncateAt.END);
         tx.addView(s);
         r.addView(tx, k.weight());
 
-        r.addView(k.text(L.rtl() ? "‹" : "›", 24, MUTED));
+        r.addView(k.chevron());
         r.setOnClickListener(v -> startActivity(new Intent(this, InfoActivity.class).putExtra(InfoActivity.EXTRA_PAGE, page)));
         return r;
     }
 
     private View switchRow(String label, Switch sw) {
         LinearLayout row = k.row();
-        row.setPadding(k.dp(14), k.dp(8), k.dp(10), k.dp(8));
+        row.setPaddingRelative(k.dp(14), k.dp(8), k.dp(10), k.dp(8));
         row.setBackground(k.rounded(SOFT, 16, LINE));
         row.addView(k.title(label, 16, INK), k.weight());
         int[][] states = {{android.R.attr.state_checked}, {}};
