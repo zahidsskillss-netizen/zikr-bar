@@ -24,6 +24,8 @@ public class TasbihView extends View {
     }
 
     private static final float PAD = 10;
+    /** Width of the column on the left that holds the "change dhikr" button. */
+    private static final float BTN = 34, GAP = 6;
 
     private int style;
     private String text = "";
@@ -38,6 +40,8 @@ public class TasbihView extends View {
     private final Paint np = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF r = new RectF();
     private final Path path = new Path();
+    /** Where the "change dhikr" button is, in view coordinates (for touch). */
+    private final RectF btn = new RectF();
 
     public TasbihView(Context c) {
         super(c);
@@ -166,15 +170,17 @@ public class TasbihView extends View {
                 h = dp(60);
         }
         float pad = dp(PAD) * 2;
-        setMeasuredDimension((int) Math.ceil(w + pad), (int) Math.ceil(h + pad));
+        setMeasuredDimension((int) Math.ceil(w + pad + dp(BTN + GAP)), (int) Math.ceil(h + pad));
     }
 
     // ---------- drawing ----------
     @Override
     protected void onDraw(Canvas c) {
+        float h = getHeight() - dp(PAD) * 2;
+        drawSwitch(c, h);
         c.save();
-        c.translate(dp(PAD), dp(PAD));
-        float w = getWidth() - dp(PAD) * 2;
+        c.translate(dp(PAD) + dp(BTN + GAP), dp(PAD));
+        float w = getWidth() - dp(PAD) * 2 - dp(BTN + GAP);
         switch (style) {
             case 0: drawRing(c, w); break;
             case 1: drawOrb(c, w); break;
@@ -184,6 +190,52 @@ public class TasbihView extends View {
             default: drawHead(c, w);
         }
         c.restore();
+    }
+
+    /** True when (x, y) — in view coordinates — is on the "change dhikr" button. */
+    public boolean isSwitchHit(float x, float y) {
+        RectF t = new RectF(btn);
+        t.inset(-dp(6), -dp(6));
+        return t.contains(x, y);
+    }
+
+    /** Small round button on the left: tap it to move to the next dhikr. */
+    private void drawSwitch(Canvas c, float h) {
+        float rad = dp(BTN) / 2;
+        float cx = dp(PAD) + rad;
+        float cy = dp(PAD) + ((style == 3 || style == 5) ? h / 2 : Math.max(rad, dp(17)));
+        btn.set(cx - rad, cy - rad, cx + rad, cy + rad);
+        fillCircle(c, cx, cy, rad, Color.WHITE, true);
+        fillCircle(c, cx, cy, rad - dp(2.5f), 0xFF1B5E20, false);
+
+        // circular arrows icon
+        float ar = rad * 0.48f;
+        r.set(cx - ar, cy - ar, cx + ar, cy + ar);
+        p.setShader(null);
+        p.setStyle(Paint.Style.STROKE);
+        p.setStrokeWidth(dp(2.2f));
+        p.setStrokeCap(Paint.Cap.ROUND);
+        p.setColor(0xFFF3E3A5);
+        c.drawArc(r, 200, 140, false, p);
+        c.drawArc(r, 20, 140, false, p);
+        p.setStyle(Paint.Style.FILL);
+        arrowHead(c, cx, cy, ar, 340);
+        arrowHead(c, cx, cy, ar, 160);
+    }
+
+    private void arrowHead(Canvas c, float cx, float cy, float ar, float deg) {
+        double a = Math.toRadians(deg);
+        float x = cx + ar * (float) Math.cos(a), y = cy + ar * (float) Math.sin(a);
+        // tangent direction (clockwise)
+        float tx = (float) -Math.sin(a), ty = (float) Math.cos(a);
+        float nx = (float) Math.cos(a), ny = (float) Math.sin(a);
+        float len = dp(4.2f), wid = dp(3.4f);
+        path.reset();
+        path.moveTo(x + tx * len, y + ty * len);
+        path.lineTo(x + nx * wid, y + ny * wid);
+        path.lineTo(x - nx * wid, y - ny * wid);
+        path.close();
+        c.drawPath(path, p);
     }
 
     /** 1 — ring counter, like a finger tasbih ring. */

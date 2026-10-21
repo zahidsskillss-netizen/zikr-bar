@@ -470,7 +470,11 @@ public class ZikrService extends Service {
                                 Prefs.setPos(ZikrService.this, lp.x, lp.y);
                             }
                         } else if (!longDone) {
-                            countOne();
+                            if (tasbih != null && tasbih.isSwitchHit(e.getX(), e.getY())) {
+                                nextTasbihZikr();
+                            } else {
+                                countOne();
+                            }
                         }
                         return true;
 
@@ -611,6 +615,16 @@ public class ZikrService extends Service {
             }
             tab = null;
         }
+    }
+
+    /** Moves the floating tasbih to the next dhikr in the list and starts a new count. */
+    private void nextTasbihZikr() {
+        int size = Prefs.list(this).size();
+        Prefs.setTasbihIndex(this, (Prefs.tasbihIndex(this) + 1) % size);
+        Prefs.setCount(this, 0);
+        refreshTasbih();
+        vibrate(30);
+        Toast.makeText(this, Prefs.tasbihText(this), Toast.LENGTH_SHORT).show();
     }
 
     private void countOne() {

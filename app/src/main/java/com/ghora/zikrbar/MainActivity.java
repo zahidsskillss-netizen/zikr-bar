@@ -302,7 +302,7 @@ public class MainActivity extends Activity {
         howBox.setVisibility(View.GONE);
         String[][] howTo = {
                 {"h_tap_k", "h_tap_v"}, {"h_drag_k", "h_drag_v"}, {"h_pinch_k", "h_pinch_v"},
-                {"h_edge_k", "h_edge_v"}, {"h_close_k", "h_close_v"}, {"h_long_k", "h_long_v"}
+                {"h_edge_k", "h_edge_v"}, {"h_switch_k", "h_switch_v"}, {"h_close_k", "h_close_v"}, {"h_long_k", "h_long_v"}
         };
         for (String[] h : howTo) howBox.addView(howRow(L.t(h[0]), L.t(h[1])));
 
