@@ -168,10 +168,10 @@ final class Kit {
 
         LinearLayout head = row();
         head.setPadding(0, 0, 0, dp(6));
-        if (glyph != null) head.addView(badge(glyph, 40));
+        if (glyph != null) head.addView(iconGap(badge(glyph, 34), 16));
         LinearLayout tx = new LinearLayout(c);
         tx.setOrientation(LinearLayout.VERTICAL);
-        tx.setPaddingRelative(glyph != null ? dp(18) : 0, 0, 0, 0);
+        tx.setPadding(dp(4), 0, dp(4), 0);
         tx.addView(title(title, 19, INK));
         if (sub != null) {
             TextView s = text(sub, 13.5f, MUTED);
@@ -181,6 +181,18 @@ final class Kit {
         head.addView(tx, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
         card.addView(head);
         return card;
+    }
+
+    /** Gives an icon a fixed gap before the text that follows it (works in RTL and LTR). */
+    <T extends View> T iconGap(T icon, int gapDp) {
+        ViewGroup.LayoutParams old = icon.getLayoutParams();
+        LinearLayout.LayoutParams lp = old instanceof LinearLayout.LayoutParams
+                ? (LinearLayout.LayoutParams) old
+                : new LinearLayout.LayoutParams(old != null ? old.width : -2, old != null ? old.height : -2);
+        lp.setMarginStart(dp(gapDp));
+        lp.setMarginEnd(dp(gapDp));
+        icon.setLayoutParams(lp);
+        return icon;
     }
 
     TextView label(String s) {

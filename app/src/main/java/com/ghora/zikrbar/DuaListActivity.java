@@ -60,7 +60,10 @@ public class DuaListActivity extends Activity {
         scroll.removeAllViews();
         scroll.addView(root);
         String duaId = getIntent().getStringExtra(EXTRA_DUA);
-        if (duaId != null) buildDua(root, duaId);
+        if (duaId != null) {
+            DuaData.setLast(this, duaId);
+            buildDua(root, duaId);
+        }
         else buildList(root, getIntent().getStringExtra(EXTRA_CAT));
         scroll.post(() -> scroll.scrollTo(0, y));
     }
@@ -134,7 +137,7 @@ public class DuaListActivity extends Activity {
             r.addView(n, new LinearLayout.LayoutParams(k.dp(48), k.dp(48)));
             TextView t = k.title(d.title(), 17, D_TEXT);
             t.setLineSpacing(0, 1.15f);
-            t.setPaddingRelative(k.dp(18), 0, 0, 0);
+            t.setPadding(k.dp(18), 0, k.dp(18), 0);
             r.addView(t, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
             r.setOnClickListener(v -> startActivity(new Intent(this, DuaListActivity.class).putExtra(EXTRA_DUA, d.id())));
             root.addView(r);

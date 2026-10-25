@@ -170,9 +170,27 @@ final class AdhkarData {
         sp(c).edit().putBoolean("on_" + cat, on).apply();
     }
 
+    /** Show the reminder as the small round logo over the screen (else a normal message). */
+    static boolean bubbleOn(Context c) {
+        return sp(c).getBoolean("bubble", true);
+    }
+
+    static void setBubbleOn(Context c, boolean on) {
+        sp(c).edit().putBoolean("bubble", on).apply();
+    }
+
+    /** Design of the page that opens from the sleep reminder (SleepActivity.CARD … LIST). */
+    static int sleepStyle(Context c) {
+        return Math.max(0, Math.min(3, sp(c).getInt("sleepStyle", 0)));
+    }
+
+    static void setSleepStyle(Context c, int s) {
+        sp(c).edit().putInt("sleepStyle", s).apply();
+    }
+
     /** Minutes after midnight: morning 06:00, evening 17:00 by default. */
     static int remindAt(Context c, int cat) {
-        return sp(c).getInt("at_" + cat, cat == MORNING ? 6 * 60 : 17 * 60);
+        return sp(c).getInt("at_" + cat, cat == MORNING ? 6 * 60 : cat == SLEEP ? 21 * 60 + 30 : 17 * 60);
     }
 
     static void setRemindAt(Context c, int cat, int minutes) {

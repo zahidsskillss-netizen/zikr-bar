@@ -117,6 +117,24 @@ final class DuaData {
         }
     }
 
+    // ---------------- last opened dua (for "continue" on the home page) ----------------
+    static void setLast(Context c, String id) {
+        sp(c).edit().putString("last", id).apply();
+    }
+
+    static Dua last(Context c) {
+        String id = sp(c).getString("last", null);
+        return id == null ? null : find(c, id);
+    }
+
+    /** One dua for today, the same all day, going through every category. */
+    static Dua ofDay(Context c) {
+        Dua[] all = category(c, "all");
+        if (all.length == 0) return null;
+        int day = (int) (System.currentTimeMillis() / 86_400_000L);
+        return all[Math.floorMod(day * 7919, all.length)];
+    }
+
     // ---------------- favourites ("My duas") ----------------
     private static SharedPreferences sp(Context c) {
         return c.getSharedPreferences("duas", Context.MODE_PRIVATE);

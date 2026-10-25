@@ -45,6 +45,7 @@ public class ZikrService extends Service {
     static final String ACTION_REFRESH = "com.ghora.zikrbar.REFRESH";
     static final String ACTION_TOGGLE_TASBIH = "com.ghora.zikrbar.TOGGLE_TASBIH";
     static final String ACTION_SHOW_TASBIH = "com.ghora.zikrbar.SHOW_TASBIH";
+    static final String ACTION_PREVIEW_UNLOCK = "com.ghora.zikrbar.PREVIEW_UNLOCK";
 
     private static final String CHANNEL = "zikr_bar";
     private static final String CHANNEL_REMIND = "zikr_reminder";
@@ -126,6 +127,8 @@ public class ZikrService extends Service {
             boolean on = !Prefs.overlay(this);
             Prefs.setOverlay(this, on);
             if (on) Prefs.setMini(this, 0, Prefs.miniY(this));
+        } else if (ACTION_PREVIEW_UNLOCK.equals(action)) {
+            if (Settings.canDrawOverlays(this)) handler.postDelayed(this::showUnlockPopup, 250);
         } else if (ACTION_SHOW_TASBIH.equals(action)) {
             getSystemService(NotificationManager.class).cancel(REMIND_ID);
             if (Settings.canDrawOverlays(this)) {
@@ -242,8 +245,15 @@ public class ZikrService extends Service {
      * Shows the dhikr for 2 seconds after the phone is unlocked: three glass panels at different depths
      * fly in from far away, drift gently in 3D, then fly past the viewer.
      */
+    private UnlockStyles.Shown styled;
+
     private void showUnlockPopup() {
         removeUnlockPopup();
+        int style = Prefs.unlockStyleNow(this);
+        if (style != UnlockStyles.LAYERS) {
+            showStyled(style);
+            return;
+        }
         Kit k = new Kit(this);
         Point s = screen();
         int cw = Math.min(s.x - k.dp(64), k.dp(300));
@@ -360,7 +370,42 @@ public class ZikrService extends Service {
         }, 2100);
     }
 
+    /** One of the newer glass designs (see UnlockStyles). */
+    private void showStyled(int style) {
+        UnlockStyles.Shown sh = UnlockStyles.build(this, style, Prefs.nextUnlockText(this), screen());
+        WindowManager.LayoutParams p = overlayParams(0);
+        p.gravity = sh.gravity;
+        p.y = sh.y;
+        if (sh.fullWidth) p.width = WindowManager.LayoutParams.MATCH_PARENT;
+        sh.root.setOnClickListener(v -> {
+            if (unlockPopup == sh.root) sh.exit.run(this::removeUnlockPopup);
+        });
+        sh.root.setVisibility(View.INVISIBLE);
+        try {
+            wm.addView(sh.root, p);
+        } catch (RuntimeException e) {
+            return;
+        }
+        unlockPopup = sh.root;
+        styled = sh;
+        final View shown = sh.root;
+        shown.post(() -> {
+            if (unlockPopup != shown) return;
+            shown.setVisibility(View.VISIBLE);
+            sh.enter.run();
+        });
+        handler.postDelayed(() -> {
+            if (unlockPopup == shown) sh.exit.run(() -> {
+                if (unlockPopup == shown) removeUnlockPopup();
+            });
+        }, 900 + sh.hold);
+    }
+
     private void removeUnlockPopup() {
+        if (styled != null) {
+            styled.stopLoops();
+            styled = null;
+        }
         if (unlockPopup != null) {
             try {
                 wm.removeView(unlockPopup);

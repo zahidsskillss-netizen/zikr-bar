@@ -18,15 +18,16 @@ public class AdhkarAlarm extends BroadcastReceiver {
 
     static final String ACTION = "com.ghora.zikrbar.ADHKAR_TIME";
     private static final String CHANNEL = "adhkar_daily";
-    private static final int[] CATS = {AdhkarData.MORNING, AdhkarData.EVENING};
+    static final int[] CATS = {AdhkarData.MORNING, AdhkarData.EVENING, AdhkarData.SLEEP};
 
     @Override
     public void onReceive(Context c, Intent intent) {
         if (!ACTION.equals(intent.getAction())) return;
         int cat = intent.getIntExtra("cat", AdhkarData.MORNING);
         L.init(c);
-        if (AdhkarData.remindOn(c, cat) && !AdhkarData.allDone(c, cat)) show(c, cat);
-        schedule(c, cat);
+        boolean snoozed = intent.getBooleanExtra("snooze", false);
+        if ((snoozed || AdhkarData.remindOn(c, cat)) && !AdhkarData.allDone(c, cat)) show(c, cat);
+        if (!snoozed) schedule(c, cat);
     }
 
     /** Sets (or clears) both daily alarms. Safe to call often. */
@@ -62,22 +63,37 @@ public class AdhkarAlarm extends BroadcastReceiver {
         }
     }
 
+    /** Reminds again after some minutes (the "later" button on the sleep page). */
+    static void snooze(Context c, int cat, int minutes) {
+        AlarmManager am = c.getSystemService(AlarmManager.class);
+        if (am == null) return;
+        Intent i = new Intent(c, AdhkarAlarm.class).setAction(ACTION).putExtra("cat", cat).putExtra("snooze", true);
+        PendingIntent pi = PendingIntent.getBroadcast(c, 330 + cat, i, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+        long when = System.currentTimeMillis() + minutes * 60_000L;
+        boolean exact = Build.VERSION.SDK_INT < 31 || am.canScheduleExactAlarms();
+        try {
+            if (exact) am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, when, pi);
+            else am.setWindow(AlarmManager.RTC_WAKEUP, when, 5 * 60_000L, pi);
+        } catch (SecurityException e) {
+            am.setWindow(AlarmManager.RTC_WAKEUP, when, 5 * 60_000L, pi);
+        }
+    }
+
     private static PendingIntent pending(Context c, int cat) {
         Intent i = new Intent(c, AdhkarAlarm.class).setAction(ACTION).putExtra("cat", cat);
         return PendingIntent.getBroadcast(c, 300 + cat, i, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
-    private static void show(Context c, int cat) {
+    static void show(Context c, int cat) {
+        if (AdhkarData.bubbleOn(c) && BubbleService.show(c, cat)) return;
         NotificationManager nm = c.getSystemService(NotificationManager.class);
         if (nm == null) return;
         if (Build.VERSION.SDK_INT >= 26) createChannel(nm);
-        Intent open = new Intent(c, AdhkarActivity.class)
-                .putExtra(AdhkarActivity.EXTRA_TAB, cat)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        Intent open = BubbleService.target(c, cat);
         PendingIntent pi = PendingIntent.getActivity(c, 310 + cat, open,
                 PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
-        String title = (cat == AdhkarData.MORNING ? "☀︎  " : "☾︎  ") + L.t(AdhkarData.nameKey(cat));
-        String body = L.t(cat == AdhkarData.MORNING ? "n_morning_b" : "n_evening_b");
+        String title = BubbleService.title(cat);
+        String body = BubbleService.body(cat);
         Notification n = Ui.notif(c, CHANNEL, false)
                 .setSmallIcon(Icon.createWithBitmap(Ui.allahIcon(c)))
                 .setContentTitle(title)

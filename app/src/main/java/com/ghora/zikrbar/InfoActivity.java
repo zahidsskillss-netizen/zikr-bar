@@ -311,7 +311,7 @@ public class InfoActivity extends Activity {
     private View bullet(String mark, String s) {
         LinearLayout r = k.row();
         r.setPadding(0, k.dp(6), 0, k.dp(6));
-        r.addView(k.badge(mark, 32));
+        r.addView(k.iconGap(k.badge(mark, 30), 10));
         TextView t = k.text(s, 15, INK);
         t.setPadding(k.dp(12), 0, k.dp(12), 0);
         r.addView(t, k.weight());

@@ -9,7 +9,6 @@ import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.graphics.drawable.RippleDrawable;
 import android.os.Bundle;
-import android.speech.tts.TextToSpeech;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.LinearLayout;
@@ -194,8 +193,6 @@ public class SalahWordsActivity extends Activity {
     private final List<View> cards = new ArrayList<>();
     private TextView progressText;
     private ProgressBar progressBar;
-    private TextToSpeech tts;
-    private boolean ttsReady;
 
     static SharedPreferences sp(Context c) {
         return c.getSharedPreferences("learn", Context.MODE_PRIVATE);
@@ -244,7 +241,7 @@ public class SalahWordsActivity extends Activity {
         back.setOnClickListener(v -> finish());
         h.addView(back, new LinearLayout.LayoutParams(k.dp(44), k.dp(44)));
         TextView t = k.title(L.t("sw_title"), 20, D_TEXT);
-        t.setPaddingRelative(k.dp(14), 0, 0, 0);
+        t.setPadding(k.dp(14), 0, k.dp(14), 0);
         h.addView(t, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
         root.addView(h);
 
@@ -263,31 +260,6 @@ public class SalahWordsActivity extends Activity {
         int go = getIntent().getIntExtra(EXTRA_SECTION, -1);
         if (go >= 0 && go < cards.size()) scroll.post(() -> scroll.smoothScrollTo(0, cards.get(go).getTop() - k.dp(8)));
 
-        tts = new TextToSpeech(this, st -> {
-            if (st == TextToSpeech.SUCCESS && tts != null) {
-                int r = tts.setLanguage(new Locale("ar"));
-                ttsReady = r != TextToSpeech.LANG_MISSING_DATA && r != TextToSpeech.LANG_NOT_SUPPORTED;
-                tts.setSpeechRate(0.8f);
-            }
-        });
-    }
-
-    @Override
-    protected void onDestroy() {
-        if (tts != null) {
-            tts.shutdown();
-            tts = null;
-        }
-        super.onDestroy();
-    }
-
-    private void speak(String text) {
-        if (!sp(this).getBoolean("voice", true)) return;
-        if (tts == null || !ttsReady) {
-            Toast.makeText(this, L.t("sw_no_voice"), Toast.LENGTH_LONG).show();
-            return;
-        }
-        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "w");
     }
 
     // ---------------------------------------------------------------- learning card
@@ -316,19 +288,8 @@ public class SalahWordsActivity extends Activity {
         pb.setMargins(0, k.dp(6), 0, k.dp(12));
         c.addView(progressBar, pb);
 
-        LinearLayout btns = k.row();
         TextView remind = k.button("\uD83D\uDD14\u2003" + L.t("sw_remind"), true, v -> reminderDialog());
-        btns.addView(remind, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
-        TextView voice = k.button((sp(this).getBoolean("voice", true) ? "\uD83D\uDD0A" : "\uD83D\uDD07") + "\u2003" + L.t("sw_voice"), false, null);
-        voice.setOnClickListener(v -> {
-            boolean on = !sp(this).getBoolean("voice", true);
-            sp(this).edit().putBoolean("voice", on).apply();
-            voice.setText((on ? "\uD83D\uDD0A" : "\uD83D\uDD07") + "\u2003" + L.t("sw_voice"));
-        });
-        LinearLayout.LayoutParams vp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
-        vp.setMarginStart(k.dp(10));
-        btns.addView(voice, vp);
-        c.addView(btns);
+        c.addView(remind, k.matchWrap());
         return c;
     }
 
@@ -433,20 +394,12 @@ public class SalahWordsActivity extends Activity {
             full.append(s[i]);
         }
 
-        // title band with a "listen" button
+        // title band
         LinearLayout band = k.row();
-        band.setPadding(k.dp(14), k.dp(10), k.dp(10), k.dp(10));
+        band.setPadding(k.dp(14), k.dp(12), k.dp(14), k.dp(12));
         band.setBackground(k.rounded(Theme.ov(0x1F), 22, 0));
-        TextView title = k.title(s[0], 17, D_GOLD);
+        TextView title = k.title(s[0], 16, D_GOLD);
         band.addView(title, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
-        TextView listen = new TextView(this);
-        listen.setText("\uD83D\uDD0A");
-        listen.setTextSize(18);
-        listen.setGravity(Gravity.CENTER);
-        listen.setContentDescription(L.t("sw_voice"));
-        listen.setBackground(k.rounded(Theme.ov(0x1A), 20, 0));
-        listen.setOnClickListener(v -> speak(full.toString()));
-        band.addView(listen, new LinearLayout.LayoutParams(k.dp(40), k.dp(40)));
         card.addView(band, k.matchWrap());
 
         TextView all = k.arabic(full.toString(), 22, D_TEXT);
@@ -474,7 +427,7 @@ public class SalahWordsActivity extends Activity {
         r.setGravity(Gravity.CENTER_VERTICAL);
         r.setMinimumHeight(k.dp(52));
 
-        TextView arT = k.arabic(ar, 20, D_TEXT);
+        TextView arT = k.arabic(ar, 19, D_TEXT);
         arT.setTextDirection(View.TEXT_DIRECTION_RTL);
         r.addView(cell(arT), new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
 
@@ -484,8 +437,8 @@ public class SalahWordsActivity extends Activity {
         cp.setMargins(k.dp(5), 0, k.dp(5), 0);
         r.addView(count, cp);
 
-        TextView psT = k.text(ps, 15, D_TEXT);
-        psT.setTypeface(k.strong);
+        TextView psT = k.text(ps, 12.5f, D_TEXT);
+        psT.setLineSpacing(0, 1.15f);
         psT.setTextDirection(View.TEXT_DIRECTION_RTL);
         r.addView(cell(psT), new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
 
@@ -517,7 +470,6 @@ public class SalahWordsActivity extends Activity {
             count.setScaleX(1.3f);
             count.setScaleY(1.3f);
             count.animate().scaleX(1f).scaleY(1f).setDuration(180).start();
-            speak(ar);
         });
         ok.setOnClickListener(v -> {
             boolean done = !sp(this).getBoolean("l_" + key, false);

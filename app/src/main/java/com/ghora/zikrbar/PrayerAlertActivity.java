@@ -71,7 +71,7 @@ public class PrayerAlertActivity extends Activity {
         back.setOnClickListener(v -> finish());
         h.addView(back, new LinearLayout.LayoutParams(k.dp(44), k.dp(44)));
         TextView t = k.title(L.f("pa_title", L.t(PrayTimes.KEYS[prayer])), 19, D_TEXT);
-        t.setPaddingRelative(k.dp(14), 0, 0, 0);
+        t.setPadding(k.dp(14), 0, k.dp(14), 0);
         h.addView(t, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
         root.addView(h);
 
@@ -96,7 +96,7 @@ public class PrayerAlertActivity extends Activity {
             r.addView(ic, new LinearLayout.LayoutParams(k.dp(46), k.dp(46)));
             LinearLayout tx = new LinearLayout(this);
             tx.setOrientation(LinearLayout.VERTICAL);
-            tx.setPaddingRelative(k.dp(18), 0, 0, 0);
+            tx.setPadding(k.dp(18), 0, k.dp(18), 0);
             tx.addView(k.strong(L.t(MODE_KEYS[m]), 16, D_TEXT));
             if (m == PrayTimes.A_CUSTOM) {
                 String name = PrayTimes.customName(this, prayer);

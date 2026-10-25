@@ -11,12 +11,6 @@
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
-    <queries>
-        <intent>
-            <action android:name="android.intent.action.TTS_SERVICE" />
-        </intent>
-    </queries>
-
     <application
         android:label="Zikr Yad"
         android:icon="@mipmap/ic_launcher"
@@ -79,6 +73,22 @@
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Persistent dhikr reminder shown in the status bar" />
         </service>
+
+        <service
+            android:name=".BubbleService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Daily adhkar reminder shown as a small logo over other apps until the user taps or dismisses it" />
+        </service>
+
+        <activity
+            android:name=".SleepActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:theme="@style/Translucent" />
 
         <receiver
             android:name=".BootReceiver"

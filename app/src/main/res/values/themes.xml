@@ -7,4 +7,12 @@
         <item name="android:statusBarColor">#2E7D32</item>
         <item name="android:windowBackground">#F2F5F1</item>
     </style>
+    <style name="Translucent" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowAnimationStyle">@android:style/Animation.Translucent</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">#00000000</item>
+        <item name="android:backgroundDimEnabled">false</item>
+    </style>
 </resources>

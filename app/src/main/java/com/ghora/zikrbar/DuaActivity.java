@@ -57,7 +57,7 @@ public class DuaActivity extends Activity {
         back.setOnClickListener(v -> finish());
         h.addView(back, new LinearLayout.LayoutParams(k.dp(44), k.dp(44)));
         TextView t = k.title(L.t("duas_t"), 21, D_TEXT);
-        t.setPaddingRelative(k.dp(14), 0, 0, 0);
+        t.setPadding(k.dp(14), 0, k.dp(14), 0);
         h.addView(t);
         root.addView(h);
 

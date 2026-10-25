@@ -44,6 +44,18 @@ public final class Prefs {
         sp(c).edit().putString("list", raw).putInt("index", 0).putInt("tIndex", 0).apply();
     }
 
+    /** Saves the rows from the list editor (order kept; the current positions stay where they are). */
+    static void setList(Context c, List<String> rows) {
+        StringBuilder b = new StringBuilder();
+        for (String r : rows) {
+            String t = r.replace('\n', ' ').trim();
+            if (t.isEmpty()) continue;
+            if (b.length() > 0) b.append('\n');
+            b.append(t);
+        }
+        sp(c).edit().putString("list", b.toString()).apply();
+    }
+
     static List<String> list(Context c) {
         List<String> out = new ArrayList<>();
         for (String line : rawList(c).split("\n")) {
@@ -198,6 +210,24 @@ public final class Prefs {
 
     static void setUnlockPopup(Context c, boolean on) {
         sp(c).edit().putBoolean("unlock", on).apply();
+    }
+
+    static int unlockStyle(Context c) {
+        int s = sp(c).getInt("uStyle", UnlockStyles.LAYERS);
+        return s < 0 || s > UnlockStyles.ROTATE ? UnlockStyles.LAYERS : s;
+    }
+
+    static void setUnlockStyle(Context c, int s) {
+        sp(c).edit().putInt("uStyle", s).apply();
+    }
+
+    /** The design to use now; "change every time" goes through all designs in turn. */
+    static int unlockStyleNow(Context c) {
+        int s = unlockStyle(c);
+        if (s != UnlockStyles.ROTATE) return s;
+        int n = sp(c).getInt("uRot", 0);
+        sp(c).edit().putInt("uRot", n + 1).apply();
+        return Math.floorMod(n, UnlockStyles.REAL);
     }
 
     /** Next dhikr for the unlock popup (rotates through the list). */

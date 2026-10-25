@@ -17,6 +17,9 @@ import android.widget.ScrollView;
 import android.widget.Switch;
 import android.widget.TextView;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static com.ghora.zikrbar.Kit.*;
 
 /**
@@ -144,12 +147,12 @@ public class AdhkarActivity extends Activity {
         t.setPadding(k.dp(10), k.dp(16), k.dp(10), k.dp(16));
         t.setBackground(new RippleDrawable(ColorStateList.valueOf(0x201B5E20), k.glass(22), null));
         Theme.elev(t, k.dp(1.5f));
-        t.addView(k.badge(AdhkarData.glyph(c), 48));
+        t.addView(wide ? k.iconGap(k.badge(AdhkarData.glyph(c), 40), 12) : k.badge(AdhkarData.glyph(c), 42));
 
         LinearLayout tx = new LinearLayout(this);
         tx.setOrientation(LinearLayout.VERTICAL);
         tx.setGravity(wide ? Gravity.START | Gravity.CENTER_VERTICAL : Gravity.CENTER);
-        if (wide) tx.setPaddingRelative(k.dp(18), 0, 0, 0);
+        if (wide) tx.setPadding(k.dp(18), 0, k.dp(18), 0);
         TextView name = k.title(L.t(AdhkarData.nameKey(c)), 15, INK);
         name.setGravity(Gravity.CENTER);
         name.setPadding(0, wide ? 0 : k.dp(12), 0, k.dp(4));
@@ -189,7 +192,7 @@ public class AdhkarActivity extends Activity {
 
     private View reminderCard() {
         LinearLayout card = k.card("\u25F7", L.t("rem_daily_t"), L.t("rem_daily_s"));
-        for (int c : new int[]{AdhkarData.MORNING, AdhkarData.EVENING}) {
+        for (int c : AdhkarAlarm.CATS) {
             LinearLayout r = k.row();
             r.setPadding(0, k.dp(12), 0, 0);
             TextView name = k.strong(L.t(AdhkarData.nameKey(c)), 15, INK);
@@ -225,6 +228,64 @@ public class AdhkarActivity extends Activity {
             r.addView(sw, sp);
             card.addView(r);
         }
+
+        // show as the round logo over the screen, or as a normal message
+        LinearLayout br = k.row();
+        br.setPadding(k.dp(14), k.dp(10), k.dp(10), k.dp(10));
+        br.setBackground(k.rounded(SOFT, 16, LINE));
+        LinearLayout btx = new LinearLayout(this);
+        btx.setOrientation(LinearLayout.VERTICAL);
+        btx.addView(k.strong(L.t("bub_t"), 15, INK));
+        TextView bs = k.text(L.t("bub_s"), 12.5f, MUTED);
+        btx.addView(bs);
+        br.addView(btx, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        Switch bsw = new Switch(this);
+        bsw.setChecked(AdhkarData.bubbleOn(this));
+        bsw.setThumbTintList(ColorStateList.valueOf(bsw.isChecked() ? GREEN2 : 0xFFBDBDBD));
+        bsw.setOnCheckedChangeListener((b, on) -> {
+            AdhkarData.setBubbleOn(this, on);
+            bsw.setThumbTintList(ColorStateList.valueOf(on ? GREEN2 : 0xFFBDBDBD));
+            if (on && !android.provider.Settings.canDrawOverlays(this)) {
+                android.widget.Toast.makeText(this, L.t("overlay_perm"), android.widget.Toast.LENGTH_LONG).show();
+                startActivity(new Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        android.net.Uri.parse("package:" + getPackageName())));
+            }
+        });
+        br.addView(bsw);
+        card.addView(br, k.topMargin(16));
+        card.addView(k.button("\u25B6\u2003" + L.t("bub_try"), false, v -> AdhkarAlarm.show(this, AdhkarData.MORNING)), k.topMargin(10));
+
+        // design of the sleep page
+        card.addView(k.label(L.t("sl_choose")));
+        LinearLayout grid = new LinearLayout(this);
+        grid.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout row = null;
+        String[] marks = {"\u263E\uFE0E", "\u25CE", "\u2605\uFE0E", "\u2630"};
+        List<TextView> chips = new ArrayList<>();
+        for (int i = 0; i < SleepActivity.KEYS.length; i++) {
+            if (i % 2 == 0) {
+                row = k.row();
+                grid.addView(row, k.matchWrap());
+            }
+            final int st = i;
+            TextView t = k.strong(marks[i] + "  " + L.t(SleepActivity.KEYS[i]), 14, INK);
+            t.setGravity(Gravity.CENTER);
+            t.setPadding(k.dp(8), k.dp(12), k.dp(8), k.dp(14));
+            t.setOnClickListener(v -> {
+                AdhkarData.setSleepStyle(this, st);
+                for (int j = 0; j < chips.size(); j++) {
+                    chips.get(j).setBackground(k.rounded(j == st ? Theme.ov(0x1A) : SOFT, 16, j == st ? GOLD_LINE : LINE));
+                }
+                startActivity(new Intent(this, SleepActivity.class).putExtra(SleepActivity.EXTRA_STYLE, st));
+            });
+            t.setBackground(k.rounded(i == AdhkarData.sleepStyle(this) ? Theme.ov(0x1A) : SOFT, 16,
+                    i == AdhkarData.sleepStyle(this) ? GOLD_LINE : LINE));
+            LinearLayout.LayoutParams tp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
+            tp.setMargins(k.dp(4), k.dp(4), k.dp(4), k.dp(4));
+            row.addView(t, tp);
+            chips.add(t);
+        }
+        card.addView(grid, k.matchWrap());
         return card;
     }
 
@@ -322,7 +383,7 @@ public class AdhkarActivity extends Activity {
 
         LinearLayout info = new LinearLayout(this);
         info.setOrientation(LinearLayout.VERTICAL);
-        info.setPaddingRelative(k.dp(16), 0, 0, 0);
+        info.setPadding(k.dp(16), 0, k.dp(16), 0);
         TextView times = k.strong(it.times == 1 ? L.t("once") : L.f("times", L.num(it.times)), 13, INK);
         info.addView(times);
         if (!it.ref.isEmpty()) {

@@ -90,8 +90,9 @@ public class TasbihActivity extends Activity {
         TextView back = icon(L.rtl() ? "→" : "←", v -> finish());
         h.addView(back);
         TextView t = k.title(L.t("tasbih_t"), 22, D_TEXT);
-        t.setPaddingRelative(k.dp(14), 0, 0, 0);
+        t.setPadding(k.dp(14), 0, k.dp(14), 0);
         h.addView(t, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        h.addView(icon("\u21C5", v -> ListEditor.dialog(this, k, this::recreate)));
         h.addView(icon("↻", v -> confirmReset()));
         vibBtn = icon("📳", v -> {
             sp().edit().putBoolean("vib", !vib()).apply();

@@ -41,9 +41,9 @@ public class MainActivity extends Activity {
     private Switch barSwitch, tasbihSwitch, unlockSwitch;
     private TextView currentZk, countText, statBar, statCount, statGoal;
     private Spinner intervalSpinner, tasbihZkSpinner, targetSpinner, reminderSpinner;
-    private EditText listInput;
     private final List<LinearLayout> tiles = new ArrayList<>();
     private boolean binding;
+    private LinearLayout highlightBox;
     private boolean waitingOverlay, waitingUnlock;
 
     @Override
@@ -86,6 +86,9 @@ public class MainActivity extends Activity {
 
         root.addView(header());
         root.addView(stats());
+        highlightBox = new LinearLayout(this);
+        highlightBox.setOrientation(LinearLayout.VERTICAL);
+        root.addView(highlightBox, k.matchWrap());
         root.addView(adhkarRow());
         root.addView(toolsRow());
         TextView words = k.button("\uD83D\uDCD6\u2003" + L.t("sw_title"), false, v -> startActivity(new Intent(this, SalahWordsActivity.class)));
@@ -288,6 +291,105 @@ public class MainActivity extends Activity {
         return row;
     }
 
+    // ---------------------------------------------------------------- today's highlight
+
+    /** The adhkar for this time of day. */
+    private int adhkarNow() {
+        int h = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY);
+        if (h >= 21 || h < 3) return AdhkarData.SLEEP;
+        if (h >= 15) return AdhkarData.EVENING;
+        if (h >= 12 && AdhkarData.allDone(this, AdhkarData.MORNING)) return AdhkarData.EVENING;
+        return AdhkarData.MORNING;
+    }
+
+    private void fillHighlight() {
+        highlightBox.removeAllViews();
+        LinearLayout c = k.card(null, L.t("hl_title"), null);
+
+        int cat = adhkarNow();
+        AdhkarData.Item[] items = AdhkarData.items(this, cat);
+        if (items.length > 0) {
+            int[] left = AdhkarData.left(this, cat);
+            int done = AdhkarData.doneCount(left);
+            LinearLayout box = new LinearLayout(this);
+            box.setOrientation(LinearLayout.VERTICAL);
+            box.setPadding(k.dp(14), k.dp(12), k.dp(14), k.dp(14));
+            box.setBackground(new RippleDrawable(ColorStateList.valueOf(0x201B5E20), k.rounded(SOFT, 18, LINE), null));
+            LinearLayout top = k.row();
+            top.addView(k.iconGap(k.badge(AdhkarData.glyph(cat), 34), 12));
+            LinearLayout tx = new LinearLayout(this);
+            tx.setOrientation(LinearLayout.VERTICAL);
+            tx.addView(k.title(L.t(AdhkarData.nameKey(cat)), 16, INK));
+            TextView pr = k.strong(done == items.length ? L.t("done") : L.f("prog", L.num(done), L.num(items.length)), 12.5f,
+                    done > 0 ? GREEN2 : MUTED);
+            pr.setPadding(0, k.dp(2), 0, 0);
+            tx.addView(pr);
+            top.addView(tx, k.weight());
+            box.addView(top);
+            android.widget.ProgressBar bar = new android.widget.ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+            bar.setMax(items.length);
+            bar.setProgress(done);
+            bar.setProgressTintList(ColorStateList.valueOf(GOLD_LINE));
+            bar.setProgressBackgroundTintList(ColorStateList.valueOf(Theme.ov(0x22)));
+            box.addView(bar, k.topMargin(8));
+            int next = -1;
+            for (int i = 0; i < left.length; i++) if (left[i] > 0) { next = i; break; }
+            if (next >= 0) {
+                TextView ar = k.arabic(items[next].text, 18, INK);
+                ar.setMaxLines(2);
+                ar.setEllipsize(android.text.TextUtils.TruncateAt.END);
+                ar.setTextDirection(View.TEXT_DIRECTION_RTL);
+                ar.setPadding(0, k.dp(10), 0, k.dp(4));
+                box.addView(ar);
+            }
+            String go = done == items.length ? L.t("hl_again") : done > 0 ? L.t("hl_continue") : L.t("hl_start");
+            TextView b = k.button(go + "  " + (L.rtl() ? "\u2190" : "\u2192"), done < items.length, null);
+            box.addView(b, k.topMargin(10));
+            final int fc = cat;
+            View.OnClickListener open = v -> startActivity(new Intent(this, AdhkarActivity.class).putExtra(AdhkarActivity.EXTRA_TAB, fc));
+            b.setOnClickListener(open);
+            box.setOnClickListener(open);
+            c.addView(box, k.topMargin(8));
+        }
+
+        DuaData.Dua day = DuaData.ofDay(this);
+        if (day != null && day.parts.length > 0) {
+            LinearLayout box = new LinearLayout(this);
+            box.setOrientation(LinearLayout.VERTICAL);
+            box.setPadding(k.dp(14), k.dp(12), k.dp(14), k.dp(14));
+            box.setBackground(new RippleDrawable(ColorStateList.valueOf(0x201B5E20), k.rounded(SOFT, 18, LINE), null));
+            LinearLayout top = k.row();
+            top.addView(k.iconGap(k.badge("\u2766", 34), 12));
+            LinearLayout tx = new LinearLayout(this);
+            tx.setOrientation(LinearLayout.VERTICAL);
+            tx.addView(k.title(L.t("hl_dua"), 16, INK));
+            TextView dt = k.text(day.title(), 12.5f, MUTED);
+            dt.setMaxLines(1);
+            dt.setEllipsize(android.text.TextUtils.TruncateAt.END);
+            tx.addView(dt);
+            top.addView(tx, k.weight());
+            box.addView(top);
+            TextView ar = k.arabic(day.parts[0].text, 18, INK);
+            ar.setMaxLines(3);
+            ar.setEllipsize(android.text.TextUtils.TruncateAt.END);
+            ar.setTextDirection(View.TEXT_DIRECTION_RTL);
+            ar.setPadding(0, k.dp(10), 0, 0);
+            box.addView(ar);
+            box.setOnClickListener(v -> startActivity(new Intent(this, DuaListActivity.class).putExtra(DuaListActivity.EXTRA_DUA, day.id())));
+            c.addView(box, k.topMargin(10));
+        }
+
+        DuaData.Dua last = DuaData.last(this);
+        if (last != null) {
+            TextView cont = k.button(L.t("hl_last") + "  " + last.title(), false,
+                    v -> startActivity(new Intent(this, DuaListActivity.class).putExtra(DuaListActivity.EXTRA_DUA, last.id())));
+            cont.setMaxLines(1);
+            cont.setEllipsize(android.text.TextUtils.TruncateAt.END);
+            c.addView(cont, k.topMargin(10));
+        }
+        highlightBox.addView(c);
+    }
+
     private View statusCard() {
         LinearLayout c = k.card("ﷲ", L.t("c_bar_t"), L.t("c_bar_s"));
 
@@ -482,7 +584,63 @@ public class MainActivity extends Activity {
         TextView note = k.text(L.t("unl_note"), 13, MUTED);
         note.setPadding(0, k.dp(10), 0, 0);
         c.addView(note);
+
+        c.addView(k.label(L.t("us_choose")));
+        HorizontalScrollView hs = new HorizontalScrollView(this);
+        hs.setHorizontalScrollBarEnabled(false);
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        String[] marks = {"\u25A4", "\u2B2D", "\u21BB", "\u25CB", "\u2738", "\u2229", "\u2581", "\u2685"};
+        for (int i = 0; i <= UnlockStyles.ROTATE; i++) {
+            final int st = i;
+            LinearLayout t = new LinearLayout(this);
+            t.setOrientation(LinearLayout.VERTICAL);
+            t.setGravity(Gravity.CENTER);
+            t.setPadding(k.dp(10), k.dp(12), k.dp(10), k.dp(10));
+            TextView m = k.strong(marks[i], 22, GOLD_LINE);
+            m.setGravity(Gravity.CENTER);
+            t.addView(m);
+            TextView n = k.strong(L.t(UnlockStyles.KEYS[i]), 12.5f, INK);
+            n.setGravity(Gravity.CENTER);
+            n.setPadding(0, k.dp(6), 0, 0);
+            t.addView(n);
+            t.setOnClickListener(v -> {
+                Prefs.setUnlockStyle(this, st);
+                paintStyles();
+                previewUnlock();
+            });
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(k.dp(92), LinearLayout.LayoutParams.WRAP_CONTENT);
+            lp.setMarginEnd(k.dp(8));
+            row.addView(t, lp);
+            styleTiles.add(t);
+        }
+        hs.addView(row);
+        c.addView(hs, k.matchWrap());
+        c.addView(k.button("\u25B6\u2003" + L.t("us_preview"), false, v -> previewUnlock()), k.topMargin(12));
+        paintStyles();
         return c;
+    }
+
+    private final List<LinearLayout> styleTiles = new ArrayList<>();
+
+    private void paintStyles() {
+        int sel = Prefs.unlockStyle(this);
+        for (int i = 0; i < styleTiles.size(); i++) {
+            styleTiles.get(i).setBackground(i == sel ? k.rounded(Theme.ov(0x1A), 18, GOLD_LINE) : k.rounded(SOFT, 18, LINE));
+        }
+    }
+
+    private void previewUnlock() {
+        if (!Settings.canDrawOverlays(this)) {
+            waitingUnlock = true;
+            askOverlay();
+            return;
+        }
+        if (!Prefs.running(this)) {
+            Toast.makeText(this, L.t("us_need_on"), Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Ui.startZikrService(this, new Intent(this, ZikrService.class).setAction(ZikrService.ACTION_PREVIEW_UNLOCK));
     }
 
     private View reminderCard() {
@@ -514,36 +672,19 @@ public class MainActivity extends Activity {
     }
 
     private View listCard() {
-        LinearLayout c = k.card("≡", L.t("c_list_t"), L.t("c_list_s"));
-        listInput = new EditText(this);
-        listInput.setText(Prefs.rawList(this));
-        listInput.setTypeface(k.amiri);
-        listInput.setTextSize(18);
-        listInput.setTextColor(INK);
-        listInput.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
-        listInput.setSingleLine(false);
-        listInput.setMinLines(6);
-        listInput.setMaxLines(14);
-        listInput.setGravity(Gravity.TOP | Gravity.START);
-        listInput.setTextDirection(View.TEXT_DIRECTION_RTL);
-        listInput.setPadding(k.dp(14), k.dp(10), k.dp(14), k.dp(10));
-        listInput.setBackground(k.rounded(SOFT, 16, LINE));
-        c.addView(listInput, k.topMargin(10));
-
-        c.addView(k.button(L.t("save"), true, v -> {
-            Prefs.saveList(this, listInput.getText().toString());
-            Toast.makeText(this, L.t("saved"), Toast.LENGTH_SHORT).show();
+        LinearLayout c = k.card("\u2261", L.t("c_list_t"), L.t("le_sub"));
+        c.addView(ListEditor.inline(this, k, () -> {
             refresh();
             refreshService();
-        }), k.topMargin(12));
+        }), k.topMargin(4));
         return c;
     }
 
     private View moreCard() {
         LinearLayout c = k.card("✦", L.t("c_more_t"), L.t("c_more_s"));
-        c.addView(navRow(k.badge("\u2665\uFE0E", 46), L.t("nav_donate"), "HesabPay · Atoma Pay · Payoneer", InfoActivity.PAGE_DONATE));
-        c.addView(navRow(k.badge("ﷲ", 46), L.t("nav_about"), L.t("nav_about_s"), InfoActivity.PAGE_ABOUT));
-        ImageView ph = k.photo(46);
+        c.addView(navRow(k.badge("\u2665\uFE0E", 38), L.t("nav_donate"), "HesabPay · Atoma Pay · Payoneer", InfoActivity.PAGE_DONATE));
+        c.addView(navRow(k.badge("ﷲ", 38), L.t("nav_about"), L.t("nav_about_s"), InfoActivity.PAGE_ABOUT));
+        ImageView ph = k.photo(38);
         c.addView(navRow(ph, L.t("nav_dev"), L.t("dev_name") + " · " + L.t("ghora"), InfoActivity.PAGE_DEV));
         c.addView(k.button(L.t("share_btn"), true, v -> InfoActivity.share(this)), k.topMargin(12));
         return c;
@@ -554,11 +695,11 @@ public class MainActivity extends Activity {
         r.setPadding(k.dp(4), k.dp(10), k.dp(4), k.dp(10));
         r.setBackground(new RippleDrawable(ColorStateList.valueOf(0x201B5E20), null, k.rounded(CARD, 14, 0)));
         r.setClickable(true);
-        r.addView(icon);
+        r.addView(k.iconGap(icon, 14));
 
         LinearLayout tx = new LinearLayout(this);
         tx.setOrientation(LinearLayout.VERTICAL);
-        tx.setPaddingRelative(k.dp(18), 0, k.dp(8), 0);
+        tx.setPadding(k.dp(4), 0, k.dp(4), 0);
         tx.addView(k.title(title, 16, INK));
         TextView s = k.text(sub, 13, MUTED);
         s.setPadding(0, k.dp(3), 0, 0);
@@ -641,6 +782,7 @@ public class MainActivity extends Activity {
 
     private void refresh() {
         if (barSwitch == null) return;
+        fillHighlight();
         binding = true;
         boolean running = Prefs.running(this);
         boolean canDraw = Settings.canDrawOverlays(this);

@@ -90,7 +90,7 @@ public class PrayerActivity extends Activity {
         h.setPadding(k.dp(8), k.dp(10), k.dp(8), k.dp(10));
         h.addView(icon(L.rtl() ? "→" : "←", v -> finish()));
         TextView t = k.title(L.t("prayer_t"), 21, D_TEXT);
-        t.setPaddingRelative(k.dp(14), 0, 0, 0);
+        t.setPadding(k.dp(14), 0, k.dp(14), 0);
         h.addView(t, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
         h.addView(icon("⚙︎", v -> settings()));
         root.addView(h);
