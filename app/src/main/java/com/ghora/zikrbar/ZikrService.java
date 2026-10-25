@@ -51,7 +51,6 @@ public class ZikrService extends Service {
     private static final int NOTIF_ID = 1;
     private static final int REMIND_ID = 2;
 
-    private static Bitmap iconCache;
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Runnable tick = new Runnable() {
@@ -234,23 +233,7 @@ public class ZikrService extends Service {
 
     /** The name of Allah Ta'ala (ﷲ in the Amiri font), white on transparent, for the status bar. */
     private Bitmap allahIcon() {
-        if (iconCache != null) return iconCache;
-        int size = 128;
-        Bitmap bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(bmp);
-        Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
-        p.setColor(Color.WHITE);
-        p.setTypeface(Ui.amiriBold(this));
-        String word = "ﷲ";
-        Rect b = new Rect();
-        p.setTextSize(100f);
-        p.getTextBounds(word, 0, word.length(), b);
-        float s = Math.min((size - 6f) / b.width(), (size - 6f) / b.height());
-        p.setTextSize(100f * s);
-        p.getTextBounds(word, 0, word.length(), b);
-        canvas.drawText(word, size / 2f - b.exactCenterX(), size / 2f - b.exactCenterY(), p);
-        iconCache = bmp;
-        return bmp;
+        return Ui.allahIcon(this);
     }
 
     // ---------------- unlock popup ----------------

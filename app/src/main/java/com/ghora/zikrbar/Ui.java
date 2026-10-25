@@ -64,6 +64,29 @@ final class Ui {
                 : WindowManager.LayoutParams.TYPE_PHONE;
     }
 
+    private static android.graphics.Bitmap allah;
+
+    /** The name of Allah Ta'ala (ﷲ in the Amiri font), white on transparent, for notification icons. */
+    static synchronized android.graphics.Bitmap allahIcon(Context c) {
+        if (allah != null) return allah;
+        int size = 128;
+        android.graphics.Bitmap bmp = android.graphics.Bitmap.createBitmap(size, size, android.graphics.Bitmap.Config.ARGB_8888);
+        android.graphics.Canvas canvas = new android.graphics.Canvas(bmp);
+        android.graphics.Paint p = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+        p.setColor(0xFFFFFFFF);
+        p.setTypeface(amiriBold(c));
+        String word = "ﷲ";
+        android.graphics.Rect b = new android.graphics.Rect();
+        p.setTextSize(100f);
+        p.getTextBounds(word, 0, word.length(), b);
+        float s = Math.min((size - 6f) / b.width(), (size - 6f) / b.height());
+        p.setTextSize(100f * s);
+        p.getTextBounds(word, 0, word.length(), b);
+        canvas.drawText(word, size / 2f - b.exactCenterX(), size / 2f - b.exactCenterY(), p);
+        allah = bmp;
+        return bmp;
+    }
+
     /** Writes a number with the digits of the chosen language. */
     static String fa(int n) {
         return L.num(n);

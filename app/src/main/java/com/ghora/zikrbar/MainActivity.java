@@ -55,6 +55,7 @@ public class MainActivity extends Activity {
         getWindow().setNavigationBarColor(BG);
         setContentView(build());
         askNotificationPermission();
+        AdhkarAlarm.scheduleAll(this);
     }
 
     @Override
@@ -199,15 +200,16 @@ public class MainActivity extends Activity {
         return v;
     }
 
-    /** Three quick tiles: morning adhkar, evening adhkar, the 99 Names. */
+    /** Three quick tiles: morning adhkar, evening adhkar, and the page with all adhkar categories. */
     private View adhkarRow() {
         LinearLayout row = k.row();
         LinearLayout.LayoutParams lp = k.matchWrap();
         lp.setMargins(k.dp(12), k.dp(14), k.dp(12), 0);
         row.setLayoutParams(lp);
-        String[][] tiles = {{"\u2600\uFE0E", "morning"}, {"\u263E\uFE0E", "evening"}, {"\uFDF2", "names99"}};
+        String[][] tiles = {{"\u2600\uFE0E", "morning"}, {"\u263E\uFE0E", "evening"}, {"\u06DE", "adhkar_all"}};
+        int[] tabs = {AdhkarData.MORNING, AdhkarData.EVENING, AdhkarData.HUB};
         for (int i = 0; i < tiles.length; i++) {
-            final int tab = i;
+            final int tab = tabs[i];
             LinearLayout t = new LinearLayout(this);
             t.setOrientation(LinearLayout.VERTICAL);
             t.setGravity(Gravity.CENTER);
