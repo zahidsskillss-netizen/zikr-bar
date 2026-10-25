@@ -451,7 +451,7 @@ public class ZikrService extends Service {
         tasbih.setOnTouchListener(new View.OnTouchListener() {
             float downX, downY;
             int startX, startY;
-            boolean moved, longDone, pinching;
+            boolean moved, longDone, pinching, onText, swiping;
             final Runnable longPress = () -> {
                 longDone = true;
                 Prefs.setCount(ZikrService.this, 0);
@@ -472,6 +472,8 @@ public class ZikrService extends Service {
                         moved = false;
                         longDone = false;
                         pinching = false;
+                        swiping = false;
+                        onText = tasbih != null && tasbih.isTextHit(e.getX(), e.getY());
                         handler.postDelayed(longPress, 700);
                         return true;
 
@@ -482,8 +484,14 @@ public class ZikrService extends Service {
                         return true;
 
                     case MotionEvent.ACTION_MOVE:
-                        if (pinching) return true;
+                        if (pinching || swiping) return true;
                         float dx = e.getRawX() - downX, dy = e.getRawY() - downY;
+                        // sideways swipe on the dhikr text changes the dhikr instead of moving the tasbih
+                        if (!moved && onText && Math.abs(dx) > slop && Math.abs(dx) > Math.abs(dy) * 1.2f) {
+                            swiping = true;
+                            handler.removeCallbacks(longPress);
+                            return true;
+                        }
                         if (!moved && Math.hypot(dx, dy) > slop) {
                             moved = true;
                             handler.removeCallbacks(longPress);
@@ -504,6 +512,12 @@ public class ZikrService extends Service {
                             pinching = false;
                             return true;
                         }
+                        if (swiping) {
+                            swiping = false;
+                            float sx = e.getRawX() - downX;
+                            if (Math.abs(sx) > dp(30)) nextTasbihZikr(sx < 0 ? 1 : -1);
+                            return true;
+                        }
                         if (moved) {
                             Point s = screen();
                             int edge = dp(28);
@@ -517,11 +531,7 @@ public class ZikrService extends Service {
                                 Prefs.setPos(ZikrService.this, lp.x, lp.y);
                             }
                         } else if (!longDone) {
-                            if (tasbih != null && tasbih.isSwitchHit(e.getX(), e.getY())) {
-                                nextTasbihZikr();
-                            } else {
-                                countOne();
-                            }
+                            countOne();
                         }
                         return true;
 
@@ -664,10 +674,10 @@ public class ZikrService extends Service {
         }
     }
 
-    /** Moves the floating tasbih to the next dhikr in the list and starts a new count. */
-    private void nextTasbihZikr() {
+    /** Moves the floating tasbih to the next (dir 1) or previous (dir -1) dhikr and starts a new count. */
+    private void nextTasbihZikr(int dir) {
         int size = Prefs.list(this).size();
-        Prefs.setTasbihIndex(this, (Prefs.tasbihIndex(this) + 1) % size);
+        Prefs.setTasbihIndex(this, Math.floorMod(Prefs.tasbihIndex(this) + dir, size));
         Prefs.setCount(this, 0);
         refreshTasbih();
         vibrate(30);

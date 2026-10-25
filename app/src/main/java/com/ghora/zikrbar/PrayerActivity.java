@@ -54,9 +54,13 @@ public class PrayerActivity extends Activity {
         PrayerAlarm.schedule(this);
     }
 
+    private boolean shown;
+
     @Override
     protected void onResume() {
         super.onResume();
+        if (shown) build(); // alert settings may have changed
+        shown = true;
         tick.post(ticker);
     }
 
@@ -162,15 +166,14 @@ public class PrayerActivity extends Activity {
             TextView time = k.title(PrayTimes.clock(m[p], true), 18, D_TEXT);
             time.setTextDirection(View.TEXT_DIRECTION_LTR);
             r.addView(time);
-            TextView bell = icon(PrayTimes.alertOn(this, p) ? "🔔" : "🔕", null);
+            TextView bell = icon(PrayerAlertActivity.icon(PrayTimes.alertMode(this, p)), null);
             bell.setTextSize(18);
-            bell.setOnClickListener(v -> {
-                boolean on = !PrayTimes.alertOn(this, pr);
-                PrayTimes.setAlertOn(this, pr, on);
-                bell.setText(on ? "🔔" : "🔕");
-                PrayerAlarm.schedule(this);
-                Toast.makeText(this, L.f(on ? "alert_on" : "alert_off", L.t(PrayTimes.KEYS[pr])), Toast.LENGTH_SHORT).show();
-            });
+            bell.setBackground(k.rounded(0x00000000, 22, D_ACCENT));
+            LinearLayout.LayoutParams bpl = new LinearLayout.LayoutParams(k.dp(40), k.dp(40));
+            bpl.setMarginStart(k.dp(10));
+            bell.setLayoutParams(bpl);
+            bell.setOnClickListener(v -> startActivity(new Intent(this, PrayerAlertActivity.class)
+                    .putExtra(PrayerAlertActivity.EXTRA_PRAYER, pr)));
             r.addView(bell);
             card.addView(r);
             if (p < 5) {
@@ -181,6 +184,11 @@ public class PrayerActivity extends Activity {
                 card.addView(line, lp);
             }
         }
+
+        TextView words = k.button("\uD83D\uDCD6  " + L.t("sw_title"), false, v -> startActivity(new Intent(this, SalahWordsActivity.class)));
+        LinearLayout.LayoutParams wp = k.matchWrap();
+        wp.setMargins(k.dp(24), k.dp(20), k.dp(24), 0);
+        root.addView(words, wp);
 
         TextView fix = k.button(L.t("fix_delay"), true, v -> fixDelay());
         LinearLayout.LayoutParams fp = k.matchWrap();

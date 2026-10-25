@@ -88,6 +88,10 @@ public class MainActivity extends Activity {
         root.addView(stats());
         root.addView(adhkarRow());
         root.addView(toolsRow());
+        TextView words = k.button("\uD83D\uDCD6  " + L.t("sw_title"), false, v -> startActivity(new Intent(this, SalahWordsActivity.class)));
+        LinearLayout.LayoutParams wlp = k.matchWrap();
+        wlp.setMargins(k.dp(16), k.dp(10), k.dp(16), 0);
+        root.addView(words, wlp);
         root.addView(statusCard());
         root.addView(tasbihCard());
         root.addView(unlockCard());

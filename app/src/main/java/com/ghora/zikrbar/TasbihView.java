@@ -40,7 +40,7 @@ public class TasbihView extends View {
 
     private static final float PAD = 10;
     /** Width of the column on the left that holds the "change dhikr" button. */
-    private static final float BTN = 34, GAP = 6;
+    private static final float BTN = 0, GAP = 0;
 
     private int style;
     private String text = "";
@@ -130,6 +130,8 @@ public class TasbihView extends View {
         float w = tp.measureText(s) + dp(28);
         float h = pillH(sizeDp);
         r.set(cx - w / 2, top, cx + w / 2, top + h);
+        textArea.set(r);
+        textArea.offset(dp(PAD), dp(PAD));
         p.setShader(null);
         p.setStyle(Paint.Style.FILL);
         p.setColor(bg);
@@ -200,8 +202,7 @@ public class TasbihView extends View {
     // ---------- drawing ----------
     @Override
     protected void onDraw(Canvas c) {
-        float h = getHeight() - dp(PAD) * 2;
-        drawSwitch(c, h);
+        textArea.set(0, 0, getWidth(), getHeight() * 0.38f);
         c.save();
         c.translate(dp(PAD) + dp(BTN + GAP), dp(PAD));
         float w = getWidth() - dp(PAD) * 2 - dp(BTN + GAP);
@@ -219,35 +220,13 @@ public class TasbihView extends View {
         c.restore();
     }
 
-    /** True when (x, y) — in view coordinates — is on the "change dhikr" button. */
-    public boolean isSwitchHit(float x, float y) {
-        RectF t = new RectF(btn);
-        t.inset(-dp(6), -dp(6));
+    private final RectF textArea = new RectF();
+
+    /** True when (x, y) — in view coordinates — is on the dhikr text; a sideways swipe there changes the dhikr. */
+    public boolean isTextHit(float x, float y) {
+        RectF t = new RectF(textArea);
+        t.inset(-dp(10), -dp(10));
         return t.contains(x, y);
-    }
-
-    /** Small round button on the left: tap it to move to the next dhikr. */
-    private void drawSwitch(Canvas c, float h) {
-        float rad = dp(BTN) / 2;
-        float cx = dp(PAD) + rad;
-        float cy = dp(PAD) + ((style == 3 || style == 5) ? h / 2 : Math.max(rad, dp(17)));
-        btn.set(cx - rad, cy - rad, cx + rad, cy + rad);
-        fillCircle(c, cx, cy, rad, Color.WHITE, true);
-        fillCircle(c, cx, cy, rad - dp(2.5f), 0xFF1B5E20, false);
-
-        // circular arrows icon
-        float ar = rad * 0.48f;
-        r.set(cx - ar, cy - ar, cx + ar, cy + ar);
-        p.setShader(null);
-        p.setStyle(Paint.Style.STROKE);
-        p.setStrokeWidth(dp(2.2f));
-        p.setStrokeCap(Paint.Cap.ROUND);
-        p.setColor(0xFFF3E3A5);
-        c.drawArc(r, 200, 140, false, p);
-        c.drawArc(r, 20, 140, false, p);
-        p.setStyle(Paint.Style.FILL);
-        arrowHead(c, cx, cy, ar, 340);
-        arrowHead(c, cx, cy, ar, 160);
     }
 
     private void arrowHead(Canvas c, float cx, float cy, float ar, float deg) {
@@ -491,6 +470,7 @@ public class TasbihView extends View {
         c.drawText(n, nRight, dp(30) - (fm.ascent + fm.descent) / 2, np);
 
         float textRight = nRight - np.measureText(n) - dp(12);
+        textArea.set(dp(PAD), dp(PAD), dp(PAD) + textRight, dp(PAD) + dp(60));
         zk(17, Color.WHITE);
         String s = fit(textRight - dp(18));
         tp.setTextAlign(Paint.Align.RIGHT);

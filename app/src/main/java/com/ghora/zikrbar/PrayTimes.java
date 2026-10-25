@@ -73,12 +73,48 @@ final class PrayTimes {
         return sp(c).getInt("hijri", 0);
     }
 
+    /** How each prayer alerts: none, vibration, silent message, phone sound, long beep, own sound file. */
+    static final int A_NONE = 0, A_VIBRATE = 1, A_SILENT = 2, A_DEFAULT = 3, A_BEEP = 4, A_CUSTOM = 5;
+
+    static int alertMode(Context c, int prayer) {
+        SharedPreferences s = sp(c);
+        if (s.contains("mode_" + prayer)) return s.getInt("mode_" + prayer, A_DEFAULT);
+        if (s.contains("alert_" + prayer)) return s.getBoolean("alert_" + prayer, true) ? A_DEFAULT : A_NONE;
+        return prayer == SUNRISE ? A_NONE : A_DEFAULT;
+    }
+
+    static void setAlertMode(Context c, int prayer, int mode) {
+        sp(c).edit().putInt("mode_" + prayer, mode).apply();
+    }
+
     static boolean alertOn(Context c, int prayer) {
-        return sp(c).getBoolean("alert_" + prayer, prayer != SUNRISE);
+        return alertMode(c, prayer) != A_NONE;
     }
 
     static void setAlertOn(Context c, int prayer, boolean on) {
-        sp(c).edit().putBoolean("alert_" + prayer, on).apply();
+        setAlertMode(c, prayer, on ? A_DEFAULT : A_NONE);
+    }
+
+    /** Minutes before (negative) or after (positive) the prayer time when the message comes. */
+    static int alertOffset(Context c, int prayer) {
+        return sp(c).getInt("off_" + prayer, 0);
+    }
+
+    static void setAlertOffset(Context c, int prayer, int min) {
+        sp(c).edit().putInt("off_" + prayer, min).apply();
+    }
+
+    /** The user's own sound, copied into the app (path), and its name. */
+    static String customPath(Context c, int prayer) {
+        return sp(c).getString("file_" + prayer, null);
+    }
+
+    static String customName(Context c, int prayer) {
+        return sp(c).getString("fname_" + prayer, "");
+    }
+
+    static void setCustom(Context c, int prayer, String path, String name) {
+        sp(c).edit().putString("file_" + prayer, path).putString("fname_" + prayer, name).apply();
     }
 
     // ---------------------------------------------------------------- times
