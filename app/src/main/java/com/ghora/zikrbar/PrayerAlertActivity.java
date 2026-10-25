@@ -45,11 +45,9 @@ public class PrayerAlertActivity extends Activity {
         super.onCreate(savedInstanceState);
         L.init(this);
         k = new Kit(this);
-        getWindow().setStatusBarColor(D_HEAD);
-        getWindow().setNavigationBarColor(D_BG);
+        Theme.darkWindow(this);
         prayer = getIntent().getIntExtra(EXTRA_PRAYER, PrayTimes.FAJR);
         scroll = new ScrollView(this);
-        scroll.setBackgroundColor(D_BG);
         setContentView(scroll);
         build();
     }
@@ -73,14 +71,14 @@ public class PrayerAlertActivity extends Activity {
         back.setOnClickListener(v -> finish());
         h.addView(back, new LinearLayout.LayoutParams(k.dp(44), k.dp(44)));
         TextView t = k.title(L.f("pa_title", L.t(PrayTimes.KEYS[prayer])), 19, D_TEXT);
-        t.setPaddingRelative(k.dp(10), 0, 0, 0);
+        t.setPaddingRelative(k.dp(14), 0, 0, 0);
         h.addView(t, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
         root.addView(h);
 
         // kinds of alert
         LinearLayout list = new LinearLayout(this);
         list.setOrientation(LinearLayout.VERTICAL);
-        list.setBackground(k.rounded(0xFF2A2F33, 22, 0));
+        list.setBackground(k.glass(22));
         LinearLayout.LayoutParams lp = k.matchWrap();
         lp.setMargins(k.dp(14), k.dp(16), k.dp(14), 0);
         root.addView(list, lp);
@@ -89,7 +87,7 @@ public class PrayerAlertActivity extends Activity {
             final int mm = m;
             LinearLayout r = k.row();
             r.setPadding(k.dp(16), k.dp(12), k.dp(16), k.dp(12));
-            r.setBackground(new RippleDrawable(ColorStateList.valueOf(0x30FFFFFF), null, k.rounded(0xFFFFFFFF, 22, 0)));
+            r.setBackground(new RippleDrawable(ColorStateList.valueOf(Theme.ov(0x30)), null, k.rounded(Theme.ov(0xFF), 22, 0)));
             TextView ic = new TextView(this);
             ic.setText(MODE_ICONS[m]);
             ic.setTextSize(20);
@@ -98,7 +96,7 @@ public class PrayerAlertActivity extends Activity {
             r.addView(ic, new LinearLayout.LayoutParams(k.dp(46), k.dp(46)));
             LinearLayout tx = new LinearLayout(this);
             tx.setOrientation(LinearLayout.VERTICAL);
-            tx.setPaddingRelative(k.dp(14), 0, 0, 0);
+            tx.setPaddingRelative(k.dp(18), 0, 0, 0);
             tx.addView(k.strong(L.t(MODE_KEYS[m]), 16, D_TEXT));
             if (m == PrayTimes.A_CUSTOM) {
                 String name = PrayTimes.customName(this, prayer);
@@ -113,7 +111,7 @@ public class PrayerAlertActivity extends Activity {
         // notify at
         LinearLayout at = k.row();
         at.setPadding(k.dp(18), k.dp(16), k.dp(18), k.dp(16));
-        at.setBackground(new RippleDrawable(ColorStateList.valueOf(0x30FFFFFF), k.rounded(D_CARD, 18, 0x14FFFFFF), null));
+        at.setBackground(new RippleDrawable(ColorStateList.valueOf(Theme.ov(0x30)), k.glass(18), null));
         TextView atL = k.strong(L.t("pa_at"), 16, D_TEXT);
         at.addView(atL, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
         at.addView(k.strong(offsetText(PrayTimes.alertOffset(this, prayer)), 15, D_ACCENT));

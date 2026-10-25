@@ -11,6 +11,7 @@ public class BootReceiver extends BroadcastReceiver {
         String a = intent.getAction();
         AdhkarAlarm.scheduleAll(context);
         PrayerAlarm.schedule(context);
+        LearnAlarm.schedule(context);
         if ((Intent.ACTION_BOOT_COMPLETED.equals(a) || Intent.ACTION_MY_PACKAGE_REPLACED.equals(a)) && Prefs.running(context)) {
             try {
                 Ui.startZikrService(context, new Intent(context, ZikrService.class));

@@ -48,11 +48,9 @@ public class AdhkarActivity extends Activity {
         super.onCreate(savedInstanceState);
         L.init(this);
         k = new Kit(this);
-        getWindow().setStatusBarColor(GREEN2);
-        getWindow().setNavigationBarColor(BG);
+        Theme.window(this);
         cat = getIntent().getIntExtra(EXTRA_TAB, AdhkarData.HUB);
         scroll = new ScrollView(this);
-        scroll.setBackgroundColor(BG);
         setContentView(scroll);
         build();
     }
@@ -144,17 +142,17 @@ public class AdhkarActivity extends Activity {
         t.setOrientation(wide ? LinearLayout.HORIZONTAL : LinearLayout.VERTICAL);
         t.setGravity(Gravity.CENTER);
         t.setPadding(k.dp(10), k.dp(16), k.dp(10), k.dp(16));
-        t.setBackground(new RippleDrawable(ColorStateList.valueOf(0x201B5E20), k.rounded(WHITE, 22, LINE), null));
-        t.setElevation(k.dp(1.5f));
+        t.setBackground(new RippleDrawable(ColorStateList.valueOf(0x201B5E20), k.glass(22), null));
+        Theme.elev(t, k.dp(1.5f));
         t.addView(k.badge(AdhkarData.glyph(c), 48));
 
         LinearLayout tx = new LinearLayout(this);
         tx.setOrientation(LinearLayout.VERTICAL);
         tx.setGravity(wide ? Gravity.START | Gravity.CENTER_VERTICAL : Gravity.CENTER);
-        if (wide) tx.setPaddingRelative(k.dp(14), 0, 0, 0);
+        if (wide) tx.setPaddingRelative(k.dp(18), 0, 0, 0);
         TextView name = k.title(L.t(AdhkarData.nameKey(c)), 15, INK);
         name.setGravity(Gravity.CENTER);
-        name.setPadding(0, wide ? 0 : k.dp(10), 0, k.dp(4));
+        name.setPadding(0, wide ? 0 : k.dp(12), 0, k.dp(4));
         tx.addView(name);
 
         String sub;
@@ -291,8 +289,8 @@ public class AdhkarActivity extends Activity {
         LinearLayout.LayoutParams lp = k.matchWrap();
         lp.setMargins(k.dp(14), k.dp(12), k.dp(14), 0);
         c.setLayoutParams(lp);
-        c.setElevation(k.dp(2));
-        c.setBackground(new RippleDrawable(ColorStateList.valueOf(0x301B5E20), k.rounded(WHITE, 22, LINE), null));
+        Theme.elev(c, k.dp(2));
+        c.setBackground(new RippleDrawable(ColorStateList.valueOf(0x301B5E20), k.glass(22), null));
 
         if (!it.title.isEmpty()) {
             TextView title = k.arabic(it.title, 17, GOLD_LINE);
@@ -305,11 +303,11 @@ public class AdhkarActivity extends Activity {
         c.addView(text);
 
         if (!it.virtue.isEmpty()) {
-            TextView v = k.arabic(it.virtue, 14.5f, 0xFF55705A);
+            TextView v = k.arabic(it.virtue, 14.5f, MUTED);
             v.setLineSpacing(0, 1.3f);
             v.setTextDirection(View.TEXT_DIRECTION_RTL);
             v.setPadding(k.dp(12), k.dp(8), k.dp(12), k.dp(10));
-            v.setBackground(k.rounded(0xFFF3F8F1, 14, 0));
+            v.setBackground(k.rounded(SOFT, 14, 0));
             LinearLayout.LayoutParams vp = k.matchWrap();
             vp.setMargins(0, k.dp(12), 0, 0);
             c.addView(v, vp);
@@ -324,7 +322,7 @@ public class AdhkarActivity extends Activity {
 
         LinearLayout info = new LinearLayout(this);
         info.setOrientation(LinearLayout.VERTICAL);
-        info.setPaddingRelative(k.dp(12), 0, 0, 0);
+        info.setPaddingRelative(k.dp(16), 0, 0, 0);
         TextView times = k.strong(it.times == 1 ? L.t("once") : L.f("times", L.num(it.times)), 13, INK);
         info.addView(times);
         if (!it.ref.isEmpty()) {
@@ -373,7 +371,7 @@ public class AdhkarActivity extends Activity {
         c.setOrientation(LinearLayout.VERTICAL);
         c.setGravity(Gravity.CENTER_HORIZONTAL);
         c.setPadding(k.dp(20), k.dp(26), k.dp(20), k.dp(24));
-        c.setBackground(k.rounded(0xFFE7F3E8, 24, 0xFF9CCB9F));
+        c.setBackground(k.rounded(Theme.ov(0x14), 24, 0xFF9CCB9F));
         LinearLayout.LayoutParams lp = k.matchWrap();
         lp.setMargins(k.dp(14), k.dp(14), k.dp(14), 0);
         c.setLayoutParams(lp);
@@ -404,8 +402,8 @@ public class AdhkarActivity extends Activity {
             c.setPadding(k.dp(18), k.dp(16), k.dp(18), k.dp(14));
             LinearLayout.LayoutParams lp = k.matchWrap();
             lp.setMargins(k.dp(14), k.dp(12), k.dp(14), 0);
-            c.setElevation(k.dp(2));
-            c.setBackground(new RippleDrawable(ColorStateList.valueOf(0x301B5E20), k.rounded(WHITE, 22, LINE), null));
+            Theme.elev(c, k.dp(2));
+            c.setBackground(new RippleDrawable(ColorStateList.valueOf(0x301B5E20), k.glass(22), null));
             if (!it.title.isEmpty()) {
                 TextView t = k.title(it.title, 15, GOLD_LINE);
                 t.setGravity(Gravity.CENTER);
@@ -417,10 +415,10 @@ public class AdhkarActivity extends Activity {
             text.setTextDirection(View.TEXT_DIRECTION_RTL);
             c.addView(text);
             if (!it.virtue.isEmpty()) {
-                TextView v = k.text(it.virtue, 14, 0xFF55705A);
+                TextView v = k.text(it.virtue, 14, MUTED);
                 v.setGravity(Gravity.CENTER);
                 v.setPadding(k.dp(12), k.dp(8), k.dp(12), k.dp(10));
-                v.setBackground(k.rounded(0xFFF3F8F1, 14, 0));
+                v.setBackground(k.rounded(SOFT, 14, 0));
                 LinearLayout.LayoutParams vp = k.matchWrap();
                 vp.setMargins(0, k.dp(12), 0, 0);
                 c.addView(v, vp);
@@ -476,7 +474,7 @@ public class AdhkarActivity extends Activity {
         c.setOrientation(LinearLayout.VERTICAL);
         c.setGravity(Gravity.CENTER);
         c.setPadding(k.dp(6), k.dp(8), k.dp(6), k.dp(8));
-        c.setBackground(k.rounded(WHITE, 20, LINE));
+        c.setBackground(k.glass(20));
         TextView n = k.strong(L.num(i + 1), 11, GOLD_LINE);
         n.setGravity(Gravity.CENTER);
         c.addView(n);

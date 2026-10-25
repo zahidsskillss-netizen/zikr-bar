@@ -11,6 +11,12 @@
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
+    </queries>
+
     <application
         android:label="Zikr Yad"
         android:icon="@mipmap/ic_launcher"
@@ -91,6 +97,10 @@
 
         <receiver
             android:name=".PrayerAlarm"
+            android:exported="false" />
+
+        <receiver
+            android:name=".LearnAlarm"
             android:exported="false" />
     </application>
 </manifest>

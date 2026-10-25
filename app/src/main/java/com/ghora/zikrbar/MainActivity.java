@@ -51,12 +51,12 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         L.init(this);
         k = new Kit(this);
-        getWindow().setStatusBarColor(GREEN2);
-        getWindow().setNavigationBarColor(BG);
+        Theme.window(this);
         setContentView(build());
         askNotificationPermission();
         AdhkarAlarm.scheduleAll(this);
         PrayerAlarm.schedule(this);
+        LearnAlarm.schedule(this);
     }
 
     @Override
@@ -88,7 +88,7 @@ public class MainActivity extends Activity {
         root.addView(stats());
         root.addView(adhkarRow());
         root.addView(toolsRow());
-        TextView words = k.button("\uD83D\uDCD6  " + L.t("sw_title"), false, v -> startActivity(new Intent(this, SalahWordsActivity.class)));
+        TextView words = k.button("\uD83D\uDCD6\u2003" + L.t("sw_title"), false, v -> startActivity(new Intent(this, SalahWordsActivity.class)));
         LinearLayout.LayoutParams wlp = k.matchWrap();
         wlp.setMargins(k.dp(16), k.dp(10), k.dp(16), 0);
         root.addView(words, wlp);
@@ -105,7 +105,6 @@ public class MainActivity extends Activity {
         root.addView(credit);
 
         ScrollView scroll = new ScrollView(this);
-        scroll.setBackgroundColor(BG);
         scroll.addView(root);
         return scroll;
     }
@@ -124,6 +123,13 @@ public class MainActivity extends Activity {
         lang.setBackground(new RippleDrawable(ColorStateList.valueOf(0x40FFFFFF), k.rounded(0x26FFFFFF, 18, 0x40FFFFFF), null));
         lang.setOnClickListener(v -> chooseLanguage());
         top.addView(lang);
+        TextView theme = k.strong("\u2726  " + L.t(Theme.KEYS[Theme.id]), 13.5f, WHITE);
+        theme.setPadding(k.dp(14), k.dp(6), k.dp(14), k.dp(8));
+        theme.setBackground(new RippleDrawable(ColorStateList.valueOf(0x40FFFFFF), k.rounded(0x26FFFFFF, 18, 0x40FFFFFF), null));
+        theme.setOnClickListener(v -> chooseTheme());
+        LinearLayout.LayoutParams thp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        thp.setMarginStart(k.dp(8));
+        top.addView(theme, thp);
         View spacer = new View(this);
         top.addView(spacer, k.weight());
         TextView share = k.strong("↗  " + L.t("share_now"), 13.5f, GOLD);
@@ -135,7 +141,7 @@ public class MainActivity extends Activity {
 
         ImageView logo = new ImageView(this);
         logo.setImageResource(R.drawable.logo);
-        logo.setElevation(k.dp(8));
+        Theme.elev(logo, k.dp(8));
         logo.setOutlineProvider(android.view.ViewOutlineProvider.BACKGROUND);
         logo.setBackground(k.rounded(0x00000000, 24, 0));
         logo.setClipToOutline(true);
@@ -150,6 +156,21 @@ public class MainActivity extends Activity {
 
         h.addView(k.arabic(AYAH, 19, 0xE6FFFFFF));
         return h;
+    }
+
+    private void chooseTheme() {
+        String[] names = new String[Theme.KEYS.length];
+        for (int i = 0; i < names.length; i++) names[i] = L.t(Theme.KEYS[i]);
+        new AlertDialog.Builder(this)
+                .setTitle(L.t("choose_theme"))
+                .setSingleChoiceItems(names, Theme.id, (d, which) -> {
+                    d.dismiss();
+                    if (which == Theme.id) return;
+                    Theme.save(this, which);
+                    Theme.load(this);
+                    recreate();
+                })
+                .show();
     }
 
     private void chooseLanguage() {
@@ -170,8 +191,8 @@ public class MainActivity extends Activity {
     private View stats() {
         LinearLayout s = k.row();
         s.setPadding(k.dp(8), k.dp(14), k.dp(8), k.dp(14));
-        s.setBackground(k.rounded(WHITE, 22, LINE));
-        s.setElevation(k.dp(5));
+        s.setBackground(k.glass(22));
+        Theme.elev(s, k.dp(5));
         LinearLayout.LayoutParams lp = k.matchWrap();
         lp.setMargins(k.dp(20), -k.dp(38), k.dp(20), 0);
         s.setLayoutParams(lp);
@@ -220,13 +241,13 @@ public class MainActivity extends Activity {
             t.setOrientation(LinearLayout.VERTICAL);
             t.setGravity(Gravity.CENTER);
             t.setPadding(k.dp(6), k.dp(14), k.dp(6), k.dp(14));
-            t.setBackground(new RippleDrawable(ColorStateList.valueOf(0x201B5E20), k.rounded(WHITE, 22, LINE), null));
-            t.setElevation(k.dp(1.5f));
+            t.setBackground(new RippleDrawable(ColorStateList.valueOf(0x201B5E20), k.glass(22), null));
+            Theme.elev(t, k.dp(1.5f));
             TextView b = k.badge(tiles[i][0], 44);
             t.addView(b);
             TextView name = k.title(L.t(tiles[i][1]), 13.5f, INK);
             name.setGravity(Gravity.CENTER);
-            name.setPadding(0, k.dp(10), 0, 0);
+            name.setPadding(0, k.dp(12), 0, 0);
             t.addView(name);
             t.setOnClickListener(v -> startActivity(new Intent(this, AdhkarActivity.class).putExtra(AdhkarActivity.EXTRA_TAB, tab)));
             LinearLayout.LayoutParams tp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
@@ -250,14 +271,14 @@ public class MainActivity extends Activity {
             t.setOrientation(LinearLayout.VERTICAL);
             t.setGravity(Gravity.CENTER);
             t.setPadding(k.dp(6), k.dp(14), k.dp(6), k.dp(14));
-            t.setBackground(new RippleDrawable(ColorStateList.valueOf(0x201B5E20), k.rounded(WHITE, 22, LINE), null));
-            t.setElevation(k.dp(1.5f));
+            t.setBackground(new RippleDrawable(ColorStateList.valueOf(0x201B5E20), k.glass(22), null));
+            Theme.elev(t, k.dp(1.5f));
             TextView b = k.badge(tiles[i][0], 44);
             b.setTextSize(20);
             t.addView(b);
             TextView name = k.title(L.t(tiles[i][1]), 13.5f, INK);
             name.setGravity(Gravity.CENTER);
-            name.setPadding(0, k.dp(10), 0, 0);
+            name.setPadding(0, k.dp(12), 0, 0);
             t.addView(name);
             t.setOnClickListener(v -> startActivity(new Intent(this, page)));
             LinearLayout.LayoutParams tp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
@@ -531,13 +552,13 @@ public class MainActivity extends Activity {
     private View navRow(View icon, String title, String sub, int page) {
         LinearLayout r = k.row();
         r.setPadding(k.dp(4), k.dp(10), k.dp(4), k.dp(10));
-        r.setBackground(new RippleDrawable(ColorStateList.valueOf(0x201B5E20), null, k.rounded(WHITE, 14, 0)));
+        r.setBackground(new RippleDrawable(ColorStateList.valueOf(0x201B5E20), null, k.rounded(CARD, 14, 0)));
         r.setClickable(true);
         r.addView(icon);
 
         LinearLayout tx = new LinearLayout(this);
         tx.setOrientation(LinearLayout.VERTICAL);
-        tx.setPaddingRelative(k.dp(14), 0, k.dp(8), 0);
+        tx.setPaddingRelative(k.dp(18), 0, k.dp(8), 0);
         tx.addView(k.title(title, 16, INK));
         TextView s = k.text(sub, 13, MUTED);
         s.setPadding(0, k.dp(3), 0, 0);

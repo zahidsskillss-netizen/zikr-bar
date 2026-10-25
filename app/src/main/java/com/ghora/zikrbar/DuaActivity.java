@@ -39,8 +39,7 @@ public class DuaActivity extends Activity {
         super.onCreate(savedInstanceState);
         L.init(this);
         k = new Kit(this);
-        getWindow().setStatusBarColor(D_HEAD);
-        getWindow().setNavigationBarColor(D_BG);
+        Theme.darkWindow(this);
 
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
@@ -58,7 +57,7 @@ public class DuaActivity extends Activity {
         back.setOnClickListener(v -> finish());
         h.addView(back, new LinearLayout.LayoutParams(k.dp(44), k.dp(44)));
         TextView t = k.title(L.t("duas_t"), 21, D_TEXT);
-        t.setPaddingRelative(k.dp(10), 0, 0, 0);
+        t.setPaddingRelative(k.dp(14), 0, 0, 0);
         h.addView(t);
         root.addView(h);
 
@@ -68,7 +67,7 @@ public class DuaActivity extends Activity {
         TextView catTab = k.strong(L.t("categories"), 15, D_TEXT);
         catTab.setGravity(Gravity.CENTER);
         catTab.setPadding(0, k.dp(10), 0, k.dp(12));
-        catTab.setBackground(k.rounded(0xFF173A2A, 18, 0));
+        catTab.setBackground(k.rounded(Theme.ov(0x2E), 18, 0));
         tabs.addView(catTab, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
         TextView favTab = k.strong("\u2B50 " + L.t("my_duas"), 15, D_TEXT);
         favTab.setGravity(Gravity.CENTER);
@@ -86,7 +85,7 @@ public class DuaActivity extends Activity {
         search.setTextSize(15);
         search.setSingleLine(true);
         search.setPadding(k.dp(18), k.dp(12), k.dp(18), k.dp(12));
-        search.setBackground(k.rounded(D_CARD, 22, 0x14FFFFFF));
+        search.setBackground(k.glass(22));
         LinearLayout.LayoutParams sp = k.matchWrap();
         sp.setMargins(k.dp(16), k.dp(16), k.dp(16), k.dp(6));
         root.addView(search, sp);
@@ -110,7 +109,6 @@ public class DuaActivity extends Activity {
         fill("");
 
         ScrollView scroll = new ScrollView(this);
-        scroll.setBackgroundColor(D_BG);
         scroll.addView(root);
         setContentView(scroll);
     }
@@ -141,13 +139,13 @@ public class DuaActivity extends Activity {
         t.setOrientation(LinearLayout.VERTICAL);
         t.setGravity(Gravity.CENTER_HORIZONTAL);
         t.setPadding(k.dp(4), k.dp(14), k.dp(4), k.dp(10));
-        t.setBackground(new RippleDrawable(ColorStateList.valueOf(0x30FFFFFF), null, k.rounded(0xFFFFFFFF, 20, 0)));
+        t.setBackground(new RippleDrawable(ColorStateList.valueOf(Theme.ov(0x30)), null, k.rounded(Theme.ov(0xFF), 20, 0)));
 
         t.addView(DuaListActivity.icon(this, k, glyph, 92));
 
         TextView label = k.strong(name, 13.5f, D_TEXT);
         label.setGravity(Gravity.CENTER);
-        label.setPadding(0, k.dp(10), 0, 0);
+        label.setPadding(0, k.dp(12), 0, 0);
         label.setMaxLines(2);
         t.addView(label);
 

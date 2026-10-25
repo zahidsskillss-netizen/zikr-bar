@@ -36,8 +36,7 @@ public class InfoActivity extends Activity {
         super.onCreate(savedInstanceState);
         L.init(this);
         k = new Kit(this);
-        getWindow().setStatusBarColor(GREEN2);
-        getWindow().setNavigationBarColor(BG);
+        Theme.window(this);
         int page = getIntent().getIntExtra(EXTRA_PAGE, PAGE_ABOUT);
 
         LinearLayout root = new LinearLayout(this);
@@ -50,7 +49,6 @@ public class InfoActivity extends Activity {
         else buildAbout(root);
 
         ScrollView scroll = new ScrollView(this);
-        scroll.setBackgroundColor(BG);
         scroll.addView(root);
         setContentView(scroll);
     }
@@ -139,7 +137,7 @@ public class InfoActivity extends Activity {
         bg.setCornerRadius(k.dp(24));
         bg.setStroke(k.dp(1.5f), GOLD_LINE);
         ad.setBackground(bg);
-        ad.setElevation(k.dp(3));
+        Theme.elev(ad, k.dp(3));
         LinearLayout.LayoutParams alp = k.matchWrap();
         alp.setMargins(k.dp(16), k.dp(14), k.dp(16), 0);
         ad.setLayoutParams(alp);

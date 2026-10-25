@@ -36,8 +36,8 @@ import static com.ghora.zikrbar.Kit.*;
  */
 public class TasbihActivity extends Activity {
 
-    static final int D_BG = 0xFF0D1B18, D_BG2 = 0xFF0F2B27, D_CARD = 0xFF1A2724, D_HEAD = 0xFF0F2A1C;
-    static final int D_TEXT = 0xFFFFFFFF, D_MUTED = 0x99FFFFFF, D_ACCENT = 0xFF63D3A0, D_GOLD = 0xFFE9C46A;
+    static int D_BG = 0xFF0D1B18, D_BG2 = 0xFF0F2B27, D_CARD = 0xFF1A2724, D_HEAD = 0xFF0F2A1C;
+    static int D_TEXT = Theme.ov(0xFF), D_MUTED = Theme.ov(0x99), D_ACCENT = 0xFF63D3A0, D_GOLD = 0xFFE9C46A;
     static final int[] GOALS = {7, 10, 33, 41, 99, 100, 313, 500, 1000, 0};
 
     private Kit k;
@@ -58,15 +58,13 @@ public class TasbihActivity extends Activity {
         super.onCreate(savedInstanceState);
         L.init(this);
         k = new Kit(this);
-        getWindow().setStatusBarColor(D_HEAD);
-        getWindow().setNavigationBarColor(D_BG2);
+        Theme.darkWindow(this);
         list = Prefs.list(this);
         idx = Math.floorMod(sp().getInt("idx", 0), list.size());
 
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setLayoutDirection(L.rtl() ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
-        root.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, new int[]{D_BG, D_BG2}));
         root.addView(header());
         root.addView(dhikrCard());
         root.addView(chipRow());
@@ -92,7 +90,7 @@ public class TasbihActivity extends Activity {
         TextView back = icon(L.rtl() ? "→" : "←", v -> finish());
         h.addView(back);
         TextView t = k.title(L.t("tasbih_t"), 22, D_TEXT);
-        t.setPaddingRelative(k.dp(8), 0, 0, 0);
+        t.setPaddingRelative(k.dp(14), 0, 0, 0);
         h.addView(t, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
         h.addView(icon("↻", v -> confirmReset()));
         vibBtn = icon("📳", v -> {
@@ -115,7 +113,7 @@ public class TasbihActivity extends Activity {
         b.setTextSize(22);
         b.setTextColor(D_TEXT);
         b.setGravity(Gravity.CENTER);
-        b.setBackground(k.rounded(0x14FFFFFF, 14, 0));
+        b.setBackground(k.rounded(Theme.ov(0x14), 14, 0));
         b.setOnClickListener(l);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(k.dp(44), k.dp(44));
         lp.setMarginStart(k.dp(6));
@@ -154,8 +152,8 @@ public class TasbihActivity extends Activity {
         c.setOrientation(LinearLayout.VERTICAL);
         c.setGravity(Gravity.CENTER);
         c.setPadding(k.dp(18), k.dp(20), k.dp(18), k.dp(16));
-        c.setBackground(k.rounded(D_CARD, 26, 0x14FFFFFF));
-        c.setElevation(k.dp(6));
+        c.setBackground(k.glass(26));
+        Theme.elev(c, k.dp(6));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, k.dp(150));
         lp.setMargins(k.dp(16), k.dp(16), k.dp(16), 0);
         c.setLayoutParams(lp);
@@ -212,7 +210,7 @@ public class TasbihActivity extends Activity {
         sp().edit().putInt("idx", idx).apply();
         for (int j = 0; j < chips.getChildCount(); j++) {
             boolean sel = j == idx;
-            chips.getChildAt(j).setBackground(k.rounded(sel ? 0xFF22352F : D_CARD, 20, sel ? D_GOLD : 0x10FFFFFF));
+            chips.getChildAt(j).setBackground(k.rounded(sel ? Theme.ov(0x33) : D_CARD, 20, sel ? D_GOLD : Theme.ov(0x10)));
             ((TextView) chips.getChildAt(j)).setTextColor(sel ? D_GOLD : D_ACCENT);
         }
         View chip = chips.getChildAt(idx);
@@ -308,7 +306,7 @@ public class TasbihActivity extends Activity {
             num.setTextAlign(Paint.Align.CENTER);
             line.setStyle(Paint.Style.STROKE);
             line.setStrokeWidth(k.dp(1.5f));
-            line.setColor(0x40FFFFFF);
+            line.setColor(Theme.ov(0x40));
             int g = goal();
             for (int i = 0; i < GOALS.length; i++) if (GOALS[i] == g) offset = i;
         }
@@ -331,7 +329,7 @@ public class TasbihActivity extends Activity {
                 float y = h * 0.52f + t * t * h * 0.32f;
                 float focus = Math.max(0f, 1f - Math.abs(i - offset));
                 num.setTextSize(sp(22 + 12 * focus));
-                num.setColor(focus > 0.5f ? D_TEXT : 0xCCFFFFFF);
+                num.setColor(focus > 0.5f ? D_TEXT : Theme.ov(0xCC));
                 num.setAlpha((int) (255 * Math.max(0.25f, 1f - 0.55f * Math.abs(t))));
                 c.save();
                 c.rotate(t * 22f, cx + dx, y);
@@ -425,7 +423,7 @@ public class TasbihActivity extends Activity {
             bg.lineTo(w, h);
             bg.lineTo(0, h);
             bg.close();
-            fill.setShader(new LinearGradient(0, 0, 0, h, 0xFF143A35, 0xFF0D2420, Shader.TileMode.CLAMP));
+            fill.setShader(new LinearGradient(0, 0, 0, h, Theme.ov(0x1A), Theme.ov(0x05), Shader.TileMode.CLAMP));
             c.drawPath(bg, fill);
             fill.setShader(null);
 
@@ -442,7 +440,7 @@ public class TasbihActivity extends Activity {
             // progress towards the goal
             int g = goal();
             ring.setStrokeWidth(k.dp(5));
-            ring.setColor(0x1FFFFFFF);
+            ring.setColor(Theme.ov(0x1F));
             RectF oval = new RectF(cx - r * 1.18f, cy - r * 1.18f, cx + r * 1.18f, cy + r * 1.18f);
             c.drawArc(oval, 0, 360, false, ring);
             if (g > 0) {
@@ -452,7 +450,7 @@ public class TasbihActivity extends Activity {
 
             // fingerprint lines
             ring.setStrokeWidth(k.dp(3.2f));
-            ring.setColor(0x3DFFFFFF);
+            ring.setColor(Theme.ov(0x3D));
             for (int i = 0; i < 6; i++) {
                 float rr = r * (0.28f + i * 0.13f);
                 RectF o = new RectF(cx - rr * 0.82f, cy - rr, cx + rr * 0.82f, cy + rr);

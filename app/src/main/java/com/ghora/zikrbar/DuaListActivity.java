@@ -40,10 +40,8 @@ public class DuaListActivity extends Activity {
         super.onCreate(savedInstanceState);
         L.init(this);
         k = new Kit(this);
-        getWindow().setStatusBarColor(D_HEAD);
-        getWindow().setNavigationBarColor(D_BG);
+        Theme.darkWindow(this);
         scroll = new ScrollView(this);
-        scroll.setBackgroundColor(D_BG);
         setContentView(scroll);
     }
 
@@ -91,7 +89,7 @@ public class DuaListActivity extends Activity {
         r.setPadding(k.dp(14), k.dp(18), k.dp(16), k.dp(12));
         r.addView(icon(this, k, glyph, 64));
         View line = new View(this);
-        line.setBackgroundColor(0xCCFFFFFF);
+        line.setBackgroundColor(Theme.ov(0xCC));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(k.dp(1.5f), k.dp(58));
         lp.setMargins(k.dp(14), 0, k.dp(14), 0);
         r.addView(line, lp);
@@ -129,19 +127,19 @@ public class DuaListActivity extends Activity {
             DuaData.Dua d = duas.get(i);
             LinearLayout r = k.row();
             r.setPadding(k.dp(16), k.dp(16), k.dp(16), k.dp(16));
-            r.setBackground(new RippleDrawable(ColorStateList.valueOf(0x30FFFFFF), null, k.rounded(0xFFFFFFFF, 0, 0)));
+            r.setBackground(new RippleDrawable(ColorStateList.valueOf(Theme.ov(0x30)), null, k.rounded(Theme.ov(0xFF), 0, 0)));
             TextView n = k.title(L.num(i + 1), 16, D_TEXT);
             n.setGravity(Gravity.CENTER);
-            n.setBackground(k.rounded(0xFF3E8E55, 24, 0));
+            n.setBackground(k.rounded(GREEN2, 24, 0));
             r.addView(n, new LinearLayout.LayoutParams(k.dp(48), k.dp(48)));
             TextView t = k.title(d.title(), 17, D_TEXT);
             t.setLineSpacing(0, 1.15f);
-            t.setPaddingRelative(k.dp(14), 0, 0, 0);
+            t.setPaddingRelative(k.dp(18), 0, 0, 0);
             r.addView(t, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
             r.setOnClickListener(v -> startActivity(new Intent(this, DuaListActivity.class).putExtra(EXTRA_DUA, d.id())));
             root.addView(r);
             View line = new View(this);
-            line.setBackgroundColor(0x14FFFFFF);
+            line.setBackgroundColor(Theme.ov(0x14));
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, k.dp(1));
             lp.setMargins(k.dp(14), 0, k.dp(14), 0);
             root.addView(line, lp);
@@ -170,7 +168,7 @@ public class DuaListActivity extends Activity {
             c.addView(ar, k.matchWrap());
 
             if (!p.meaning.isEmpty()) {
-                TextView m = k.arabic((many ? L.num(i + 1) + "- " : "") + p.meaning, 17, 0xEEFFFFFF);
+                TextView m = k.arabic((many ? L.num(i + 1) + "- " : "") + p.meaning, 17, Theme.ov(0xEE));
                 m.setTypeface(k.amiri);
                 m.setTextDirection(View.TEXT_DIRECTION_RTL);
                 m.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
@@ -189,7 +187,7 @@ public class DuaListActivity extends Activity {
             c.addView(actions(d, p));
             root.addView(c);
             View line = new View(this);
-            line.setBackgroundColor(0x14FFFFFF);
+            line.setBackgroundColor(Theme.ov(0x14));
             root.addView(line, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, k.dp(1)));
         }
     }
@@ -233,14 +231,14 @@ public class DuaListActivity extends Activity {
         t.setTextColor(0xFF2E7D32);
         t.setGravity(Gravity.CENTER);
         t.setIncludeFontPadding(false);
-        t.setBackground(k.rounded(0xFFFFFFFF, 22, 0xFFDDDDDD));
+        t.setBackground(k.rounded(Theme.ov(0xFF), 22, 0xFFDDDDDD));
         t.setLayoutParams(new LinearLayout.LayoutParams(k.dp(42), k.dp(42)));
         return t;
     }
 
     private View bar() {
         View v = new View(this);
-        v.setBackgroundColor(0xCCFFFFFF);
+        v.setBackgroundColor(Theme.ov(0xCC));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(k.dp(2), k.dp(30));
         lp.setMargins(k.dp(30), 0, k.dp(30), 0);
         v.setLayoutParams(lp);
@@ -264,12 +262,12 @@ public class DuaListActivity extends Activity {
             icon.setTypeface(k.amiriBold);
             icon.setTextColor(ORANGE);
             icon.setTextSize(sizeDp * 0.30f);
-            icon.setBackground(new LayerDrawable(new Drawable[]{k.rounded(D_CARD, sizeDp / 2, 0x10FFFFFF), new DotRing(k.dp(1.3f))}));
+            icon.setBackground(new LayerDrawable(new Drawable[]{k.rounded(D_CARD, sizeDp / 2, Theme.ov(0x10)), new DotRing(k.dp(1.3f))}));
         } else {
             icon.setTextSize(sizeDp * 0.40f);
-            icon.setBackground(k.rounded(D_CARD, sizeDp / 2, 0x10FFFFFF));
+            icon.setBackground(k.rounded(D_CARD, sizeDp / 2, Theme.ov(0x10)));
         }
-        icon.setElevation(k.dp(4));
+        Theme.elev(icon, k.dp(4));
         icon.setLayoutParams(new LinearLayout.LayoutParams(k.dp(sizeDp), k.dp(sizeDp)));
         return icon;
     }

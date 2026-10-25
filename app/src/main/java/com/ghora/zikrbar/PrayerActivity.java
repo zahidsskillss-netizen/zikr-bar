@@ -45,10 +45,8 @@ public class PrayerActivity extends Activity {
         super.onCreate(savedInstanceState);
         L.init(this);
         k = new Kit(this);
-        getWindow().setStatusBarColor(D_HEAD);
-        getWindow().setNavigationBarColor(D_BG);
+        Theme.darkWindow(this);
         scroll = new ScrollView(this);
-        scroll.setBackgroundColor(D_BG);
         setContentView(scroll);
         build();
         PrayerAlarm.schedule(this);
@@ -92,7 +90,7 @@ public class PrayerActivity extends Activity {
         h.setPadding(k.dp(8), k.dp(10), k.dp(8), k.dp(10));
         h.addView(icon(L.rtl() ? "→" : "←", v -> finish()));
         TextView t = k.title(L.t("prayer_t"), 21, D_TEXT);
-        t.setPaddingRelative(k.dp(10), 0, 0, 0);
+        t.setPaddingRelative(k.dp(14), 0, 0, 0);
         h.addView(t, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
         h.addView(icon("⚙︎", v -> settings()));
         root.addView(h);
@@ -102,7 +100,7 @@ public class PrayerActivity extends Activity {
         place.setOrientation(LinearLayout.VERTICAL);
         place.setGravity(Gravity.CENTER);
         place.setPadding(k.dp(16), k.dp(16), k.dp(16), k.dp(14));
-        place.setBackground(new RippleDrawable(ColorStateList.valueOf(0x30FFFFFF), null, null));
+        place.setBackground(new RippleDrawable(ColorStateList.valueOf(Theme.ov(0x30)), null, null));
         TextView name = k.title("📍 " + PrayTimes.placeName(this), 20, D_TEXT);
         name.setGravity(Gravity.CENTER);
         place.addView(name);
@@ -147,7 +145,7 @@ public class PrayerActivity extends Activity {
         nextPrayer = dayOffset == 0 ? next(m) : -1;
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
-        card.setBackground(k.rounded(D_CARD, 24, 0x14FFFFFF));
+        card.setBackground(k.glass(24));
         LinearLayout.LayoutParams cp = k.matchWrap();
         cp.setMargins(k.dp(14), k.dp(16), k.dp(14), 0);
         root.addView(card, cp);
@@ -156,7 +154,7 @@ public class PrayerActivity extends Activity {
             LinearLayout r = k.row();
             r.setPadding(k.dp(18), k.dp(14), k.dp(12), k.dp(14));
             boolean isNext = p == nextPrayer;
-            if (isNext) r.setBackground(k.rounded(0xFF1F4A3C, 18, D_ACCENT));
+            if (isNext) r.setBackground(k.rounded(Theme.ov(0x26), 18, D_ACCENT));
             TextView pn = k.title(L.t(PrayTimes.KEYS[p]), 18, isNext ? D_GOLD : D_TEXT);
             r.addView(pn);
             TextView mid = k.text("", 12, D_ACCENT);
@@ -178,14 +176,14 @@ public class PrayerActivity extends Activity {
             card.addView(r);
             if (p < 5) {
                 View line = new View(this);
-                line.setBackgroundColor(0x14FFFFFF);
+                line.setBackgroundColor(Theme.ov(0x14));
                 LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, k.dp(1));
                 lp.setMargins(k.dp(16), 0, k.dp(16), 0);
                 card.addView(line, lp);
             }
         }
 
-        TextView words = k.button("\uD83D\uDCD6  " + L.t("sw_title"), false, v -> startActivity(new Intent(this, SalahWordsActivity.class)));
+        TextView words = k.button("\uD83D\uDCD6\u2003" + L.t("sw_title"), false, v -> startActivity(new Intent(this, SalahWordsActivity.class)));
         LinearLayout.LayoutParams wp = k.matchWrap();
         wp.setMargins(k.dp(24), k.dp(20), k.dp(24), 0);
         root.addView(words, wp);

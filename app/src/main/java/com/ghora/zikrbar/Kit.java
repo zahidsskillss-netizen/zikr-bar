@@ -27,9 +27,12 @@ import android.widget.TextView;
 /** Shared colors, fonts and building blocks for the app screens. */
 final class Kit {
 
-    static final int GREEN = 0xFF1B5E20, GREEN2 = 0xFF2E7D32, DARK = 0xFF0B3319;
-    static final int INK = 0xFF16231A, MUTED = 0xFF66746A, LINE = 0xFFE1E8E0;
-    static final int BG = 0xFFF1F4EF, SOFT = 0xFFF6F8F4, GOLD = 0xFFF3E3A5, GOLD_LINE = 0xFFC9A227;
+    // set by Theme (see Theme.set); these start as the classic colours
+    static int GREEN = 0xFF1B5E20, GREEN2 = 0xFF2E7D32, DARK = 0xFF0B3319;
+    static int INK = 0xFF16231A, MUTED = 0xFF66746A, LINE = 0xFFE1E8E0;
+    static int BG = 0xFFF1F4EF, SOFT = 0xFFF6F8F4, GOLD = 0xFFF3E3A5, GOLD_LINE = 0xFFC9A227;
+    /** card fill (see-through in glass themes) and a faint tint on cards */
+    static int CARD = 0xFFFFFFFF, ON_CARD_DIM = 0x1A000000;
     static final int WHITE = 0xFFFFFFFF;
 
     static final String FACEBOOK = "https://www.facebook.com/zahid.alkozai";
@@ -110,6 +113,11 @@ final class Kit {
         return g;
     }
 
+    /** A glass card (classic theme: a white card with a light border). */
+    GradientDrawable glass(float radiusDp) {
+        return Theme.glass ? Theme.card(dp(radiusDp), dp(1.2f)) : rounded(CARD, radiusDp, LINE);
+    }
+
     GradientDrawable greenGradient(float radiusDp) {
         GradientDrawable g = new GradientDrawable(GradientDrawable.Orientation.TL_BR, new int[]{GREEN2, DARK});
         g.setCornerRadius(dp(radiusDp));
@@ -152,8 +160,8 @@ final class Kit {
         LinearLayout card = new LinearLayout(c);
         card.setOrientation(LinearLayout.VERTICAL);
         card.setPadding(dp(18), dp(16), dp(18), dp(18));
-        card.setBackground(rounded(WHITE, 24, LINE));
-        card.setElevation(dp(1.5f));
+        card.setBackground(glass(24));
+        Theme.elev(card, dp(1.5f));
         LinearLayout.LayoutParams lp = matchWrap();
         lp.setMargins(dp(16), dp(14), dp(16), 0);
         card.setLayoutParams(lp);
@@ -163,7 +171,7 @@ final class Kit {
         if (glyph != null) head.addView(badge(glyph, 40));
         LinearLayout tx = new LinearLayout(c);
         tx.setOrientation(LinearLayout.VERTICAL);
-        tx.setPaddingRelative(glyph != null ? dp(14) : 0, 0, 0, 0);
+        tx.setPaddingRelative(glyph != null ? dp(18) : 0, 0, 0, 0);
         tx.addView(title(title, 19, INK));
         if (sub != null) {
             TextView s = text(sub, 13.5f, MUTED);
@@ -185,7 +193,7 @@ final class Kit {
         TextView b = strong(s, 15, filled ? WHITE : GREEN);
         b.setGravity(Gravity.CENTER);
         b.setPadding(dp(16), dp(11), dp(16), dp(13));
-        Drawable shape = filled ? greenGradient(16) : rounded(WHITE, 16, GREEN);
+        Drawable shape = filled ? greenGradient(16) : rounded(CARD, 16, GREEN);
         b.setBackground(new RippleDrawable(ColorStateList.valueOf(filled ? 0x40FFFFFF : 0x201B5E20), shape, null));
         b.setClickable(true);
         b.setFocusable(true);
@@ -301,7 +309,11 @@ final class Kit {
             clip.addRoundRect(r, new float[]{0, 0, 0, 0, radius, radius, radius, radius}, Path.Direction.CW);
             cv.save();
             cv.clipPath(clip);
-            fill.setShader(new LinearGradient(b.left, b.top, b.right, b.bottom, GREEN2, DARK, Shader.TileMode.CLAMP));
+            if (Theme.glass && Theme.dark) {
+                fill.setShader(new LinearGradient(b.left, b.top, b.left, b.bottom, 0x33FFFFFF, 0x0DFFFFFF, Shader.TileMode.CLAMP));
+            } else {
+                fill.setShader(new LinearGradient(b.left, b.top, b.right, b.bottom, GREEN2, DARK, Shader.TileMode.CLAMP));
+            }
             cv.drawRect(r, fill);
 
             float s = step * 0.36f;
