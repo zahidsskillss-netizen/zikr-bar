@@ -62,6 +62,22 @@ public class DuaActivity extends Activity {
         h.addView(t);
         root.addView(h);
 
+        // tabs: categories | my duas (favourites)
+        LinearLayout tabs = k.row();
+        tabs.setPadding(k.dp(16), k.dp(14), k.dp(16), 0);
+        TextView catTab = k.strong(L.t("categories"), 15, D_TEXT);
+        catTab.setGravity(Gravity.CENTER);
+        catTab.setPadding(0, k.dp(10), 0, k.dp(12));
+        catTab.setBackground(k.rounded(0xFF173A2A, 18, 0));
+        tabs.addView(catTab, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        TextView favTab = k.strong("\u2B50 " + L.t("my_duas"), 15, D_TEXT);
+        favTab.setGravity(Gravity.CENTER);
+        favTab.setPadding(0, k.dp(10), 0, k.dp(12));
+        favTab.setOnClickListener(v -> startActivity(new Intent(this, DuaListActivity.class)
+                .putExtra(DuaListActivity.EXTRA_CAT, "fav")));
+        tabs.addView(favTab, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        root.addView(tabs);
+
         EditText search = new EditText(this);
         search.setHint("🔍  " + L.t("dua_search"));
         search.setHintTextColor(D_MUTED);
@@ -127,19 +143,7 @@ public class DuaActivity extends Activity {
         t.setPadding(k.dp(4), k.dp(14), k.dp(4), k.dp(10));
         t.setBackground(new RippleDrawable(ColorStateList.valueOf(0x30FFFFFF), null, k.rounded(0xFFFFFFFF, 20, 0)));
 
-        TextView icon = new TextView(this);
-        icon.setText(glyph);
-        icon.setGravity(Gravity.CENTER);
-        icon.setIncludeFontPadding(false);
-        boolean allah = glyph.equals("ﷲ");
-        icon.setTextSize(allah ? 30 : 38);
-        if (allah) {
-            icon.setTypeface(k.amiriBold);
-            icon.setTextColor(0xFFF0A030);
-        }
-        icon.setBackground(k.rounded(D_CARD, 48, 0x10FFFFFF));
-        icon.setElevation(k.dp(4));
-        t.addView(icon, new LinearLayout.LayoutParams(k.dp(92), k.dp(92)));
+        t.addView(DuaListActivity.icon(this, k, glyph, 92));
 
         TextView label = k.strong(name, 13.5f, D_TEXT);
         label.setGravity(Gravity.CENTER);
@@ -147,9 +151,8 @@ public class DuaActivity extends Activity {
         label.setMaxLines(2);
         t.addView(label);
 
-        t.setOnClickListener(v -> startActivity(new Intent(this, AdhkarActivity.class)
-                .putExtra(AdhkarActivity.EXTRA_FILE, "duas/" + id)
-                .putExtra(AdhkarActivity.EXTRA_TITLE, name)));
+        t.setOnClickListener(v -> startActivity(new Intent(this, DuaListActivity.class)
+                .putExtra(DuaListActivity.EXTRA_CAT, id)));
         return t;
     }
 }

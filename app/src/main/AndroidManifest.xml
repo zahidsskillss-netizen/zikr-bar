@@ -44,6 +44,10 @@
             android:exported="false" />
 
         <activity
+            android:name=".DuaListActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".PrayerActivity"
             android:exported="false" />
 
