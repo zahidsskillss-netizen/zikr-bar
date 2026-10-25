@@ -95,7 +95,7 @@ public final class Prefs {
     }
 
     static int tasbihStyle(Context c) {
-        return sp(c).getInt("tStyle", 0);
+        return TasbihView.valid(sp(c).getInt("tStyle", 6));
     }
 
     static void setTasbihStyle(Context c, int s) {

@@ -17,11 +17,26 @@ import android.view.View;
 /** Draws the floating tasbih counter in one of six designs. */
 public class TasbihView extends View {
 
-    static final int COUNT = 6;
+    /** The designs offered, in picker order (ids; 6–8 are the white, gold and black ring counters). */
+    static final int[] STYLES = {6, 7, 8, 0, 2, 3};
+    static final int COUNT = STYLES.length;
 
-    static String name(int i) {
-        return L.t("d" + i);
+    static String name(int id) {
+        return L.t("d" + id);
     }
+
+    /** Old saved designs that were removed fall back to the first one. */
+    static int valid(int id) {
+        for (int s : STYLES) if (s == id) return id;
+        return STYLES[0];
+    }
+
+    // ring-counter bitmaps (680 x 840 px; body 600 x 760 at 40,40)
+    private static final int[] RING_RES = {R.drawable.tasbih_white, R.drawable.tasbih_gold, R.drawable.tasbih_black};
+    private static final android.graphics.Bitmap[] RING_BMP = new android.graphics.Bitmap[3];
+    private static final float BMP_W = 680, BMP_H = 840;
+    private static final float LCD_L = 40 + 0.17f * 600 + 16, LCD_R = 40 + 0.83f * 600 - 16;
+    private static final float LCD_T = 40 + 0.13f * 760 + 16, LCD_B = 40 + 0.36f * 760 - 16;
 
     private static final float PAD = 10;
     /** Width of the column on the left that holds the "change dhikr" button. */
@@ -61,6 +76,7 @@ public class TasbihView extends View {
     }
 
     public void setState(int style, String text, int count, int target) {
+        style = valid(style);
         boolean relayout = style != this.style || !text.equals(this.text);
         this.style = style;
         this.text = text;
@@ -160,6 +176,14 @@ public class TasbihView extends View {
                 w = dp(280);
                 h = dp(60);
                 break;
+            case 6:
+            case 7:
+            case 8: {
+                float sc = ringScale();
+                w = Math.max(BMP_W * sc, pillW(15, maxPill));
+                h = pillH(15) + dp(2) + BMP_H * sc;
+                break;
+            }
             case 4:
                 w = dp(200);
                 h = dp(196);
@@ -187,6 +211,9 @@ public class TasbihView extends View {
             case 2: drawBeads(c, w); break;
             case 3: drawPill(c, w); break;
             case 4: drawGold(c, w); break;
+            case 6:
+            case 7:
+            case 8: drawRingCounter(c, w, style - 6); break;
             default: drawHead(c, w);
         }
         c.restore();
@@ -234,6 +261,102 @@ public class TasbihView extends View {
         path.moveTo(x + tx * len, y + ty * len);
         path.lineTo(x + nx * wid, y + ny * wid);
         path.lineTo(x - nx * wid, y - ny * wid);
+        path.close();
+        c.drawPath(path, p);
+    }
+
+    // ---------- white / gold / black finger-ring counters ----------
+    private float ringScale() {
+        return dp(124) / 600f;
+    }
+
+    private android.graphics.Bitmap ringBitmap(int i) {
+        if (RING_BMP[i] == null) {
+            RING_BMP[i] = android.graphics.BitmapFactory.decodeResource(getResources(), RING_RES[i]);
+        }
+        return RING_BMP[i];
+    }
+
+    private final Paint bp = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
+
+    private void drawRingCounter(Canvas c, float w, int i) {
+        float cx = w / 2;
+        pill(c, cx, 0, 15, dp(220), i == 0 ? 0xE6202124 : 0xB0000000, Color.WHITE);
+        float sc = ringScale();
+        float left = cx - BMP_W * sc / 2, top = pillH(15) + dp(2);
+        android.graphics.Bitmap b = ringBitmap(i);
+        if (b != null) {
+            r.set(left, top, left + BMP_W * sc, top + BMP_H * sc);
+            c.drawBitmap(b, null, r, bp);
+        }
+        RectF lcd = new RectF(left + LCD_L * sc, top + LCD_T * sc, left + LCD_R * sc, top + LCD_B * sc);
+        sevenSeg(c, String.valueOf(count), lcd, 0xFF2B322A);
+    }
+
+    private static final String[] SEGS = {"abcdef", "bc", "abged", "abgcd", "fgbc", "afgcd", "afgedc", "abc", "abcdefg", "abcfgd"};
+
+    /** Draws digits like an LCD counter, right-aligned inside the box. */
+    private void sevenSeg(Canvas c, String digits, RectF box, int color) {
+        float h = box.height() * 0.66f;
+        float dw = h * 0.5f, gap = h * 0.16f, t = h * 0.13f;
+        float total = digits.length() * dw + (digits.length() - 1) * gap;
+        float maxW = box.width() * 0.88f;
+        if (total > maxW) {
+            float k = maxW / total;
+            h *= k; dw *= k; gap *= k; t *= k; total = maxW;
+        }
+        float x = box.right - box.width() * 0.06f - total;
+        float y = box.centerY() - h / 2;
+        p.setShader(null);
+        p.setStyle(Paint.Style.FILL);
+        // faint "off" segments, like a real LCD
+        for (int k = 0; k < digits.length(); k++) {
+            drawDigit(c, "abcdefg", x + k * (dw + gap), y, dw, h, t, 0x14000000);
+            drawDigit(c, SEGS[digits.charAt(k) - '0'], x + k * (dw + gap), y, dw, h, t, color);
+        }
+    }
+
+    private void drawDigit(Canvas c, String on, float x, float y, float w, float h, float t, int color) {
+        p.setColor(color);
+        float g = t * 0.25f;
+        float x0 = x + t / 2, x1 = x + w - t / 2, y0 = y + t / 2, ym = y + h / 2, y1 = y + h - t / 2;
+        for (int i = 0; i < on.length(); i++) {
+            switch (on.charAt(i)) {
+                case 'a': hSeg(c, x0, x1, y0, t, g); break;
+                case 'g': hSeg(c, x0, x1, ym, t, g); break;
+                case 'd': hSeg(c, x0, x1, y1, t, g); break;
+                case 'f': vSeg(c, x0, y0, ym, t, g); break;
+                case 'b': vSeg(c, x1, y0, ym, t, g); break;
+                case 'e': vSeg(c, x0, ym, y1, t, g); break;
+                default: vSeg(c, x1, ym, y1, t, g); break;
+            }
+        }
+    }
+
+    private void hSeg(Canvas c, float a, float b, float y, float t, float g) {
+        a += g;
+        b -= g;
+        path.reset();
+        path.moveTo(a, y);
+        path.lineTo(a + t / 2, y - t / 2);
+        path.lineTo(b - t / 2, y - t / 2);
+        path.lineTo(b, y);
+        path.lineTo(b - t / 2, y + t / 2);
+        path.lineTo(a + t / 2, y + t / 2);
+        path.close();
+        c.drawPath(path, p);
+    }
+
+    private void vSeg(Canvas c, float x, float a, float b, float t, float g) {
+        a += g;
+        b -= g;
+        path.reset();
+        path.moveTo(x, a);
+        path.lineTo(x + t / 2, a + t / 2);
+        path.lineTo(x + t / 2, b - t / 2);
+        path.lineTo(x, b);
+        path.lineTo(x - t / 2, b - t / 2);
+        path.lineTo(x - t / 2, a + t / 2);
         path.close();
         c.drawPath(path, p);
     }

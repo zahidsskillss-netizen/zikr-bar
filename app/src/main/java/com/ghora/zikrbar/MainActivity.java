@@ -276,7 +276,7 @@ public class MainActivity extends Activity {
         hs.setHorizontalScrollBarEnabled(false);
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
-        for (int i = 0; i < TasbihView.COUNT; i++) row.addView(tile(i));
+        for (int i = 0; i < TasbihView.COUNT; i++) row.addView(tile(TasbihView.STYLES[i], i));
         hs.addView(row);
         c.addView(hs, k.matchWrap());
 
@@ -364,7 +364,7 @@ public class MainActivity extends Activity {
         return row;
     }
 
-    private View tile(int style) {
+    private View tile(int style, int index) {
         LinearLayout t = new LinearLayout(this);
         t.setOrientation(LinearLayout.VERTICAL);
         t.setGravity(Gravity.CENTER_HORIZONTAL);
@@ -380,7 +380,7 @@ public class MainActivity extends Activity {
         box.addView(preview);
         t.addView(box, new LinearLayout.LayoutParams(k.dp(140), k.dp(160)));
 
-        TextView name = k.strong(L.num(style + 1) + " · " + TasbihView.name(style), 13, INK);
+        TextView name = k.strong(L.num(index + 1) + " · " + TasbihView.name(style), 13, INK);
         name.setGravity(Gravity.CENTER);
         name.setPadding(0, k.dp(6), 0, 0);
         t.addView(name);
@@ -611,7 +611,7 @@ public class MainActivity extends Activity {
 
         int sel = Prefs.tasbihStyle(this);
         for (int i = 0; i < tiles.size(); i++) {
-            tiles.get(i).setBackground(i == sel ? k.rounded(0x141B5E20, 22, GREEN) : null);
+            tiles.get(i).setBackground(TasbihView.STYLES[i] == sel ? k.rounded(0x141B5E20, 22, GREEN) : null);
         }
         binding = false;
     }
