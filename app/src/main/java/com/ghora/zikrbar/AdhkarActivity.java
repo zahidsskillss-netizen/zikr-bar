@@ -27,6 +27,8 @@ import static com.ghora.zikrbar.Kit.*;
 public class AdhkarActivity extends Activity {
 
     static final String EXTRA_TAB = "tab";
+    /** Opens a dua list from assets/&lt;file&gt;.json with this title, instead of an adhkar category. */
+    static final String EXTRA_FILE = "file", EXTRA_TITLE = "title";
     static final int MORNING = AdhkarData.MORNING, EVENING = AdhkarData.EVENING, NAMES = AdhkarData.NAMES;
 
     private Kit k;
@@ -80,7 +82,9 @@ public class AdhkarActivity extends Activity {
         root.setPadding(0, 0, 0, k.dp(32));
         scroll.removeAllViews();
         scroll.addView(root);
-        if (cat == AdhkarData.HUB) buildHub();
+        String file = getIntent().getStringExtra(EXTRA_FILE);
+        if (file != null) buildDuas(file, getIntent().getStringExtra(EXTRA_TITLE));
+        else if (cat == AdhkarData.HUB) buildHub();
         else if (cat == AdhkarData.NAMES) buildNames();
         else buildCategory();
     }
@@ -380,6 +384,62 @@ public class AdhkarActivity extends Activity {
         c.addView(t);
         c.addView(k.arabic("جَزَاكَ اللَّهُ خَيْرًا", 20, GOLD_LINE));
         return c;
+    }
+
+    // ================================================== duas (read-only cards)
+    private void buildDuas(String file, String title) {
+        header(title == null ? L.t("duas_t") : title, null);
+        AdhkarData.Item[] duas = AdhkarData.items(this, file);
+        if (duas.length == 0) {
+            root.addView(k.card("\u2741", L.t("soon"), L.t("duas_soon")));
+            return;
+        }
+        TextView hint = k.text(L.t("dua_copy"), 13, MUTED);
+        hint.setGravity(Gravity.CENTER);
+        hint.setPadding(k.dp(22), k.dp(14), k.dp(22), 0);
+        root.addView(hint);
+        for (AdhkarData.Item it : duas) {
+            LinearLayout c = new LinearLayout(this);
+            c.setOrientation(LinearLayout.VERTICAL);
+            c.setPadding(k.dp(18), k.dp(16), k.dp(18), k.dp(14));
+            LinearLayout.LayoutParams lp = k.matchWrap();
+            lp.setMargins(k.dp(14), k.dp(12), k.dp(14), 0);
+            c.setElevation(k.dp(2));
+            c.setBackground(new RippleDrawable(ColorStateList.valueOf(0x301B5E20), k.rounded(WHITE, 22, LINE), null));
+            if (!it.title.isEmpty()) {
+                TextView t = k.title(it.title, 15, GOLD_LINE);
+                t.setGravity(Gravity.CENTER);
+                t.setPadding(0, 0, 0, k.dp(8));
+                c.addView(t);
+            }
+            TextView text = k.arabic(it.text, 21, INK);
+            text.setLineSpacing(0, 1.45f);
+            text.setTextDirection(View.TEXT_DIRECTION_RTL);
+            c.addView(text);
+            if (!it.virtue.isEmpty()) {
+                TextView v = k.text(it.virtue, 14, 0xFF55705A);
+                v.setGravity(Gravity.CENTER);
+                v.setPadding(k.dp(12), k.dp(8), k.dp(12), k.dp(10));
+                v.setBackground(k.rounded(0xFFF3F8F1, 14, 0));
+                LinearLayout.LayoutParams vp = k.matchWrap();
+                vp.setMargins(0, k.dp(12), 0, 0);
+                c.addView(v, vp);
+            }
+            if (!it.ref.isEmpty()) {
+                TextView r = k.text(it.ref, 11.5f, MUTED);
+                r.setGravity(Gravity.CENTER);
+                r.setPadding(0, k.dp(8), 0, 0);
+                c.addView(r);
+            }
+            c.setOnLongClickListener(v -> {
+                android.content.ClipboardManager cm = getSystemService(android.content.ClipboardManager.class);
+                if (cm != null) cm.setPrimaryClip(android.content.ClipData.newPlainText("dua", it.text));
+                android.widget.Toast.makeText(this, L.t("copied"), android.widget.Toast.LENGTH_SHORT).show();
+                return true;
+            });
+            c.setOnClickListener(v -> { });
+            root.addView(c, lp);
+        }
     }
 
     // ================================================== 99 names

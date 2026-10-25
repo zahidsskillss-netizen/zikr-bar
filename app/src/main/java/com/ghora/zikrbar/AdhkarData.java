@@ -37,8 +37,6 @@ final class AdhkarData {
         }
     }
 
-    private static final Item[][] cache = new Item[7][];
-
     private AdhkarData() {}
 
     static String nameKey(int cat) {
@@ -78,29 +76,34 @@ final class AdhkarData {
     }
 
     /** The items of a category; empty when that category has not been added yet. */
-    static synchronized Item[] items(Context c, int cat) {
-        if (cat < 0 || cat >= cache.length) return new Item[0];
-        if (cache[cat] != null) return cache[cat];
-        Item[] out = new Item[0];
+    static Item[] items(Context c, int cat) {
         String f = file(cat);
-        if (f != null) {
-            try (InputStream in = c.getApplicationContext().getAssets().open("adhkar/" + f + ".json")) {
-                ByteArrayOutputStream buf = new ByteArrayOutputStream();
-                byte[] b = new byte[8192];
-                int n;
-                while ((n = in.read(b)) > 0) buf.write(b, 0, n);
-                JSONArray a = new JSONArray(new String(buf.toByteArray(), StandardCharsets.UTF_8));
-                out = new Item[a.length()];
-                for (int i = 0; i < a.length(); i++) {
-                    JSONObject o = a.getJSONObject(i);
-                    out[i] = new Item(o.optString("t"), o.optString("z"), o.optInt("n", 1),
-                            o.optString("r"), o.optString("v"));
-                }
-            } catch (Exception ignored) {
-                out = new Item[0];
+        return f == null ? new Item[0] : items(c, "adhkar/" + f);
+    }
+
+    private static final java.util.HashMap<String, Item[]> files = new java.util.HashMap<>();
+
+    /** Items from assets/&lt;path&gt;.json (for example "adhkar/morning" or "duas/travel"); empty if missing. */
+    static synchronized Item[] items(Context c, String path) {
+        Item[] out = files.get(path);
+        if (out != null) return out;
+        out = new Item[0];
+        try (InputStream in = c.getApplicationContext().getAssets().open(path + ".json")) {
+            ByteArrayOutputStream buf = new ByteArrayOutputStream();
+            byte[] b = new byte[8192];
+            int n;
+            while ((n = in.read(b)) > 0) buf.write(b, 0, n);
+            JSONArray a = new JSONArray(new String(buf.toByteArray(), StandardCharsets.UTF_8));
+            out = new Item[a.length()];
+            for (int i = 0; i < a.length(); i++) {
+                JSONObject o = a.getJSONObject(i);
+                out[i] = new Item(o.optString("t"), o.optString("z"), o.optInt("n", 1),
+                        o.optString("r"), o.optString("v"));
             }
+        } catch (Exception ignored) {
+            out = new Item[0];
         }
-        cache[cat] = out;
+        files.put(path, out);
         return out;
     }
 

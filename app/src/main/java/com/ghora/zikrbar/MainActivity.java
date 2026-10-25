@@ -56,6 +56,7 @@ public class MainActivity extends Activity {
         setContentView(build());
         askNotificationPermission();
         AdhkarAlarm.scheduleAll(this);
+        PrayerAlarm.schedule(this);
     }
 
     @Override
@@ -86,6 +87,7 @@ public class MainActivity extends Activity {
         root.addView(header());
         root.addView(stats());
         root.addView(adhkarRow());
+        root.addView(toolsRow());
         root.addView(statusCard());
         root.addView(tasbihCard());
         root.addView(unlockCard());
@@ -223,6 +225,37 @@ public class MainActivity extends Activity {
             name.setPadding(0, k.dp(10), 0, 0);
             t.addView(name);
             t.setOnClickListener(v -> startActivity(new Intent(this, AdhkarActivity.class).putExtra(AdhkarActivity.EXTRA_TAB, tab)));
+            LinearLayout.LayoutParams tp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
+            tp.setMargins(k.dp(4), 0, k.dp(4), 0);
+            row.addView(t, tp);
+        }
+        return row;
+    }
+
+    /** Second row of tiles: the tasbih page, duas and prayer times. */
+    private View toolsRow() {
+        LinearLayout row = k.row();
+        LinearLayout.LayoutParams lp = k.matchWrap();
+        lp.setMargins(k.dp(12), k.dp(8), k.dp(12), 0);
+        row.setLayoutParams(lp);
+        String[][] tiles = {{"\uD83D\uDCFF", "tile_tasbih"}, {"\uD83E\uDD32", "tile_duas"}, {"\uD83D\uDD4C", "tile_prayer"}};
+        Class<?>[] pages = {TasbihActivity.class, DuaActivity.class, PrayerActivity.class};
+        for (int i = 0; i < tiles.length; i++) {
+            final Class<?> page = pages[i];
+            LinearLayout t = new LinearLayout(this);
+            t.setOrientation(LinearLayout.VERTICAL);
+            t.setGravity(Gravity.CENTER);
+            t.setPadding(k.dp(6), k.dp(14), k.dp(6), k.dp(14));
+            t.setBackground(new RippleDrawable(ColorStateList.valueOf(0x201B5E20), k.rounded(WHITE, 22, LINE), null));
+            t.setElevation(k.dp(1.5f));
+            TextView b = k.badge(tiles[i][0], 44);
+            b.setTextSize(20);
+            t.addView(b);
+            TextView name = k.title(L.t(tiles[i][1]), 13.5f, INK);
+            name.setGravity(Gravity.CENTER);
+            name.setPadding(0, k.dp(10), 0, 0);
+            t.addView(name);
+            t.setOnClickListener(v -> startActivity(new Intent(this, page)));
             LinearLayout.LayoutParams tp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
             tp.setMargins(k.dp(4), 0, k.dp(4), 0);
             row.addView(t, tp);

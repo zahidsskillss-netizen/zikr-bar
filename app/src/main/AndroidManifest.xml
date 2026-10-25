@@ -8,6 +8,7 @@
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application
         android:label="Zikr Yad"
@@ -33,6 +34,19 @@
             android:name=".AdhkarActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".TasbihActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name=".DuaActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".PrayerActivity"
+            android:exported="false" />
+
         <service
             android:name=".ZikrService"
             android:exported="false"
@@ -55,6 +69,10 @@
 
         <receiver
             android:name=".AdhkarAlarm"
+            android:exported="false" />
+
+        <receiver
+            android:name=".PrayerAlarm"
             android:exported="false" />
     </application>
 </manifest>
