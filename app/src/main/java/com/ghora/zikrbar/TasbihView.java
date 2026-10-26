@@ -557,7 +557,8 @@ public class TasbihView extends View {
     private static final float RW = 38, RH = 120;
     /** How far the surface has rolled, in px along the unrolled surface. */
     private float rot;
-    private float rollAcc;
+    /** How many notches (ribs, beads, words) the wheel has all the way round; one dhikr is counted for each. */
+    private int notches = 12, stripWords = 12;
     private android.graphics.Bitmap strip;
     private int stripStyle = -1;
     private float stripD;
@@ -580,18 +581,20 @@ public class TasbihView extends View {
         return t.contains(x, y);
     }
 
-    /** Rolls the surface by dy px of finger movement; returns how many dhikr steps were passed. */
+    /** Rolls the surface by dy px of finger movement; returns how many notches passed the gold pointer (one dhikr each). */
     public int roll(float dy) {
+        strip();
+        float sp = notchSpacing();
+        float before = (float) Math.floor(-rot / sp - 0.5f);
         rot += dy;
-        rollAcc += Math.abs(dy);
-        float step = dp(RH) / 2f * (float) (Math.PI / 9);
-        int n = 0;
-        while (rollAcc >= step) {
-            rollAcc -= step;
-            n++;
-        }
+        float after = (float) Math.floor(-rot / sp - 0.5f);
         invalidate();
-        return n;
+        return Math.min(8, Math.round(Math.abs(after - before)));
+    }
+
+    /** Height of one notch on the unrolled surface, in px. */
+    private float notchSpacing() {
+        return (float) (Math.PI * dp(RH)) / Math.max(1, notches);
     }
 
     private void drawRoller(Canvas c, float w) {
@@ -683,7 +686,7 @@ public class TasbihView extends View {
         switch (style) {
             case 10: { // black tyre
                 k.drawColor(0xFF1C1C1C);
-                int n = 24;
+                int n = 12;
                 float sp = C / (float) n, h = sp * 0.42f, t = sp * 0.30f, e = dp(5);
                 q.setColor(0xFF424242);
                 for (int i = -1; i <= n; i++) {
@@ -705,11 +708,11 @@ public class TasbihView extends View {
             }
             case 11: { // wooden cart wheel rim
                 k.drawColor(0xFF8A5A2B);
-                int n = 20;
+                int n = 12;
                 float sp = C / (float) n;
                 q.setStyle(Paint.Style.STROKE);
                 for (int i = 0; i < n; i++) {
-                    float y = i * sp;
+                    float y = (i + 0.5f) * sp;
                     q.setColor(0xFF5E3B1B);
                     q.setStrokeWidth(dp(1.2f));
                     k.drawLine(0, y, W, y, q);
@@ -733,12 +736,12 @@ public class TasbihView extends View {
             }
             case 12: { // green with gold ribs
                 k.drawColor(0xFF0F5A3C);
-                int n = 36;
+                int n = 12;
                 float sp = C / (float) n;
                 q.setColor(0xFFD4A648);
                 for (int i = 0; i < n; i++) {
                     float y = (i + 0.5f) * sp;
-                    k.drawRect(dp(7), y - dp(1.1f), W - dp(7), y + dp(1.1f), q);
+                    k.drawRect(dp(7), y - dp(2.2f), W - dp(7), y + dp(2.2f), q);
                 }
                 k.drawRect(0, 0, dp(4), C, q);
                 k.drawRect(W - dp(4), 0, W, C, q);
@@ -746,7 +749,7 @@ public class TasbihView extends View {
             }
             case 13: { // tasbih beads
                 k.drawColor(0xFF16241D);
-                int n = 18;
+                int n = 12;
                 float sp = C / (float) n;
                 float rx = W / 2f - dp(6), ry = sp / 2f - dp(1);
                 for (int i = -1; i <= n; i++) {
@@ -774,6 +777,7 @@ public class TasbihView extends View {
                 float tw = t.measureText(s);
                 int n = Math.max(1, (int) Math.floor(C / (tw + dp(24))));
                 float sp = C / (float) n;
+                stripWords = n;
                 Paint.FontMetrics fm = t.getFontMetrics();
                 for (int i = 0; i < n; i++) {
                     float y = (i + 0.5f) * sp;
@@ -790,6 +794,7 @@ public class TasbihView extends View {
                 k.drawRect(W - dp(3), 0, W, C, q);
             }
         }
+        notches = style == 14 ? stripWords : 12;
         strip = b;
         stripStyle = style;
         stripD = d;

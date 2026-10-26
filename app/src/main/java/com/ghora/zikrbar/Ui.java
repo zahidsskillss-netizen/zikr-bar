@@ -75,14 +75,24 @@ final class Ui {
         android.graphics.Paint p = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
         p.setColor(0xFFFFFFFF);
         p.setTypeface(amiriBold(c));
+        // double-bold: filled and outlined, so the name stays thick at status bar size
+        p.setStyle(android.graphics.Paint.Style.FILL_AND_STROKE);
+        p.setStrokeJoin(android.graphics.Paint.Join.ROUND);
         String word = "ﷲ";
         android.graphics.Rect b = new android.graphics.Rect();
         p.setTextSize(100f);
+        p.setStrokeWidth(5f);
         p.getTextBounds(word, 0, word.length(), b);
-        float s = Math.min((size - 6f) / b.width(), (size - 6f) / b.height());
+        float s = Math.min((size - 12f) / b.width(), (size - 12f) / b.height());
         p.setTextSize(100f * s);
+        p.setStrokeWidth(5f * s);
         p.getTextBounds(word, 0, word.length(), b);
+        // a little taller than wide, so it reads bigger in the small icon slot
+        float sy = Math.min(1.25f, (size - 10f) / b.height());
+        canvas.save();
+        canvas.scale(1f, sy, size / 2f, size / 2f);
         canvas.drawText(word, size / 2f - b.exactCenterX(), size / 2f - b.exactCenterY(), p);
+        canvas.restore();
         allah = bmp;
         return bmp;
     }

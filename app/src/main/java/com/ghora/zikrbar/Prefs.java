@@ -280,4 +280,13 @@ public final class Prefs {
     static void setFaceSound(Context c, boolean on) {
         sp(c).edit().putBoolean("faceSnd", on).apply();
     }
+
+    /** Remembers that the eyes/lips counter is running (the service sets and clears it). */
+    static boolean faceOn(Context c) {
+        return sp(c).getBoolean("faceOn", false);
+    }
+
+    static void setFaceOn(Context c, boolean on) {
+        sp(c).edit().putBoolean("faceOn", on).apply();
+    }
 }

@@ -42,6 +42,13 @@ import java.util.Calendar;
  */
 public class ZikrService extends Service {
 
+    /** The running service, so the eyes/lips counter can make the floating tasbih show a new count at once. */
+    private static ZikrService live;
+
+    static void poke() {
+        if (live != null) live.refreshTasbih();
+    }
+
     static final String ACTION_REFRESH = "com.ghora.zikrbar.REFRESH";
     static final String ACTION_TOGGLE_TASBIH = "com.ghora.zikrbar.TOGGLE_TASBIH";
     static final String ACTION_SHOW_TASBIH = "com.ghora.zikrbar.SHOW_TASBIH";
@@ -93,6 +100,7 @@ public class ZikrService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        live = this;
         L.init(this);
         wm = getSystemService(WindowManager.class);
         if (Build.VERSION.SDK_INT >= 26) createChannels();
@@ -168,6 +176,7 @@ public class ZikrService extends Service {
         removeTab();
         hideClose();
         Krr.release();
+        if (live == this) live = null;
         super.onDestroy();
     }
 
@@ -541,7 +550,7 @@ public class ZikrService extends Service {
                             float step = e.getRawY() - lastY;
                             lastY = e.getRawY();
                             int n = tasbih != null ? tasbih.roll(step) : 0;
-                            for (int i = 0; i < n; i++) countRoll();
+                            for (int i = 0; i < n; i++) handler.postDelayed(ZikrService.this::countRoll, i * 70L); // one krrr and one number for each notch, spaced so each is heard
                             return true;
                         }
                         float dx = e.getRawX() - downX, dy = e.getRawY() - downY;

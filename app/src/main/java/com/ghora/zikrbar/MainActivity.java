@@ -44,7 +44,9 @@ public class MainActivity extends Activity {
     private final List<LinearLayout> tiles = new ArrayList<>();
     private boolean binding;
     private LinearLayout highlightBox;
-    private boolean waitingOverlay, waitingUnlock;
+    private boolean waitingOverlay, waitingUnlock, waitingFace;
+    private Switch faceSwitch;
+    private static final int REQ_FACE = 7;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,6 +67,10 @@ public class MainActivity extends Activity {
         if (waitingOverlay) {
             waitingOverlay = false;
             if (Settings.canDrawOverlays(this)) turnTasbihOn();
+        }
+        if (waitingFace) {
+            waitingFace = false;
+            if (Settings.canDrawOverlays(this)) requestFace();
         }
         if (waitingUnlock) {
             waitingUnlock = false;
@@ -575,16 +581,62 @@ public class MainActivity extends Activity {
         return t;
     }
 
-    /** Separate option: count dhikr by blinking or by moving the lips, seen by the front camera. */
+    /** Separate option: count dhikr by blinking or by moving the lips, seen by the front camera (never shown). */
     private View faceCard() {
         LinearLayout c = k.card("\u25C9", L.t("c_face_t"), L.t("c_face_s"));
+        faceSwitch = new Switch(this);
+        c.addView(switchRow(L.t("enabled"), faceSwitch));
+        faceSwitch.setOnCheckedChangeListener((b, on) -> {
+            if (binding) return;
+            if (on) requestFace(); else FaceService.stop(this);
+        });
         c.addView(k.label(L.t("face_mode")));
         Spinner mode = k.spinner(new String[]{L.t("face_blink"), L.t("face_mouth")}, false);
         mode.setSelection(Prefs.faceMode(this) == 1 ? 1 : 0);
-        mode.setOnItemSelectedListener(onSelect(pos -> Prefs.setFaceMode(this, pos)));
+        mode.setOnItemSelectedListener(onSelect(pos -> {
+            if (pos == Prefs.faceMode(this)) return;
+            Prefs.setFaceMode(this, pos);
+            if (FaceService.running) {
+                FaceService.stop(this);
+                faceSwitch.postDelayed(() -> FaceService.start(this), 500);
+            }
+        }));
         c.addView(mode, k.matchWrap());
-        c.addView(k.button(L.t("face_open"), true, v -> startActivity(new Intent(this, FaceZikrActivity.class))), k.topMargin(12));
+        Switch snd = new Switch(this);
+        snd.setChecked(Prefs.faceSound(this));
+        snd.setOnCheckedChangeListener((b, on) -> Prefs.setFaceSound(this, on));
+        c.addView(switchRow(L.t("face_sound"), snd));
+        TextView note = k.text(L.t("face_note"), 12.5f, MUTED);
+        note.setPadding(k.dp(4), k.dp(6), k.dp(4), 0);
+        c.addView(note);
         return c;
+    }
+
+    /** Camera permission, then the draw-over-apps permission, then the counter starts. */
+    private void requestFace() {
+        if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            Toast.makeText(this, L.t("face_cam_perm"), Toast.LENGTH_LONG).show();
+            requestPermissions(new String[]{Manifest.permission.CAMERA}, REQ_FACE);
+            refresh();
+            return;
+        }
+        if (!Settings.canDrawOverlays(this)) {
+            waitingFace = true;
+            askOverlay();
+            refresh();
+            return;
+        }
+        FaceService.start(this);
+        faceSwitch.postDelayed(this::refresh, 700);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQ_FACE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) requestFace();
+            else refresh();
+        }
     }
 
     private View unlockCard() {
@@ -815,6 +867,7 @@ public class MainActivity extends Activity {
         boolean canDraw = Settings.canDrawOverlays(this);
         barSwitch.setChecked(running);
         tasbihSwitch.setChecked(Prefs.overlay(this) && canDraw && running);
+        faceSwitch.setChecked(FaceService.running);
         unlockSwitch.setChecked(Prefs.unlockPopup(this) && canDraw && running);
         currentZk.setText(Prefs.current(this));
         countText.setText(L.num(Prefs.count(this)));
