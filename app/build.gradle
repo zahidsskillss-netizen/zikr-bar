@@ -10,8 +10,8 @@ android {
         applicationId 'com.ghora.zikrbar'
         minSdk 23
         targetSdk 34
-        versionCode 24
-        versionName '3.7'
+        versionCode 25
+        versionName '3.7.1'
     }
 
     // Fixed key so every new build installs as an update over the old one
@@ -31,6 +31,16 @@ android {
         release {
             minifyEnabled false
             signingConfig signingConfigs.zikr
+        }
+    }
+
+    // One smaller APK per phone type (the face-detection library is big, so this keeps downloads small)
+    splits {
+        abi {
+            enable true
+            reset()
+            include 'arm64-v8a', 'armeabi-v7a'
+            universalApk false
         }
     }
 
