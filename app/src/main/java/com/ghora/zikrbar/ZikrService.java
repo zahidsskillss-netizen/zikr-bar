@@ -167,6 +167,7 @@ public class ZikrService extends Service {
         removeTasbih();
         removeTab();
         hideClose();
+        Krr.release();
         super.onDestroy();
     }
 
@@ -473,6 +474,7 @@ public class ZikrService extends Service {
         scale = Prefs.scale(this);
         tasbih = new TasbihView(this);
         tasbih.setSize(scale);
+        if (TasbihView.isRollerStyle(Prefs.tasbihStyle(this))) Krr.prepare(this);
         lp = overlayParams(0);
         lp.x = Prefs.posX(this);
         lp.y = Prefs.posY(this);
@@ -494,9 +496,9 @@ public class ZikrService extends Service {
                 });
 
         tasbih.setOnTouchListener(new View.OnTouchListener() {
-            float downX, downY;
+            float downX, downY, lastY;
             int startX, startY;
-            boolean moved, longDone, pinching, onText, swiping;
+            boolean moved, longDone, pinching, onText, swiping, roller, onGrip, rolling;
             final Runnable longPress = () -> {
                 longDone = true;
                 Prefs.setCount(ZikrService.this, 0);
@@ -519,7 +521,12 @@ public class ZikrService extends Service {
                         pinching = false;
                         swiping = false;
                         onText = tasbih != null && tasbih.isTextHit(e.getX(), e.getY());
-                        handler.postDelayed(longPress, 700);
+                        // side-view roller: rolling counts, and only the small handle under it moves it
+                        roller = tasbih != null && tasbih.isRoller();
+                        onGrip = roller && tasbih.isGripHit(e.getX(), e.getY());
+                        rolling = roller && !onText && !onGrip && tasbih.isRollerHit(e.getX(), e.getY());
+                        lastY = e.getRawY();
+                        if (!rolling) handler.postDelayed(longPress, 700);
                         return true;
 
                     case MotionEvent.ACTION_POINTER_DOWN:
@@ -530,6 +537,13 @@ public class ZikrService extends Service {
 
                     case MotionEvent.ACTION_MOVE:
                         if (pinching || swiping) return true;
+                        if (rolling) {
+                            float step = e.getRawY() - lastY;
+                            lastY = e.getRawY();
+                            int n = tasbih != null ? tasbih.roll(step) : 0;
+                            for (int i = 0; i < n; i++) countRoll();
+                            return true;
+                        }
                         float dx = e.getRawX() - downX, dy = e.getRawY() - downY;
                         // sideways swipe on the dhikr text changes the dhikr instead of moving the tasbih
                         if (!moved && onText && Math.abs(dx) > slop && Math.abs(dx) > Math.abs(dy) * 1.2f) {
@@ -538,6 +552,10 @@ public class ZikrService extends Service {
                             return true;
                         }
                         if (!moved && Math.hypot(dx, dy) > slop) {
+                            if (roller && !onGrip) {
+                                handler.removeCallbacks(longPress);
+                                return true;
+                            }
                             moved = true;
                             handler.removeCallbacks(longPress);
                             showClose();
@@ -555,6 +573,10 @@ public class ZikrService extends Service {
                         hideClose();
                         if (pinching) {
                             pinching = false;
+                            return true;
+                        }
+                        if (rolling) {
+                            rolling = false;
                             return true;
                         }
                         if (swiping) {
@@ -575,7 +597,7 @@ public class ZikrService extends Service {
                             } else {
                                 Prefs.setPos(ZikrService.this, lp.x, lp.y);
                             }
-                        } else if (!longDone) {
+                        } else if (!longDone && !onGrip && Math.hypot(e.getRawX() - downX, e.getRawY() - downY) <= slop) {
                             countOne();
                         }
                         return true;
@@ -584,6 +606,7 @@ public class ZikrService extends Service {
                         handler.removeCallbacks(longPress);
                         hideClose();
                         pinching = false;
+                        rolling = false;
                         return true;
                 }
                 return false;
@@ -727,6 +750,18 @@ public class ZikrService extends Service {
         refreshTasbih();
         vibrate(30);
         Toast.makeText(this, Prefs.tasbihText(this), Toast.LENGTH_SHORT).show();
+    }
+
+    /** One dhikr counted by rolling the roller: "krrr" and a short buzz (each can be turned off). */
+    private void countRoll() {
+        int n = Prefs.count(this) + 1;
+        Prefs.setCount(this, n);
+        Prefs.setLastZikr(this, System.currentTimeMillis());
+        refreshTasbih();
+        int t = Prefs.target(this);
+        boolean reached = t > 0 && n % t == 0;
+        if (Prefs.rollSound(this)) Krr.play(this);
+        if (Prefs.rollVib(this) || reached) vibrate(reached ? 350 : 12);
     }
 
     private void countOne() {

@@ -246,4 +246,38 @@ public final class Prefs {
     static void setLang(Context c, int l) {
         sp(c).edit().putInt("lang", l).apply();
     }
+
+    // ---- side-view roller tasbih: "krrr" sound and vibration while rolling
+    static boolean rollSound(Context c) {
+        return sp(c).getBoolean("rollSnd", true);
+    }
+
+    static void setRollSound(Context c, boolean on) {
+        sp(c).edit().putBoolean("rollSnd", on).apply();
+    }
+
+    static boolean rollVib(Context c) {
+        return sp(c).getBoolean("rollVib", true);
+    }
+
+    static void setRollVib(Context c, boolean on) {
+        sp(c).edit().putBoolean("rollVib", on).apply();
+    }
+
+    // ---- counting dhikr with the eyes (0 = blink) or the mouth (1 = lips moving)
+    static int faceMode(Context c) {
+        return sp(c).getInt("faceMode", 0);
+    }
+
+    static void setFaceMode(Context c, int m) {
+        sp(c).edit().putInt("faceMode", m).apply();
+    }
+
+    static boolean faceSound(Context c) {
+        return sp(c).getBoolean("faceSnd", true);
+    }
+
+    static void setFaceSound(Context c, boolean on) {
+        sp(c).edit().putBoolean("faceSnd", on).apply();
+    }
 }

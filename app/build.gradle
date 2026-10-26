@@ -10,8 +10,8 @@ android {
         applicationId 'com.ghora.zikrbar'
         minSdk 23
         targetSdk 34
-        versionCode 21
-        versionName '3.4'
+        versionCode 22
+        versionName '3.5'
     }
 
     // Fixed key so every new build installs as an update over the old one
@@ -45,4 +45,9 @@ android {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
+}
+
+dependencies {
+    // On-device face detection (blink / lips counting); the model is bundled, nothing goes online
+    implementation 'com.google.mlkit:face-detection:16.1.7'
 }

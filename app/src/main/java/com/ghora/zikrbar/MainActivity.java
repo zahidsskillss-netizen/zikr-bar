@@ -97,6 +97,7 @@ public class MainActivity extends Activity {
         root.addView(words, wlp);
         root.addView(statusCard());
         root.addView(tasbihCard());
+        root.addView(faceCard());
         root.addView(unlockCard());
         root.addView(reminderCard());
         root.addView(listCard());
@@ -442,6 +443,19 @@ public class MainActivity extends Activity {
         hs.addView(row);
         c.addView(hs, k.matchWrap());
 
+        // wheel designs: "krrr" sound and vibration while rolling
+        Switch rollSnd = new Switch(this);
+        rollSnd.setChecked(Prefs.rollSound(this));
+        rollSnd.setOnCheckedChangeListener((b, on) -> Prefs.setRollSound(this, on));
+        c.addView(switchRow(L.t("roll_snd"), rollSnd));
+        Switch rollVib = new Switch(this);
+        rollVib.setChecked(Prefs.rollVib(this));
+        rollVib.setOnCheckedChangeListener((b, on) -> Prefs.setRollVib(this, on));
+        c.addView(switchRow(L.t("roll_vib"), rollVib));
+        TextView rollNote = k.text(L.t("roll_note"), 12.5f, MUTED);
+        rollNote.setPadding(k.dp(4), k.dp(6), k.dp(4), 0);
+        c.addView(rollNote);
+
         c.addView(k.label(L.t("tas_zikr")));
         tasbihZkSpinner = k.spinner(new String[0], true);
         c.addView(tasbihZkSpinner, k.matchWrap());
@@ -494,7 +508,8 @@ public class MainActivity extends Activity {
         howBox.setVisibility(View.GONE);
         String[][] howTo = {
                 {"h_tap_k", "h_tap_v"}, {"h_drag_k", "h_drag_v"}, {"h_pinch_k", "h_pinch_v"},
-                {"h_edge_k", "h_edge_v"}, {"h_switch_k", "h_switch_v"}, {"h_close_k", "h_close_v"}, {"h_long_k", "h_long_v"}
+                {"h_edge_k", "h_edge_v"}, {"h_switch_k", "h_switch_v"}, {"h_close_k", "h_close_v"}, {"h_long_k", "h_long_v"},
+                {"h_roll_k", "h_roll_v"}, {"h_grip_k", "h_grip_v"}
         };
         for (String[] h : howTo) howBox.addView(howRow(L.t(h[0]), L.t(h[1])));
 
@@ -558,6 +573,18 @@ public class MainActivity extends Activity {
         t.setLayoutParams(lp);
         tiles.add(t);
         return t;
+    }
+
+    /** Separate option: count dhikr by blinking or by moving the lips, seen by the front camera. */
+    private View faceCard() {
+        LinearLayout c = k.card("\u25C9", L.t("c_face_t"), L.t("c_face_s"));
+        c.addView(k.label(L.t("face_mode")));
+        Spinner mode = k.spinner(new String[]{L.t("face_blink"), L.t("face_mouth")}, false);
+        mode.setSelection(Prefs.faceMode(this) == 1 ? 1 : 0);
+        mode.setOnItemSelectedListener(onSelect(pos -> Prefs.setFaceMode(this, pos)));
+        c.addView(mode, k.matchWrap());
+        c.addView(k.button(L.t("face_open"), true, v -> startActivity(new Intent(this, FaceZikrActivity.class))), k.topMargin(12));
+        return c;
     }
 
     private View unlockCard() {

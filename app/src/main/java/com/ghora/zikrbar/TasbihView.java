@@ -14,11 +14,11 @@ import android.text.TextPaint;
 import android.text.TextUtils;
 import android.view.View;
 
-/** Draws the floating tasbih counter in one of six designs. */
+/** Draws the floating tasbih counter: ring counters, circles, a pill, and side-view rollers (10–14). */
 public class TasbihView extends View {
 
     /** The designs offered, in picker order (ids; 6–8 are the white, gold and black ring counters). */
-    static final int[] STYLES = {6, 7, 8, 0, 2, 3};
+    static final int[] STYLES = {6, 7, 8, 0, 2, 3, 10, 11, 12, 13, 14};
     static final int COUNT = STYLES.length;
 
     static String name(int id) {
@@ -190,6 +190,14 @@ public class TasbihView extends View {
                 w = dp(200);
                 h = dp(196);
                 break;
+            case 10:
+            case 11:
+            case 12:
+            case 13:
+            case 14:
+                w = Math.max(dp(84), pillW(14, dp(200)));
+                h = pillH(14) + dp(8) + dp(RH) + dp(8) + dp(26) + dp(6) + dp(16);
+                break;
             default:
                 zk(14, 0);
                 w = Math.min(tp.measureText(text), dp(180)) + dp(20) + dp(8) + dp(60);
@@ -215,6 +223,11 @@ public class TasbihView extends View {
             case 6:
             case 7:
             case 8: drawRingCounter(c, w, style - 6); break;
+            case 10:
+            case 11:
+            case 12:
+            case 13:
+            case 14: drawRoller(c, w); break;
             default: drawHead(c, w);
         }
         c.restore();
@@ -529,5 +542,258 @@ public class TasbihView extends View {
         c.drawRoundRect(r, dp(10), dp(10), p);
         p.clearShadowLayer();
         centerText(c, tp, s, r.centerX(), r.centerY());
+    }
+
+    // ---------- side-view rollers: a thin wheel seen from its edge, rolled with the thumb ----------
+    static boolean isRollerStyle(int s) {
+        return s >= 10 && s <= 14;
+    }
+
+    public boolean isRoller() {
+        return isRollerStyle(style);
+    }
+
+    /** Roller body size in dp (thin: width is the wheel's thickness). */
+    private static final float RW = 38, RH = 120;
+    /** How far the surface has rolled, in px along the unrolled surface. */
+    private float rot;
+    private float rollAcc;
+    private android.graphics.Bitmap strip;
+    private int stripStyle = -1;
+    private float stripD;
+    private String stripText = "";
+    private final RectF rollerArea = new RectF(), gripArea = new RectF();
+    private final android.graphics.Rect src = new android.graphics.Rect();
+    private final RectF dst = new RectF();
+
+    /** True when (x, y) — view coordinates — is on the roller (rolling counts there). */
+    public boolean isRollerHit(float x, float y) {
+        RectF t = new RectF(rollerArea);
+        t.inset(-dp(16), -dp(4));
+        return t.contains(x, y);
+    }
+
+    /** True when (x, y) — view coordinates — is on the small handle under the roller (the only place that moves it). */
+    public boolean isGripHit(float x, float y) {
+        RectF t = new RectF(gripArea);
+        t.inset(-dp(14), -dp(10));
+        return t.contains(x, y);
+    }
+
+    /** Rolls the surface by dy px of finger movement; returns how many dhikr steps were passed. */
+    public int roll(float dy) {
+        rot += dy;
+        rollAcc += Math.abs(dy);
+        float step = dp(RH) / 2f * (float) (Math.PI / 9);
+        int n = 0;
+        while (rollAcc >= step) {
+            rollAcc -= step;
+            n++;
+        }
+        invalidate();
+        return n;
+    }
+
+    private void drawRoller(Canvas c, float w) {
+        float cx = w / 2;
+        pill(c, cx, 0, 14, dp(200), 0xC0000000, Color.WHITE);
+        float top = pillH(14) + dp(8);
+        float rw = dp(RW), rh = dp(RH), rad = rh / 2f, corner = dp(8);
+        float left = cx - rw / 2;
+        RectF body = new RectF(left, top, left + rw, top + rh);
+        rollerArea.set(body);
+        rollerArea.offset(dp(PAD), dp(PAD));
+
+        p.setShader(null);
+        p.setStyle(Paint.Style.FILL);
+        p.setColor(0xFF000000);
+        p.setShadowLayer(dp(6), 0, dp(3), 0x66000000);
+        c.drawRoundRect(body, corner, corner, p);
+        p.clearShadowLayer();
+
+        android.graphics.Bitmap s = strip();
+        int circ = s.getHeight();
+        c.save();
+        path.reset();
+        path.addRoundRect(body, corner, corner, Path.Direction.CW);
+        c.clipPath(path);
+        int rows = (int) Math.ceil(rh);
+        for (int i = 0; i < rows; i++) {
+            float yc = i + 0.5f - rad;
+            double phi = Math.asin(Math.max(-1f, Math.min(1f, yc / rad)));
+            int row = Math.floorMod((int) Math.floor(phi * rad - rot), circ);
+            src.set(0, row, s.getWidth(), row + 1);
+            dst.set(left, top + i, left + rw, top + i + 1);
+            c.drawBitmap(s, src, dst, bp);
+        }
+        p.setShader(new LinearGradient(0, top, 0, top + rh,
+                new int[]{0xE0000000, 0x30000000, 0x22FFFFFF, 0x00000000, 0x30000000, 0xE0000000},
+                new float[]{0f, .28f, .42f, .5f, .72f, 1f}, Shader.TileMode.CLAMP));
+        c.drawRect(body, p);
+        p.setShader(null);
+        c.restore();
+
+        // gold pointer: where each dhikr is counted
+        float py = top + rad, px = left + rw + dp(3);
+        path.reset();
+        path.moveTo(px, py);
+        path.lineTo(px + dp(7), py - dp(6));
+        path.lineTo(px + dp(7), py + dp(6));
+        path.close();
+        p.setColor(0xFFD4A648);
+        c.drawPath(path, p);
+
+        // count
+        float ny = top + rh + dp(8) + dp(13);
+        number(count >= 1000 ? 15 : 19, Color.WHITE, false);
+        String cs = Ui.fa(count);
+        float cw = Math.max(np.measureText(cs) + dp(22), dp(46));
+        r.set(cx - cw / 2, ny - dp(13), cx + cw / 2, ny + dp(13));
+        p.setColor(0xE00F3D2A);
+        c.drawRoundRect(r, dp(13), dp(13), p);
+        centerText(c, np, cs, cx, ny);
+
+        // handle: the only place that moves the roller
+        float gy = ny + dp(13) + dp(6);
+        r.set(cx - dp(22), gy, cx + dp(22), gy + dp(16));
+        p.setColor(0xD0202124);
+        c.drawRoundRect(r, dp(8), dp(8), p);
+        gripArea.set(r);
+        gripArea.offset(dp(PAD), dp(PAD));
+        p.setStyle(Paint.Style.STROKE);
+        p.setStrokeWidth(dp(1.6f));
+        p.setStrokeCap(Paint.Cap.ROUND);
+        p.setColor(0xFFCFCFCF);
+        for (int k = -1; k <= 1; k += 2) {
+            float yy = gy + dp(8) + k * dp(2.5f);
+            c.drawLine(cx - dp(9), yy, cx + dp(9), yy, p);
+        }
+        p.setStyle(Paint.Style.FILL);
+    }
+
+    /** The roller's surface, unrolled into one tall strip (its height is the wheel's circumference). */
+    private android.graphics.Bitmap strip() {
+        if (strip != null && stripStyle == style && stripD == d && (style != 14 || stripText.equals(text))) return strip;
+        int W = Math.max(2, Math.round(dp(RW)));
+        int C = Math.max(2, Math.round((float) (Math.PI * dp(RH))));
+        android.graphics.Bitmap b = android.graphics.Bitmap.createBitmap(W, C, android.graphics.Bitmap.Config.ARGB_8888);
+        Canvas k = new Canvas(b);
+        Paint q = new Paint(Paint.ANTI_ALIAS_FLAG);
+        q.setStyle(Paint.Style.FILL);
+        switch (style) {
+            case 10: { // black tyre
+                k.drawColor(0xFF1C1C1C);
+                int n = 24;
+                float sp = C / (float) n, h = sp * 0.42f, t = sp * 0.30f, e = dp(5);
+                q.setColor(0xFF424242);
+                for (int i = -1; i <= n; i++) {
+                    float y = (i + 0.5f) * sp;
+                    Path pa = new Path();
+                    pa.moveTo(e, y - h / 2);
+                    pa.lineTo(W / 2f, y + h / 2);
+                    pa.lineTo(W - e, y - h / 2);
+                    pa.lineTo(W - e, y - h / 2 + t);
+                    pa.lineTo(W / 2f, y + h / 2 + t);
+                    pa.lineTo(e, y - h / 2 + t);
+                    pa.close();
+                    k.drawPath(pa, q);
+                }
+                q.setColor(0xFFD4A648);
+                k.drawRect(0, 0, dp(2.5f), C, q);
+                k.drawRect(W - dp(2.5f), 0, W, C, q);
+                break;
+            }
+            case 11: { // wooden cart wheel rim
+                k.drawColor(0xFF8A5A2B);
+                int n = 20;
+                float sp = C / (float) n;
+                q.setStyle(Paint.Style.STROKE);
+                for (int i = 0; i < n; i++) {
+                    float y = i * sp;
+                    q.setColor(0xFF5E3B1B);
+                    q.setStrokeWidth(dp(1.2f));
+                    k.drawLine(0, y, W, y, q);
+                    q.setColor(0x405E3B1B);
+                    q.setStrokeWidth(dp(0.7f));
+                    k.drawLine(dp(8), y + sp * 0.35f, W - dp(8), y + sp * 0.45f, q);
+                    k.drawLine(dp(10), y + sp * 0.7f, W - dp(12), y + sp * 0.62f, q);
+                }
+                q.setStyle(Paint.Style.FILL);
+                q.setColor(0xFF4A4A4A);
+                k.drawRect(0, 0, dp(6), C, q);
+                k.drawRect(W - dp(6), 0, W, C, q);
+                q.setColor(0xFFBDBDBD);
+                int m = 12;
+                for (int i = 0; i <= m; i++) {
+                    float y = i * C / (float) m;
+                    k.drawCircle(dp(3), y, dp(1.6f), q);
+                    k.drawCircle(W - dp(3), y, dp(1.6f), q);
+                }
+                break;
+            }
+            case 12: { // green with gold ribs
+                k.drawColor(0xFF0F5A3C);
+                int n = 36;
+                float sp = C / (float) n;
+                q.setColor(0xFFD4A648);
+                for (int i = 0; i < n; i++) {
+                    float y = (i + 0.5f) * sp;
+                    k.drawRect(dp(7), y - dp(1.1f), W - dp(7), y + dp(1.1f), q);
+                }
+                k.drawRect(0, 0, dp(4), C, q);
+                k.drawRect(W - dp(4), 0, W, C, q);
+                break;
+            }
+            case 13: { // tasbih beads
+                k.drawColor(0xFF16241D);
+                int n = 18;
+                float sp = C / (float) n;
+                float rx = W / 2f - dp(6), ry = sp / 2f - dp(1);
+                for (int i = -1; i <= n; i++) {
+                    float y = (i + 0.5f) * sp;
+                    int j = Math.floorMod(i, n);
+                    q.setColor(j % 9 == 0 ? 0xFFD4A648 : 0xFF1F8A5C);
+                    k.drawOval(new RectF(W / 2f - rx, y - ry, W / 2f + rx, y + ry), q);
+                    q.setColor(0x55FFFFFF);
+                    k.drawOval(new RectF(W / 2f - rx * 0.55f, y - ry * 0.7f, W / 2f - rx * 0.1f, y - ry * 0.35f), q);
+                }
+                q.setColor(0xFFD4A648);
+                k.drawRect(dp(2), 0, dp(3), C, q);
+                k.drawRect(W - dp(3), 0, W - dp(2), C, q);
+                break;
+            }
+            default: { // tape with the dhikr written around it
+                k.drawColor(0xFFEEF3F0);
+                TextPaint t = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+                t.setTypeface(amiriBold);
+                t.setTextSize(Math.min(dp(16), W * 0.42f));
+                t.setColor(0xFF0F5A3C);
+                t.setTextAlign(Paint.Align.CENTER);
+                String s = text == null || text.isEmpty() ? "سُبْحَانَ اللهِ" : text;
+                s = TextUtils.ellipsize(s, t, C - dp(30), TextUtils.TruncateAt.END).toString();
+                float tw = t.measureText(s);
+                int n = Math.max(1, (int) Math.floor(C / (tw + dp(24))));
+                float sp = C / (float) n;
+                Paint.FontMetrics fm = t.getFontMetrics();
+                for (int i = 0; i < n; i++) {
+                    float y = (i + 0.5f) * sp;
+                    k.save();
+                    k.translate(W / 2f, y);
+                    k.rotate(90);
+                    k.drawText(s, 0, -(fm.ascent + fm.descent) / 2f, t);
+                    k.restore();
+                }
+                q.setColor(0xFFD4A648);
+                for (int i = 0; i <= n; i++) k.drawCircle(W / 2f, i * sp, dp(2.5f), q);
+                q.setColor(0xFFC9D3CE);
+                k.drawRect(0, 0, dp(3), C, q);
+                k.drawRect(W - dp(3), 0, W, C, q);
+            }
+        }
+        strip = b;
+        stripStyle = style;
+        stripD = d;
+        stripText = text;
+        return b;
     }
 }
