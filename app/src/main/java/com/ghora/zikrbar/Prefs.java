@@ -31,7 +31,7 @@ public final class Prefs {
 
     private Prefs() {}
 
-    private static SharedPreferences sp(Context c) {
+    static SharedPreferences sp(Context c) {
         return c.getSharedPreferences("zikr", Context.MODE_PRIVATE);
     }
 

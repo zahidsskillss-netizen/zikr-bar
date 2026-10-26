@@ -83,9 +83,9 @@ public class FaceService extends Service {
     private boolean eyesOpen = true;
     private long closedAt;
     // lips
-    private float baseline = -1, smooth = -1, lastGap;
-    private boolean talking;
-    private long talkStart, lastActive;
+    private float baseIn = -1, baseOut = -1, smIn = -1, smOut = -1, lastIn, lastOut;
+    private boolean armed = true;
+    private long nextAuto, lastActive;
 
     private long lastCount;
     private boolean faceSeen = true;
@@ -438,7 +438,7 @@ public class FaceService extends Service {
             setDot(seen ? DOT_IDLE : DOT_NO_FACE);
         }
         if (!seen) {
-            finishTalk(now, true);
+            armed = true;
             return;
         }
         Face f = faces.get(0);
@@ -465,46 +465,50 @@ public class FaceService extends Service {
     }
 
     /**
-     * Lips: very easy to trigger. Any small opening (the front teeth showing) or ordinary lip movement
-     * counts as saying the dhikr; one dhikr is added when the lips settle again for a moment.
+     * Lips: extremely easy to trigger. Any small opening (the front teeth showing) or ordinary lip
+     * movement counts a dhikr straight away. After that the lips must rest for a moment before the
+     * next one counts, or — if you keep chanting without a break — one more is counted every 1.5 seconds.
      */
     private void lips(Face f, long now) {
-        FaceContour up = f.getContour(FaceContour.UPPER_LIP_BOTTOM), lo = f.getContour(FaceContour.LOWER_LIP_TOP);
-        if (up == null || lo == null) return;
-        List<PointF> a = up.getPoints(), b = lo.getPoints();
-        if (a.isEmpty() || b.isEmpty()) return;
-        // average the gap over the middle of the lips (steadier than a single point)
-        int n = Math.min(a.size(), b.size());
-        int from = Math.max(0, n / 2 - 1), to = Math.min(n - 1, n / 2 + 1);
-        float sum = 0;
-        for (int i = from; i <= to; i++) sum += Math.abs(b.get(i).y - a.get(i).y);
-        float gap = (sum / (to - from + 1)) / Math.max(1f, f.getBoundingBox().height());
-        smooth = smooth < 0 ? gap : smooth + (gap - smooth) * 0.6f;
+        FaceContour upIn = f.getContour(FaceContour.UPPER_LIP_BOTTOM), loIn = f.getContour(FaceContour.LOWER_LIP_TOP);
+        FaceContour upOut = f.getContour(FaceContour.UPPER_LIP_TOP), loOut = f.getContour(FaceContour.LOWER_LIP_BOTTOM);
+        if (upIn == null || loIn == null || upOut == null || loOut == null) return;
+        float h = Math.max(1f, f.getBoundingBox().height());
+        float gIn = midGap(upIn.getPoints(), loIn.getPoints()) / h;
+        float gOut = midGap(upOut.getPoints(), loOut.getPoints()) / h;
+        if (gIn < 0 || gOut < 0) return;
+        smIn = smIn < 0 ? gIn : smIn + (gIn - smIn) * 0.6f;
+        smOut = smOut < 0 ? gOut : smOut + (gOut - smOut) * 0.6f;
+        if (baseIn < 0 || smIn < baseIn) baseIn = smIn; else baseIn += (smIn - baseIn) * 0.01f;
+        if (baseOut < 0 || smOut < baseOut) baseOut = smOut; else baseOut += (smOut - baseOut) * 0.01f;
 
-        if (baseline < 0 || smooth < baseline) baseline = smooth;
-        else baseline += (smooth - baseline) * 0.015f;
-
-        boolean open = smooth > baseline + 0.008f;
-        boolean moving = Math.abs(smooth - lastGap) > 0.004f;
-        lastGap = smooth;
+        boolean open = smIn > baseIn + 0.006f || smOut > baseOut + 0.010f;
+        boolean moving = Math.abs(smIn - lastIn) > 0.003f || Math.abs(smOut - lastOut) > 0.004f;
+        lastIn = smIn;
+        lastOut = smOut;
         if (open || moving) {
-            if (!talking) {
-                talking = true;
-                talkStart = now;
-            }
             lastActive = now;
-        } else {
-            finishTalk(now, false);
+            if (armed) {
+                armed = false;
+                nextAuto = now + 1500;
+                if (now - lastCount > 250) count(now);
+            } else if (now >= nextAuto) {
+                nextAuto = now + 1500;
+                count(now);
+            }
+        } else if (now - lastActive > 300) {
+            armed = true;
         }
     }
 
-    /** One dhikr is counted when the lips settle after moving or opening. */
-    private void finishTalk(long now, boolean faceLost) {
-        if (!talking) return;
-        if (faceLost || now - lastActive > 400) {
-            talking = false;
-            if (lastActive - talkStart >= 90 && now - lastCount > 300) count(now);
-        }
+    /** Average vertical distance between two lip lines, over the middle of the mouth; -1 if there are no points. */
+    private static float midGap(List<PointF> a, List<PointF> b) {
+        int n = Math.min(a.size(), b.size());
+        if (n == 0) return -1;
+        int from = Math.max(0, n / 2 - 1), to = Math.min(n - 1, n / 2 + 1);
+        float sum = 0;
+        for (int i = from; i <= to; i++) sum += Math.abs(b.get(i).y - a.get(i).y);
+        return sum / (to - from + 1);
     }
 
     private void count(long now) {

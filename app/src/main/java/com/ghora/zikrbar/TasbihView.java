@@ -581,16 +581,62 @@ public class TasbihView extends View {
         return t.contains(x, y);
     }
 
-    /** Rolls the surface by dy px of finger movement; returns how many notches passed the gold pointer (one dhikr each). */
+    /** How many notches pass the pointer for each px of finger movement (the wheel spins faster than the finger). */
+    private static final float ROLL_GAIN = 2.4f;
+
+    /** Called for every notch that passes the gold pointer while the wheel spins on by itself after a flick. */
+    public interface OnNotch {
+        void onNotch(int n);
+    }
+
+    private OnNotch notchListener;
+    private float flingV;
+    private boolean flinging;
+
+    public void setOnNotch(OnNotch l) {
+        notchListener = l;
+    }
+
+    /** Rolls the surface by dy px of finger movement; returns how many notches passed the gold pointer. */
     public int roll(float dy) {
+        return spin(dy * ROLL_GAIN);
+    }
+
+    private int spin(float dsurface) {
         strip();
         float sp = notchSpacing();
         float before = (float) Math.floor(-rot / sp - 0.5f);
-        rot += dy;
+        rot += dsurface;
         float after = (float) Math.floor(-rot / sp - 0.5f);
         invalidate();
-        return Math.min(8, Math.round(Math.abs(after - before)));
+        return Math.round(Math.abs(after - before));
     }
+
+    /** Lets the wheel keep spinning after the finger lifts, slowing down by itself. */
+    public void fling(float fingerVelocityPxPerSec) {
+        flingV = fingerVelocityPxPerSec * ROLL_GAIN * 0.7f;
+        if (Math.abs(flingV) < dp(160)) return;
+        flinging = true;
+        removeCallbacks(flingStep);
+        postOnAnimation(flingStep);
+    }
+
+    public void stopFling() {
+        flinging = false;
+        removeCallbacks(flingStep);
+    }
+
+    private final Runnable flingStep = new Runnable() {
+        @Override
+        public void run() {
+            if (!flinging) return;
+            int n = spin(flingV / 60f);
+            if (n > 0 && notchListener != null) notchListener.onNotch(n);
+            flingV *= 0.955f;
+            if (Math.abs(flingV) > dp(40)) postOnAnimation(this);
+            else flinging = false;
+        }
+    };
 
     /** Height of one notch on the unrolled surface, in px. */
     private float notchSpacing() {

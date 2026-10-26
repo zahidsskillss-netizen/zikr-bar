@@ -92,7 +92,8 @@ public class ZikrService extends Service {
             if (Intent.ACTION_USER_PRESENT.equals(intent.getAction())
                     && Prefs.unlockPopup(ZikrService.this)
                     && Settings.canDrawOverlays(ZikrService.this)) {
-                showUnlockPopup();
+                // wait until the system's own unlock animation is over, so ours starts on a smooth screen
+                handler.postDelayed(() -> showUnlockPopup(), 350);
             }
         }
     };
@@ -337,8 +338,8 @@ public class ZikrService extends Service {
         stack.setCameraDistance(cam);
         stack.setPivotX((cw + depth) / 2f);
         stack.setPivotY((ch + depth) / 2f);
-        // start: far away, tilted
-        stack.setAlpha(0f);
+        // start: far away, tilted (almost invisible first, so the first heavy draw is done before it moves)
+        stack.setAlpha(0.01f);
         stack.setScaleX(0.35f);
         stack.setScaleY(0.35f);
         stack.setRotationX(30f);
@@ -357,15 +358,18 @@ public class ZikrService extends Service {
         }
         unlockPopup = root;
 
-        android.view.animation.Interpolator out = new android.view.animation.DecelerateInterpolator(2.2f);
-        // fly in
-        stack.animate().alpha(1f).scaleX(1f).scaleY(1f).rotationX(10f).rotationY(-18f).setDuration(520).setInterpolator(out)
-                .withEndAction(() -> stack.animate().rotationX(-6f).rotationY(16f).setDuration(1500)
-                        .setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator()).start())
-                .start();
-        l1.animate().translationX(0).translationY(0).setDuration(620).setInterpolator(out).start();
-        l2.animate().translationX(0).translationY(0).setDuration(560).setInterpolator(out).start();
-        front.animate().scaleX(1f).scaleY(1f).setDuration(520).setInterpolator(out).start();
+        final android.view.animation.Interpolator out = new android.view.animation.DecelerateInterpolator(2.2f);
+        handler.postDelayed(() -> {
+            if (unlockPopup != root) return;
+            // fly in, then keep drifting smoothly
+            stack.animate().alpha(1f).scaleX(1f).scaleY(1f).rotationX(10f).rotationY(-18f).setDuration(520).setInterpolator(out)
+                    .withEndAction(() -> stack.animate().rotationX(-6f).rotationY(16f).setDuration(1500)
+                            .setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator()).start())
+                    .start();
+            l1.animate().translationX(0).translationY(0).setDuration(620).setInterpolator(out).start();
+            l2.animate().translationX(0).translationY(0).setDuration(560).setInterpolator(out).start();
+            front.animate().scaleX(1f).scaleY(1f).setDuration(520).setInterpolator(out).start();
+        }, 180);
 
         final View shown = root;
         handler.postDelayed(() -> {
@@ -377,7 +381,7 @@ public class ZikrService extends Service {
                     .withEndAction(() -> {
                         if (unlockPopup == shown) removeUnlockPopup();
                     }).start();
-        }, 2100);
+        }, 2280);
     }
 
     /** One of the newer glass designs (see UnlockStyles). */
@@ -390,7 +394,8 @@ public class ZikrService extends Service {
         sh.root.setOnClickListener(v -> {
             if (unlockPopup == sh.root) sh.exit.run(this::removeUnlockPopup);
         });
-        sh.root.setVisibility(View.INVISIBLE);
+        // nearly invisible at first so the heavy first draw happens before the animation starts
+        sh.root.setAlpha(0.01f);
         try {
             wm.addView(sh.root, p);
         } catch (RuntimeException e) {
@@ -399,16 +404,16 @@ public class ZikrService extends Service {
         unlockPopup = sh.root;
         styled = sh;
         final View shown = sh.root;
-        shown.post(() -> {
+        handler.postDelayed(() -> {
             if (unlockPopup != shown) return;
-            shown.setVisibility(View.VISIBLE);
+            shown.setAlpha(1f);
             sh.enter.run();
-        });
+        }, 180);
         handler.postDelayed(() -> {
             if (unlockPopup == shown) sh.exit.run(() -> {
                 if (unlockPopup == shown) removeUnlockPopup();
             });
-        }, 900 + sh.hold);
+        }, 1080 + sh.hold);
     }
 
     private void removeUnlockPopup() {
@@ -482,6 +487,7 @@ public class ZikrService extends Service {
     private void addTasbih() {
         scale = Prefs.scale(this);
         tasbih = new TasbihView(this);
+        tasbih.setOnNotch(n -> onRollNotches(n));
         tasbih.setSize(scale);
         if (TasbihView.isRollerStyle(Prefs.tasbihStyle(this))) Krr.prepare(this);
         lp = overlayParams(0);
@@ -508,6 +514,7 @@ public class ZikrService extends Service {
             float downX, downY, lastY;
             int startX, startY;
             boolean moved, longDone, pinching, onText, swiping, roller, onGrip, rolling;
+            android.view.VelocityTracker vt;
             final Runnable longPress = () -> {
                 longDone = true;
                 Prefs.setCount(ZikrService.this, 0);
@@ -535,6 +542,13 @@ public class ZikrService extends Service {
                         onGrip = roller && tasbih.isGripHit(e.getX(), e.getY());
                         rolling = roller && !onText && !onGrip && tasbih.isRollerHit(e.getX(), e.getY());
                         lastY = e.getRawY();
+                        if (tasbih != null) tasbih.stopFling();
+                        if (rolling) {
+                            rollCounted = false;
+                            if (vt != null) vt.recycle();
+                            vt = android.view.VelocityTracker.obtain();
+                            vt.addMovement(e);
+                        }
                         if (!rolling) handler.postDelayed(longPress, 700);
                         return true;
 
@@ -549,8 +563,9 @@ public class ZikrService extends Service {
                         if (rolling) {
                             float step = e.getRawY() - lastY;
                             lastY = e.getRawY();
+                            if (vt != null) vt.addMovement(e);
                             int n = tasbih != null ? tasbih.roll(step) : 0;
-                            for (int i = 0; i < n; i++) handler.postDelayed(ZikrService.this::countRoll, i * 70L); // one krrr and one number for each notch, spaced so each is heard
+                            if (n > 0) onRollNotches(n);
                             return true;
                         }
                         float dx = e.getRawX() - downX, dy = e.getRawY() - downY;
@@ -586,6 +601,14 @@ public class ZikrService extends Service {
                         }
                         if (rolling) {
                             rolling = false;
+                            if (vt != null) {
+                                vt.addMovement(e);
+                                vt.computeCurrentVelocity(1000);
+                                float vy = vt.getYVelocity();
+                                vt.recycle();
+                                vt = null;
+                                if (tasbih != null) tasbih.fling(vy);
+                            }
                             return true;
                         }
                         if (swiping) {
@@ -761,16 +784,37 @@ public class ZikrService extends Service {
         Toast.makeText(this, Prefs.tasbihText(this), Toast.LENGTH_SHORT).show();
     }
 
-    /** One dhikr counted by rolling the roller: "krrr" and a short buzz (each can be turned off). */
+    private boolean rollCounted;
+    private long lastRollFb;
+
+    /**
+     * A drag or flick on the roller: every notch that passes gives its own "krrr" and a small buzz,
+     * but the whole swipe adds just one to the count.
+     */
+    private void onRollNotches(int n) {
+        if (!rollCounted) {
+            rollCounted = true;
+            countRoll();
+        }
+        for (int i = 0; i < Math.min(n, 6); i++) handler.postDelayed(this::rollFeedback, i * 40L);
+    }
+
+    private void rollFeedback() {
+        long now = android.os.SystemClock.uptimeMillis();
+        if (now - lastRollFb < 22) return;
+        lastRollFb = now;
+        if (Prefs.rollSound(this)) Krr.play(this);
+        if (Prefs.rollVib(this)) vibrate(8);
+    }
+
+    /** One dhikr counted by one swipe on the roller. */
     private void countRoll() {
         int n = Prefs.count(this) + 1;
         Prefs.setCount(this, n);
         Prefs.setLastZikr(this, System.currentTimeMillis());
         refreshTasbih();
         int t = Prefs.target(this);
-        boolean reached = t > 0 && n % t == 0;
-        if (Prefs.rollSound(this)) Krr.play(this);
-        if (Prefs.rollVib(this) || reached) vibrate(reached ? 350 : 12);
+        if (t > 0 && n % t == 0) vibrate(350);
     }
 
     private void countOne() {

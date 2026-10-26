@@ -44,6 +44,9 @@ public class MainActivity extends Activity {
     private final List<LinearLayout> tiles = new ArrayList<>();
     private boolean binding;
     private LinearLayout highlightBox;
+    /** null on the home page; otherwise which feature this page manages (see SectionActivity). */
+    private String section;
+    private final java.util.Map<String, TextView> subs = new java.util.HashMap<>();
     private boolean waitingOverlay, waitingUnlock, waitingFace;
     private Switch faceSwitch;
     private static final int REQ_FACE = 7;
@@ -54,11 +57,14 @@ public class MainActivity extends Activity {
         L.init(this);
         k = new Kit(this);
         Theme.window(this);
+        section = getIntent().getStringExtra("section");
         setContentView(build());
-        askNotificationPermission();
-        AdhkarAlarm.scheduleAll(this);
-        PrayerAlarm.schedule(this);
-        LearnAlarm.schedule(this);
+        if (section == null) {
+            askNotificationPermission();
+            AdhkarAlarm.scheduleAll(this);
+            PrayerAlarm.schedule(this);
+            LearnAlarm.schedule(this);
+        }
     }
 
     @Override
@@ -85,6 +91,7 @@ public class MainActivity extends Activity {
     // =============================== UI ===============================
 
     private View build() {
+        if (section != null) return buildSection();
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setLayoutDirection(L.rtl() ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
@@ -101,19 +108,97 @@ public class MainActivity extends Activity {
         LinearLayout.LayoutParams wlp = k.matchWrap();
         wlp.setMargins(k.dp(16), k.dp(10), k.dp(16), 0);
         root.addView(words, wlp);
-        root.addView(statusCard());
-        root.addView(tasbihCard());
-        root.addView(faceCard());
-        root.addView(unlockCard());
-        root.addView(reminderCard());
-        root.addView(listCard());
-        root.addView(moreCard());
+        root.addView(featuresCard());
 
         TextView credit = k.text(L.t("credit"), 13, MUTED);
         credit.setGravity(Gravity.CENTER);
         credit.setPadding(k.dp(16), k.dp(22), k.dp(16), 0);
         root.addView(credit);
 
+        ScrollView scroll = new ScrollView(this);
+        scroll.addView(root);
+        return scroll;
+    }
+
+    // ============================ home list and feature pages ============================
+
+    /** The home page: one button for each feature; each opens its own page where it is managed. */
+    private View featuresCard() {
+        LinearLayout c = k.card("\u2699", L.t("home_f_t"), L.t("home_f_s"));
+        c.addView(sectionRow("\u06DE", "tilawat", L.t("tl_title")), k.topMargin(6));
+        c.addView(sectionRow("ﷲ", "bar", L.t("c_bar_t")));
+        c.addView(sectionRow(L.num(33), "tasbih", L.t("c_tas_t")));
+        c.addView(sectionRow("\u25C9", "face", L.t("c_face_t")));
+        c.addView(sectionRow("\u2600", "unlock", L.t("c_unl_t")));
+        c.addView(sectionRow("\u263E", "reminder", L.t("c_rem_t")));
+        c.addView(sectionRow("\u2261", "list", L.t("c_list_t")));
+        c.addView(sectionRow("\u2726", "more", L.t("c_more_t")));
+        return c;
+    }
+
+    private View sectionRow(String glyph, String id, String title) {
+        LinearLayout r = k.row();
+        r.setPadding(k.dp(4), k.dp(10), k.dp(4), k.dp(10));
+        r.setBackground(new RippleDrawable(ColorStateList.valueOf(0x201B5E20), null, k.rounded(CARD, 14, 0)));
+        r.setClickable(true);
+        r.addView(k.iconGap(k.badge(glyph, 38), 14));
+        LinearLayout tx = new LinearLayout(this);
+        tx.setOrientation(LinearLayout.VERTICAL);
+        tx.setPadding(k.dp(4), 0, k.dp(4), 0);
+        tx.addView(k.title(title, 16, INK));
+        TextView s = k.text("", 13, MUTED);
+        s.setPadding(0, k.dp(3), 0, 0);
+        s.setMaxLines(1);
+        s.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        s.setVisibility(View.GONE);
+        tx.addView(s);
+        subs.put(id, s);
+        r.addView(tx, k.weight());
+        r.addView(k.chevron());
+        r.setOnClickListener(v -> {
+            if (id.equals("tilawat")) startActivity(new Intent(this, TilawatActivity.class));
+            else startActivity(new Intent(this, SectionActivity.class).putExtra("section", id));
+        });
+        return r;
+    }
+
+    private void setSub(String id, String text, int color) {
+        TextView s = subs.get(id);
+        if (s == null) return;
+        s.setText(text);
+        s.setTextColor(color);
+        s.setVisibility(text == null || text.isEmpty() ? View.GONE : View.VISIBLE);
+    }
+
+    /** A page that manages one feature (opened from the home page). */
+    private View buildSection() {
+        LinearLayout root = new LinearLayout(this);
+        root.setOrientation(LinearLayout.VERTICAL);
+        root.setLayoutDirection(L.rtl() ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
+        root.setPadding(0, 0, 0, k.dp(32));
+
+        LinearLayout h = new LinearLayout(this);
+        h.setOrientation(LinearLayout.VERTICAL);
+        h.setPadding(k.dp(18), k.dp(14), k.dp(18), k.dp(22));
+        h.setBackground(k.headerBackground());
+        TextView back = k.strong((L.rtl() ? "\u2192  " : "\u2190  ") + L.t("back"), 14, 0xE6FFFFFF);
+        back.setPaddingRelative(k.dp(14), k.dp(6), k.dp(16), k.dp(8));
+        back.setBackground(new RippleDrawable(ColorStateList.valueOf(0x40FFFFFF), k.rounded(0x26FFFFFF, 18, 0x40FFFFFF), null));
+        back.setOnClickListener(v -> finish());
+        LinearLayout.LayoutParams bp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        bp.gravity = Gravity.START;
+        h.addView(back, bp);
+        root.addView(h);
+
+        switch (section) {
+            case "bar": root.addView(statusCard()); break;
+            case "tasbih": root.addView(tasbihCard()); break;
+            case "face": root.addView(faceCard()); break;
+            case "unlock": root.addView(unlockCard()); break;
+            case "reminder": root.addView(reminderCard()); break;
+            case "list": root.addView(listCard()); break;
+            default: root.addView(moreCard()); break;
+        }
         ScrollView scroll = new ScrollView(this);
         scroll.addView(root);
         return scroll;
@@ -860,40 +945,61 @@ public class MainActivity extends Activity {
     }
 
     private void refresh() {
-        if (barSwitch == null) return;
-        fillHighlight();
+        if (highlightBox != null) fillHighlight();
         binding = true;
         boolean running = Prefs.running(this);
         boolean canDraw = Settings.canDrawOverlays(this);
-        barSwitch.setChecked(running);
-        tasbihSwitch.setChecked(Prefs.overlay(this) && canDraw && running);
-        faceSwitch.setChecked(FaceService.running);
-        unlockSwitch.setChecked(Prefs.unlockPopup(this) && canDraw && running);
-        currentZk.setText(Prefs.current(this));
-        countText.setText(L.num(Prefs.count(this)));
-
-        statBar.setText(running ? L.t("on") : L.t("off"));
-        statBar.setTextColor(running ? GREEN : MUTED);
-        statCount.setText(L.num(Prefs.count(this)));
         int t = Prefs.target(this);
-        statGoal.setText(t == 0 ? "∞" : L.num(t));
+        if (barSwitch != null) barSwitch.setChecked(running);
+        if (tasbihSwitch != null) tasbihSwitch.setChecked(Prefs.overlay(this) && canDraw && running);
+        if (faceSwitch != null) faceSwitch.setChecked(FaceService.running);
+        if (unlockSwitch != null) unlockSwitch.setChecked(Prefs.unlockPopup(this) && canDraw && running);
+        if (currentZk != null) currentZk.setText(Prefs.current(this));
+        if (countText != null) countText.setText(L.num(Prefs.count(this)));
 
-        for (int i = 0; i < Prefs.INTERVALS.length; i++) {
-            if (Prefs.INTERVALS[i] == Prefs.intervalMinutes(this)) intervalSpinner.setSelection(i);
+        if (statBar != null) {
+            statBar.setText(running ? L.t("on") : L.t("off"));
+            statBar.setTextColor(running ? GREEN : MUTED);
+            statCount.setText(L.num(Prefs.count(this)));
+            statGoal.setText(t == 0 ? "\u221E" : L.num(t));
         }
-        for (int i = 0; i < Prefs.TARGETS.length; i++) {
-            if (Prefs.TARGETS[i] == t) targetSpinner.setSelection(i);
+
+        if (intervalSpinner != null) {
+            for (int i = 0; i < Prefs.INTERVALS.length; i++) {
+                if (Prefs.INTERVALS[i] == Prefs.intervalMinutes(this)) intervalSpinner.setSelection(i);
+            }
         }
-        for (int i = 0; i < Prefs.REMINDER_HOURS.length; i++) {
-            if (Prefs.REMINDER_HOURS[i] == Prefs.reminderHours(this)) reminderSpinner.setSelection(i);
+        if (targetSpinner != null) {
+            for (int i = 0; i < Prefs.TARGETS.length; i++) {
+                if (Prefs.TARGETS[i] == t) targetSpinner.setSelection(i);
+            }
         }
-        List<String> list = Prefs.list(this);
-        tasbihZkSpinner.setAdapter(k.adapter(list.toArray(new String[0]), true));
-        tasbihZkSpinner.setSelection(Prefs.tasbihIndex(this));
+        if (reminderSpinner != null) {
+            for (int i = 0; i < Prefs.REMINDER_HOURS.length; i++) {
+                if (Prefs.REMINDER_HOURS[i] == Prefs.reminderHours(this)) reminderSpinner.setSelection(i);
+            }
+        }
+        if (tasbihZkSpinner != null) {
+            List<String> list = Prefs.list(this);
+            tasbihZkSpinner.setAdapter(k.adapter(list.toArray(new String[0]), true));
+            tasbihZkSpinner.setSelection(Prefs.tasbihIndex(this));
+        }
 
         int sel = Prefs.tasbihStyle(this);
         for (int i = 0; i < tiles.size(); i++) {
             tiles.get(i).setBackground(TasbihView.STYLES[i] == sel ? k.rounded(0x141B5E20, 22, GREEN) : null);
+        }
+
+        // short status under each button on the home page
+        if (!subs.isEmpty()) {
+            TilawatData.Mark last = TilawatData.latest(this);
+            setSub("tilawat", last == null ? "" : TilawatData.describe(last), MUTED);
+            setSub("bar", running ? L.t("on") : L.t("off"), running ? GREEN : MUTED);
+            boolean tOn = Prefs.overlay(this) && canDraw && running;
+            setSub("tasbih", tOn ? L.t("on") : L.t("off"), tOn ? GREEN : MUTED);
+            setSub("face", FaceService.running ? L.t("on") : L.t("off"), FaceService.running ? GREEN : MUTED);
+            boolean uOn = Prefs.unlockPopup(this) && canDraw && running;
+            setSub("unlock", uOn ? L.t("on") : L.t("off"), uOn ? GREEN : MUTED);
         }
         binding = false;
     }

@@ -98,6 +98,40 @@ final class UnlockStyles {
         return a;
     }
 
+    /**
+     * An endless smooth swing around the current value: it starts exactly where the view is (no jump)
+     * and eases in, so the motion never stops or snaps between the entrance and the loop.
+     */
+    private static ValueAnimator sway(View v, String prop, long period, float amp, long delay) {
+        final float base;
+        switch (prop) {
+            case "rotationX": base = v.getRotationX(); break;
+            case "rotationY": base = v.getRotationY(); break;
+            case "translationY": base = v.getTranslationY(); break;
+            default: base = v.getAlpha(); break;
+        }
+        ValueAnimator a = ValueAnimator.ofFloat(0f, 1f);
+        a.setDuration(period);
+        a.setStartDelay(delay);
+        a.setRepeatCount(ValueAnimator.INFINITE);
+        a.setRepeatMode(ValueAnimator.RESTART);
+        a.setInterpolator(new LinearInterpolator());
+        final long[] t0 = {-1};
+        a.addUpdateListener(an -> {
+            long now = android.os.SystemClock.uptimeMillis();
+            if (t0[0] < 0) t0[0] = now;
+            float ease = Math.min(1f, (now - t0[0]) / 900f);
+            float val = base + amp * ease * (float) Math.sin(2 * Math.PI * (float) an.getAnimatedValue());
+            switch (prop) {
+                case "rotationX": v.setRotationX(val); break;
+                case "rotationY": v.setRotationY(val); break;
+                case "translationY": v.setTranslationY(val); break;
+                default: v.setAlpha(Math.max(0f, Math.min(1f, val))); break;
+            }
+        });
+        return a;
+    }
+
     // ------------------------------------------------------------------ 1. pill from the top
 
     private static Shown pill(Context c, Kit k, String text, Point screen) {
@@ -219,7 +253,7 @@ final class UnlockStyles {
             in.addListener(new AnimatorListenerAdapter() {
                 @Override
                 public void onAnimationEnd(Animator animation) {
-                    ObjectAnimator tilt = loop(card, "rotationX", 1600, 6f, -6f);
+                    ValueAnimator tilt = sway(card, "rotationX", 3200, 6f, 0);
                     tilt.start();
                     s.loops.add(tilt);
                 }
@@ -365,10 +399,11 @@ final class UnlockStyles {
                 r.start();
                 s.loops.add(r);
             }
-            ObjectAnimator tilt = loop(box, "rotationY", 1500, -10f, 10f);
-            tilt.setStartDelay(900);
-            tilt.start();
-            s.loops.add(tilt);
+            box.postDelayed(() -> {
+                ValueAnimator tilt = sway(box, "rotationY", 3000, 10f, 0);
+                tilt.start();
+                s.loops.add(tilt);
+            }, 950);
         };
         s.exit = done -> {
             s.stopLoops();
@@ -461,7 +496,8 @@ final class UnlockStyles {
                     .setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator()).start();
             right.animate().rotationY(100f).alpha(0f).setStartDelay(420).setDuration(1300)
                     .setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator()).start();
-            ObjectAnimator glow = loop(lamp, "alpha", 1200, 0.7f, 1f);
+            lamp.setAlpha(0.85f);
+            ValueAnimator glow = sway(lamp, "alpha", 2400, 0.15f, 0);
             ObjectAnimator sway = loop(lamp, "translationY", 1500, 0f, k.dp(4));
             glow.start();
             sway.start();

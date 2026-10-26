@@ -33,6 +33,14 @@
         </activity>
 
         <activity
+            android:name=".SectionActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".TilawatActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".InfoActivity"
             android:exported="false" />
 
