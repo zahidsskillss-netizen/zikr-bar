@@ -754,7 +754,8 @@ public class MainActivity extends Activity {
         hs.setHorizontalScrollBarEnabled(false);
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
-        String[] marks = {"\u25A4", "\u2B2D", "\u21BB", "\u25CB", "\u2738", "\u2229", "\u2581", "\u2685"};
+        String[] marks = {"\u25A4", "\u2B2D", "\u21BB", "\u25CB", "\u2738", "\u2229", "\u2581",
+                "\u25C9", "\u25CD", "\u25CE", "\u2600", "\u273A", "\u2742", "\u2685"};
         for (int i = 0; i <= UnlockStyles.ROTATE; i++) {
             final int st = i;
             LinearLayout t = new LinearLayout(this);
@@ -780,7 +781,21 @@ public class MainActivity extends Activity {
         }
         hs.addView(row);
         c.addView(hs, k.matchWrap());
+        c.addView(k.label(L.t("us_size")));
+        String[] sizes = {L.t("us_small"), L.t("us_normal"), L.t("us_large")};
+        Spinner sizeSp = k.spinner(sizes, false);
+        sizeSp.setSelection(Prefs.unlockSize(this));
+        c.addView(sizeSp, k.matchWrap());
+        sizeSp.setOnItemSelectedListener(onSelect(pos -> {
+            if (pos == Prefs.unlockSize(this)) return;
+            Prefs.setUnlockSize(this, pos);
+            previewUnlock();
+        }));
         c.addView(k.button("\u25B6\u2003" + L.t("us_preview"), false, v -> previewUnlock()), k.topMargin(12));
+        TextView keep = k.text(L.t("us_keep"), 13, MUTED);
+        keep.setPadding(0, k.dp(14), 0, 0);
+        c.addView(keep);
+        c.addView(k.button(L.t("us_keep_btn"), false, v -> openBatterySettings()), k.topMargin(8));
         paintStyles();
         return c;
     }
@@ -791,6 +806,19 @@ public class MainActivity extends Activity {
         int sel = Prefs.unlockStyle(this);
         for (int i = 0; i < styleTiles.size(); i++) {
             styleTiles.get(i).setBackground(i == sel ? k.rounded(Theme.ov(0x1A), 18, GOLD_LINE) : k.rounded(SOFT, 18, LINE));
+        }
+    }
+
+    /** Lets the person stop the phone's battery saver from killing the dhikr service. */
+    private void openBatterySettings() {
+        try {
+            startActivity(new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS));
+        } catch (RuntimeException e) {
+            try {
+                startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                        android.net.Uri.parse("package:" + getPackageName())));
+            } catch (RuntimeException ignored) {
+            }
         }
     }
 

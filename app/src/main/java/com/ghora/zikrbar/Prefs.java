@@ -213,12 +213,35 @@ public final class Prefs {
     }
 
     static int unlockStyle(Context c) {
-        int s = sp(c).getInt("uStyle", UnlockStyles.LAYERS);
-        return s < 0 || s > UnlockStyles.ROTATE ? UnlockStyles.LAYERS : s;
+        android.content.SharedPreferences p = sp(c);
+        int s;
+        if (p.contains("uStyle2")) {
+            s = p.getInt("uStyle2", UnlockStyles.ORB0);
+        } else if (p.contains("uStyle")) {
+            int o = p.getInt("uStyle", UnlockStyles.LAYERS); // older numbering: 7 meant "change each time"
+            s = o == 7 ? UnlockStyles.ROTATE : o;
+        } else {
+            s = UnlockStyles.ORB0; // new installs: the dua-in-a-circle design
+        }
+        return s < 0 || s > UnlockStyles.ROTATE ? UnlockStyles.ORB0 : s;
     }
 
     static void setUnlockStyle(Context c, int s) {
-        sp(c).edit().putInt("uStyle", s).apply();
+        sp(c).edit().putInt("uStyle2", s).apply();
+    }
+
+    /** Size of the unlock popup: 0 small, 1 normal, 2 large. */
+    static int unlockSize(Context c) {
+        return Math.max(0, Math.min(2, sp(c).getInt("uSize", 1)));
+    }
+
+    static void setUnlockSize(Context c, int v) {
+        sp(c).edit().putInt("uSize", v).apply();
+    }
+
+    static float unlockSizeMul(Context c) {
+        int v = unlockSize(c);
+        return v == 0 ? 0.72f : v == 2 ? 1.18f : 1f;
     }
 
     /** The design to use now; "change every time" goes through all designs in turn. */

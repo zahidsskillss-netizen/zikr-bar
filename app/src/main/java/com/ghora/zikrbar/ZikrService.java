@@ -43,7 +43,7 @@ import java.util.Calendar;
 public class ZikrService extends Service {
 
     /** The running service, so the eyes/lips counter can make the floating tasbih show a new count at once. */
-    private static ZikrService live;
+    static ZikrService live;
 
     static void poke() {
         if (live != null) live.refreshTasbih();
@@ -73,6 +73,7 @@ public class ZikrService extends Service {
         @Override
         public void run() {
             checkReminder();
+            registerUnlockReceiver(); // cheap insurance in case the phone dropped it
             handler.postDelayed(this, 60_000);
         }
     };
@@ -86,17 +87,106 @@ public class ZikrService extends Service {
     private float scale = 1f;
     private View unlockPopup;
 
+    private long lastShown;
+    private boolean pollingUnlock;
+    private boolean receiverOn;
+
     private final BroadcastReceiver unlockReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            if (Intent.ACTION_USER_PRESENT.equals(intent.getAction())
-                    && Prefs.unlockPopup(ZikrService.this)
-                    && Settings.canDrawOverlays(ZikrService.this)) {
-                // wait until the system's own unlock animation is over, so ours starts on a smooth screen
-                handler.postDelayed(() -> showUnlockPopup(), 350);
+            String a = intent.getAction();
+            if (a == null) return;
+            switch (a) {
+                case Intent.ACTION_SCREEN_ON:
+                    if (Prefs.unlockPopup(ZikrService.this)) startUnlockPolling();
+                    break;
+                case Intent.ACTION_SCREEN_OFF:
+                    pollingUnlock = false;
+                    handler.removeCallbacks(unlockPoll);
+                    break;
+                case Intent.ACTION_USER_PRESENT:
+                    unlocked();
+                    break;
+                default:
+                    break;
             }
         }
     };
+
+    /**
+     * Some phones send "unlocked" late or not at all, so besides USER_PRESENT we also watch the lock screen
+     * ourselves for a while after the screen turns on and show the dhikr the moment it is gone.
+     */
+    private int pollTries;
+    private final Runnable unlockPoll = new Runnable() {
+        @Override
+        public void run() {
+            if (!pollingUnlock) return;
+            boolean locked = true;
+            try {
+                android.app.KeyguardManager km = getSystemService(android.app.KeyguardManager.class);
+                locked = km != null && km.isKeyguardLocked();
+            } catch (RuntimeException ignored) {
+                locked = false;
+            }
+            if (!locked) {
+                pollingUnlock = false;
+                unlocked();
+                return;
+            }
+            if (++pollTries > 600) { // about a minute
+                pollingUnlock = false;
+                return;
+            }
+            handler.postDelayed(this, 100);
+        }
+    };
+
+    private void startUnlockPolling() {
+        pollingUnlock = true;
+        pollTries = 0;
+        handler.removeCallbacks(unlockPoll);
+        handler.postDelayed(unlockPoll, 60);
+        prepareUnlockPopup();
+    }
+
+    private void unlocked() {
+        if (!Prefs.unlockPopup(this)) return;
+        long now = android.os.SystemClock.elapsedRealtime();
+        if (now - lastShown < 2500) return; // USER_PRESENT and our own check both fire: show once
+        lastShown = now;
+        pollingUnlock = false;
+        handler.removeCallbacks(unlockPoll);
+        handler.post(() -> {
+            try {
+                showUnlockPopup();
+            } catch (RuntimeException e) {
+                removeUnlockPopup();
+            }
+        });
+    }
+
+    private void registerUnlockReceiver() {
+        if (receiverOn) {
+            try {
+                unregisterReceiver(unlockReceiver);
+            } catch (RuntimeException ignored) {
+            }
+            receiverOn = false;
+        }
+        IntentFilter f = new IntentFilter(Intent.ACTION_USER_PRESENT);
+        f.addAction(Intent.ACTION_SCREEN_ON);
+        f.addAction(Intent.ACTION_SCREEN_OFF);
+        try {
+            if (Build.VERSION.SDK_INT >= 33) {
+                registerReceiver(unlockReceiver, f, Context.RECEIVER_EXPORTED);
+            } else {
+                registerReceiver(unlockReceiver, f);
+            }
+            receiverOn = true;
+        } catch (RuntimeException ignored) {
+        }
+    }
 
     @Override
     public void onCreate() {
@@ -106,12 +196,7 @@ public class ZikrService extends Service {
         wm = getSystemService(WindowManager.class);
         if (Build.VERSION.SDK_INT >= 26) createChannels();
 
-        IntentFilter f = new IntentFilter(Intent.ACTION_USER_PRESENT);
-        if (Build.VERSION.SDK_INT >= 33) {
-            registerReceiver(unlockReceiver, f, Context.RECEIVER_EXPORTED);
-        } else {
-            registerReceiver(unlockReceiver, f);
-        }
+        registerUnlockReceiver();
     }
 
     /** Notification channels exist only on Android 8+. */
@@ -137,7 +222,7 @@ public class ZikrService extends Service {
             Prefs.setOverlay(this, on);
             if (on) Prefs.setMini(this, 0, Prefs.miniY(this));
         } else if (ACTION_PREVIEW_UNLOCK.equals(action)) {
-            if (Settings.canDrawOverlays(this)) handler.postDelayed(this::showUnlockPopup, 250);
+            if (Settings.canDrawOverlays(this)) handler.postDelayed(this::showUnlockPopup, 120);
         } else if (ACTION_SHOW_TASBIH.equals(action)) {
             getSystemService(NotificationManager.class).cancel(REMIND_ID);
             if (Settings.canDrawOverlays(this)) {
@@ -155,6 +240,8 @@ public class ZikrService extends Service {
             startForeground(NOTIF_ID, n);
         }
         Prefs.setRunning(this, true);
+        BootReceiver.scheduleWatchdog(this);
+        registerUnlockReceiver();
         if (Prefs.lastZikr(this) == 0) Prefs.setLastZikr(this, System.currentTimeMillis());
 
         syncOverlay();
@@ -171,6 +258,8 @@ public class ZikrService extends Service {
             unregisterReceiver(unlockReceiver);
         } catch (RuntimeException ignored) {
         }
+        receiverOn = false;
+        if (Prefs.running(this)) BootReceiver.restartSoon(this, 3000);
         removeUnlockPopup();
         handler.removeCallbacksAndMessages(null);
         removeTasbih();
@@ -179,6 +268,13 @@ public class ZikrService extends Service {
         Krr.release();
         if (live == this) live = null;
         super.onDestroy();
+    }
+
+    @Override
+    public void onTaskRemoved(Intent rootIntent) {
+        // swiping the app away must not stop the dhikr: ask to be started again right away
+        if (Prefs.running(this)) BootReceiver.restartSoon(this, 1500);
+        super.onTaskRemoved(rootIntent);
     }
 
     @Override
@@ -260,11 +356,18 @@ public class ZikrService extends Service {
 
     private void showUnlockPopup() {
         removeUnlockPopup();
-        int style = Prefs.unlockStyleNow(this);
+        int style;
+        if (prebuiltStyle >= 0) {
+            style = prebuiltStyle;
+            prebuiltStyle = -1;
+        } else {
+            style = Prefs.unlockStyleNow(this);
+        }
         if (style != UnlockStyles.LAYERS) {
             showStyled(style);
             return;
         }
+        prebuilt = null;
         Kit k = new Kit(this);
         Point s = screen();
         int cw = Math.min(s.x - k.dp(64), k.dp(300));
@@ -369,7 +472,7 @@ public class ZikrService extends Service {
             l1.animate().translationX(0).translationY(0).setDuration(620).setInterpolator(out).start();
             l2.animate().translationX(0).translationY(0).setDuration(560).setInterpolator(out).start();
             front.animate().scaleX(1f).scaleY(1f).setDuration(520).setInterpolator(out).start();
-        }, 180);
+        }, 50);
 
         final View shown = root;
         handler.postDelayed(() -> {
@@ -381,12 +484,39 @@ public class ZikrService extends Service {
                     .withEndAction(() -> {
                         if (unlockPopup == shown) removeUnlockPopup();
                     }).start();
-        }, 2280);
+        }, 2150);
     }
 
     /** One of the newer glass designs (see UnlockStyles). */
+    private UnlockStyles.Shown prebuilt;
+    private int prebuiltStyle = -1;
+
+    /** Builds the popup while the phone is still locked, so it can appear the instant it is unlocked. */
+    private void prepareUnlockPopup() {
+        try {
+            int style = Prefs.unlockStyleNow(this);
+            prebuilt = null;
+            prebuiltStyle = -1;
+            if (style == UnlockStyles.LAYERS) {
+                prebuiltStyle = style;
+                return;
+            }
+            prebuilt = UnlockStyles.build(this, style, Prefs.nextUnlockText(this), screen(), Prefs.unlockSizeMul(this));
+            prebuiltStyle = style;
+        } catch (RuntimeException e) {
+            prebuilt = null;
+            prebuiltStyle = -1;
+        }
+    }
+
     private void showStyled(int style) {
-        UnlockStyles.Shown sh = UnlockStyles.build(this, style, Prefs.nextUnlockText(this), screen());
+        UnlockStyles.Shown sh = prebuilt;
+        prebuilt = null;
+        if (sh == null) sh = UnlockStyles.build(this, style, Prefs.nextUnlockText(this), screen(), Prefs.unlockSizeMul(this));
+        showShown(sh);
+    }
+
+    private void showShown(UnlockStyles.Shown sh) {
         WindowManager.LayoutParams p = overlayParams(0);
         p.gravity = sh.gravity;
         p.y = sh.y;
@@ -408,12 +538,12 @@ public class ZikrService extends Service {
             if (unlockPopup != shown) return;
             shown.setAlpha(1f);
             sh.enter.run();
-        }, 180);
+        }, 50);
         handler.postDelayed(() -> {
             if (unlockPopup == shown) sh.exit.run(() -> {
                 if (unlockPopup == shown) removeUnlockPopup();
             });
-        }, 1080 + sh.hold);
+        }, 950 + sh.hold);
     }
 
     private void removeUnlockPopup() {
