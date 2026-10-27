@@ -10,7 +10,9 @@ import android.os.Bundle;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.ScrollView;
@@ -324,7 +326,7 @@ public class AdhkarActivity extends Activity {
         lt.setDuration(260);
         list.setLayoutTransition(lt);
         root.addView(list, k.matchWrap());
-        for (int i = 0; i < items.length; i++) if (left[i] > 0) list.addView(itemCard(i));
+        for (int i : displayOrder()) if (left[i] > 0) list.addView(itemCard(i));
 
         TextView src = k.text(L.t("source"), 12, MUTED);
         src.setGravity(Gravity.CENTER);
@@ -340,6 +342,82 @@ public class AdhkarActivity extends Activity {
         root.addView(reset, rp);
 
         updateProgress();
+    }
+
+    /**
+     * Morning and evening adhkar: the short ones first; long ones and ones said many times go to the bottom.
+     * (Other categories keep the order of the book, as the order matters there.)
+     */
+    private Integer[] displayOrder() {
+        Integer[] o = new Integer[items.length];
+        for (int i = 0; i < o.length; i++) o[i] = i;
+        if (cat == AdhkarData.MORNING || cat == AdhkarData.EVENING) {
+            final int[] score = new int[items.length];
+            for (int i = 0; i < score.length; i++) {
+                AdhkarData.Item it = items[i];
+                score[i] = it.text.length() + (it.times - 1) * 25;
+            }
+            java.util.Arrays.sort(o, (a, b) -> Integer.compare(score[a], score[b])); // stable
+        }
+        return o;
+    }
+
+    /** Dragging a card to the left sends it away (said once, said some times, or not said at all). */
+    @android.annotation.SuppressLint("ClickableViewAccessibility")
+    private void enableSwipeAway(LinearLayout c, int i) {
+        final int slop = ViewConfiguration.get(this).getScaledTouchSlop();
+        final float[] down = new float[2];
+        final boolean[] drag = {false};
+        c.setOnTouchListener((v, ev) -> {
+            switch (ev.getActionMasked()) {
+                case MotionEvent.ACTION_DOWN:
+                    down[0] = ev.getRawX();
+                    down[1] = ev.getRawY();
+                    drag[0] = false;
+                    return false;
+                case MotionEvent.ACTION_MOVE: {
+                    float dx = ev.getRawX() - down[0], dy = ev.getRawY() - down[1];
+                    if (!drag[0] && dx < -slop && Math.abs(dx) > Math.abs(dy) * 1.2f) {
+                        drag[0] = true;
+                        v.getParent().requestDisallowInterceptTouchEvent(true);
+                        MotionEvent cancel = MotionEvent.obtain(ev);
+                        cancel.setAction(MotionEvent.ACTION_CANCEL);
+                        v.onTouchEvent(cancel); // drop the pressed look / pending tap
+                        cancel.recycle();
+                    }
+                    if (drag[0]) {
+                        float x = Math.min(0f, dx);
+                        v.setTranslationX(x);
+                        v.setAlpha(Math.max(0.25f, 1f - Math.abs(x) / (v.getWidth() * 0.9f)));
+                        return true;
+                    }
+                    return false;
+                }
+                case MotionEvent.ACTION_UP:
+                case MotionEvent.ACTION_CANCEL:
+                    if (drag[0]) {
+                        drag[0] = false;
+                        float x = v.getTranslationX();
+                        if (ev.getActionMasked() == MotionEvent.ACTION_UP && x < -v.getWidth() * 0.28f) {
+                            left[i] = 0;
+                            AdhkarData.save(this, cat, left);
+                            vibrate(25);
+                            v.setClickable(false);
+                            v.animate().translationX(-v.getWidth()).alpha(0f).setDuration(200)
+                                    .withEndAction(() -> {
+                                        list.removeView(v);
+                                        updateProgress();
+                                    }).start();
+                        } else {
+                            v.animate().translationX(0f).alpha(1f).setDuration(180).start();
+                        }
+                        return true;
+                    }
+                    return false;
+                default:
+                    return false;
+            }
+        });
     }
 
     private View itemCard(int i) {
@@ -417,6 +495,7 @@ public class AdhkarActivity extends Activity {
                         updateProgress();
                     }).start();
         });
+        enableSwipeAway(c, i);
         return c;
     }
 
