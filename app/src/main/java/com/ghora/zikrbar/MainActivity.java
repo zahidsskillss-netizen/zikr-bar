@@ -126,41 +126,50 @@ public class MainActivity extends Activity {
     /** The home page: one button for each feature; each opens its own page where it is managed. */
     private View featuresCard() {
         LinearLayout c = k.card("\u2699", L.t("home_f_t"), L.t("home_f_s"));
-        c.addView(sectionRow("\u06DE", "tilawat", L.t("tl_title")), k.topMargin(6));
-        c.addView(sectionRow("ﷲ", "bar", L.t("c_bar_t")));
-        c.addView(sectionRow(L.num(33), "tasbih", L.t("c_tas_t")));
-        c.addView(sectionRow("\u25C9", "face", L.t("c_face_t")));
-        c.addView(sectionRow("\u2600", "unlock", L.t("c_unl_t")));
-        c.addView(sectionRow("\u263E", "reminder", L.t("c_rem_t")));
-        c.addView(sectionRow("\u2261", "list", L.t("c_list_t")));
-        c.addView(sectionRow("\u2726", "more", L.t("c_more_t")));
+        String[][] f = {{"\u06DE", "tilawat", "tl_title"}, {"\uFDF2", "bar", "c_bar_t"}, {L.num(33), "tasbih", "c_tas_t"},
+                {"\u25C9", "face", "c_face_t"}, {"\u2600", "unlock", "c_unl_t"}, {"\u263E", "reminder", "c_rem_t"},
+                {"\u2261", "list", "c_list_t"}, {"\u2726", "more", "c_more_t"}};
+        for (int r = 0; r < 3; r++) {
+            LinearLayout line = k.row();
+            for (int i = 0; i < 3; i++) {
+                int idx = r * 3 + i;
+                if (idx < f.length) {
+                    LinearLayout.LayoutParams tp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
+                    tp.setMargins(k.dp(3), k.dp(3), k.dp(3), k.dp(3));
+                    line.addView(sectionTile(f[idx][0], f[idx][1], L.t(f[idx][2])), tp);
+                } else {
+                    line.addView(new View(this), new LinearLayout.LayoutParams(0, 1, 1));
+                }
+            }
+            c.addView(line, k.topMargin(r == 0 ? 8 : 0));
+        }
         return c;
     }
 
-    private View sectionRow(String glyph, String id, String title) {
-        LinearLayout r = k.row();
-        r.setPadding(k.dp(4), k.dp(10), k.dp(4), k.dp(10));
-        r.setBackground(new RippleDrawable(ColorStateList.valueOf(0x201B5E20), null, k.rounded(CARD, 14, 0)));
-        r.setClickable(true);
-        r.addView(k.iconGap(k.badge(glyph, 38), 14));
-        LinearLayout tx = new LinearLayout(this);
-        tx.setOrientation(LinearLayout.VERTICAL);
-        tx.setPadding(k.dp(4), 0, k.dp(4), 0);
-        tx.addView(k.title(title, 16, INK));
-        TextView s = k.text("", 13, MUTED);
-        s.setPadding(0, k.dp(3), 0, 0);
+    private View sectionTile(String glyph, String id, String title) {
+        LinearLayout t = new LinearLayout(this);
+        t.setOrientation(LinearLayout.VERTICAL);
+        t.setGravity(Gravity.CENTER_HORIZONTAL);
+        t.setPadding(k.dp(4), k.dp(12), k.dp(4), k.dp(10));
+        t.setBackground(new RippleDrawable(ColorStateList.valueOf(0x201B5E20), k.rounded(0x14FFFFFF, 16, 0x22000000), null));
+        t.addView(k.badge(glyph, 38));
+        TextView n = k.strong(title, 11.5f, INK);
+        n.setGravity(Gravity.CENTER);
+        n.setPadding(0, k.dp(8), 0, 0);
+        n.setMaxLines(2);
+        t.addView(n);
+        TextView s = k.text("", 10.5f, MUTED);
+        s.setGravity(Gravity.CENTER);
         s.setMaxLines(1);
         s.setEllipsize(android.text.TextUtils.TruncateAt.END);
         s.setVisibility(View.GONE);
-        tx.addView(s);
+        t.addView(s);
         subs.put(id, s);
-        r.addView(tx, k.weight());
-        r.addView(k.chevron());
-        r.setOnClickListener(v -> {
+        t.setOnClickListener(v -> {
             if (id.equals("tilawat")) startActivity(new Intent(this, TilawatActivity.class));
             else startActivity(new Intent(this, SectionActivity.class).putExtra("section", id));
         });
-        return r;
+        return t;
     }
 
     private void setSub(String id, String text, int color) {
@@ -326,31 +335,71 @@ public class MainActivity extends Activity {
     /** Three quick tiles: morning adhkar, evening adhkar, and the page with all adhkar categories. */
     private View adhkarRow() {
         LinearLayout row = k.row();
+        row.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+        row.setGravity(Gravity.CENTER_HORIZONTAL);
+        row.setClipChildren(false);
+        row.setClipToPadding(false);
         LinearLayout.LayoutParams lp = k.matchWrap();
-        lp.setMargins(k.dp(12), k.dp(14), k.dp(12), 0);
+        lp.setMargins(k.dp(12), k.dp(22), k.dp(12), k.dp(4));
         row.setLayoutParams(lp);
-        String[][] tiles = {{"\u2600\uFE0E", "morning"}, {"\u263E\uFE0E", "evening"}, {"\u06DE", "adhkar_all"}};
-        int[] tabs = {AdhkarData.MORNING, AdhkarData.EVENING, AdhkarData.HUB};
-        for (int i = 0; i < tiles.length; i++) {
-            final int tab = tabs[i];
-            LinearLayout t = new LinearLayout(this);
-            t.setOrientation(LinearLayout.VERTICAL);
-            t.setGravity(Gravity.CENTER);
-            t.setPadding(k.dp(6), k.dp(14), k.dp(6), k.dp(14));
-            t.setBackground(new RippleDrawable(ColorStateList.valueOf(0x201B5E20), k.glass(22), null));
-            Theme.elev(t, k.dp(1.5f));
-            TextView b = k.badge(tiles[i][0], 44);
-            t.addView(b);
-            TextView name = k.title(L.t(tiles[i][1]), 13.5f, INK);
-            name.setGravity(Gravity.CENTER);
-            name.setPadding(0, k.dp(12), 0, 0);
-            t.addView(name);
-            t.setOnClickListener(v -> startActivity(new Intent(this, AdhkarActivity.class).putExtra(AdhkarActivity.EXTRA_TAB, tab)));
-            LinearLayout.LayoutParams tp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
-            tp.setMargins(k.dp(4), 0, k.dp(4), 0);
-            row.addView(t, tp);
-        }
+        row.addView(hangCard(L.t("morning") + " \u00B7 " + L.t("evening"), "\uFDF2",
+                0xFF171923, 0xFF07080C, 0xFFE0B345, 0xFFF0C85A, 0f,
+                v -> startActivity(new Intent(this, AdhkarActivity.class).putExtra(AdhkarActivity.EXTRA_TAB, AdhkarData.MORNING))));
+        row.addView(hangCard(L.t("tile_prayer"), "\uD83D\uDD4C",
+                0xFF23AA6E, 0xFF085C3A, 0xFFFFE9A3, 0xFFFFE9A3, 1.7f,
+                v -> startActivity(new Intent(this, PrayerActivity.class))));
         return row;
+    }
+
+    /** A hanging, gently swinging arch card (like a tag on a key ring) that opens a section. */
+    private View hangCard(String title, String glyph, int top, int bottom, int edge, int ink, float phase, View.OnClickListener open) {
+        FrameLayout box = new FrameLayout(this);
+        box.setClipChildren(false);
+        box.setClipToPadding(false);
+        int w = k.dp(150), h = k.dp(190);
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setGravity(Gravity.CENTER);
+        card.setPadding(k.dp(12), k.dp(30), k.dp(12), k.dp(14));
+        GradientDrawable bg = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, new int[]{top, bottom});
+        float big = k.dp(75), sm = k.dp(16);
+        bg.setCornerRadii(new float[]{big, big, big, big, sm, sm, sm, sm});
+        bg.setStroke(k.dp(2), edge);
+        card.setBackground(new RippleDrawable(ColorStateList.valueOf(0x40FFFFFF), bg, null));
+        card.setElevation(k.dp(8));
+        TextView g = k.strong(glyph, 34, ink);
+        g.setGravity(Gravity.CENTER);
+        card.addView(g);
+        TextView t = k.strong(title, 14, ink);
+        t.setGravity(Gravity.CENTER);
+        t.setPadding(0, k.dp(8), 0, 0);
+        card.addView(t);
+        card.setOnClickListener(open);
+        box.addView(card, new FrameLayout.LayoutParams(w, h, Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM));
+        View ring = new View(this);
+        GradientDrawable rg = new GradientDrawable();
+        rg.setShape(GradientDrawable.OVAL);
+        rg.setStroke(k.dp(3), 0xFFC9CED6);
+        ring.setBackground(rg);
+        FrameLayout.LayoutParams rp = new FrameLayout.LayoutParams(k.dp(26), k.dp(26), Gravity.CENTER_HORIZONTAL | Gravity.TOP);
+        rp.topMargin = k.dp(2);
+        box.addView(ring, rp);
+        LinearLayout.LayoutParams bp = new LinearLayout.LayoutParams(k.dp(160), k.dp(222));
+        bp.setMargins(k.dp(6), 0, k.dp(6), 0);
+        box.setLayoutParams(bp);
+        box.setPivotX(k.dp(80));
+        box.setPivotY(k.dp(14));
+        android.animation.ObjectAnimator sw = android.animation.ObjectAnimator.ofFloat(box, View.ROTATION, -4f, 4f);
+        sw.setDuration(2400);
+        sw.setRepeatMode(android.animation.ValueAnimator.REVERSE);
+        sw.setRepeatCount(android.animation.ValueAnimator.INFINITE);
+        sw.setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator());
+        sw.setCurrentPlayTime((long) (phase * 1000));
+        box.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
+            @Override public void onViewAttachedToWindow(View v) { sw.start(); }
+            @Override public void onViewDetachedFromWindow(View v) { sw.cancel(); }
+        });
+        return box;
     }
 
     /** Second row of tiles: the tasbih page, duas and prayer times. */
