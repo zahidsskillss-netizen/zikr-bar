@@ -20,8 +20,8 @@ import android.view.View;
  */
 final class Theme {
 
-    static final int AURORA = 0, EMERALD = 1, DAWN = 2, FROST = 3, TURQUOISE = 4, CLASSIC = 5;
-    static final String[] KEYS = {"th_aurora", "th_emerald", "th_dawn", "th_frost", "th_turquoise", "th_classic"};
+    static final int AURORA = 0, EMERALD = 1, DAWN = 2, FROST = 3, TURQUOISE = 4, CLASSIC = 5, SUNRISE = 6;
+    static final String[] KEYS = {"th_aurora", "th_emerald", "th_dawn", "th_frost", "th_turquoise", "th_classic", "th_sunrise"};
 
     static int id = AURORA;
     static boolean dark, glass;
@@ -33,7 +33,7 @@ final class Theme {
     private Theme() {}
 
     static int saved(Context c) {
-        return c.getSharedPreferences("zikr", Context.MODE_PRIVATE).getInt("theme", AURORA);
+        return c.getSharedPreferences("zikr", Context.MODE_PRIVATE).getInt("theme", SUNRISE);
     }
 
     static void save(Context c, int t) {
@@ -46,7 +46,7 @@ final class Theme {
     }
 
     static void set(int t) {
-        id = Math.max(0, Math.min(CLASSIC, t));
+        id = Math.max(0, Math.min(SUNRISE, t));
         switch (id) {
             case EMERALD:
                 pal(true, 0xFF04140D, 0xD90F8A53, 0x73C9A227, 0x991D6B8F,
@@ -63,6 +63,10 @@ final class Theme {
             case TURQUOISE:
                 pal(true, 0xFF053B3F, 0x8C14B8A6, 0x66E7B36A, 0x800E7490,
                         0xFFEFFFFC, 0xFFA7E6DD, 0xFF7FF5E6, 0xFF0D9488, 0xFF115E59, 0xFF0B3F3C, 0xFFF4CF96, 0xFFF4CF96);
+                break;
+            case SUNRISE:
+                pal(false, 0xFFEAF6FF, 0xCCFFE27A, 0xB3A5E2B8, 0xB38FD3FF,
+                        0xFF10301F, 0xFF3F6153, 0xFF0F7A4B, 0xFF16A163, 0xFF0B7A4B, 0xFF0B4D33, 0xFFFFE27A, 0xFFD9A60E);
                 break;
             case CLASSIC:
                 classic();

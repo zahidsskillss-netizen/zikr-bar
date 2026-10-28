@@ -60,6 +60,7 @@ public class MainActivity extends Activity {
         section = getIntent().getStringExtra("section");
         setContentView(build());
         if (section == null) {
+            showGuideOnce();
             askNotificationPermission();
             AdhkarAlarm.scheduleAll(this);
             PrayerAlarm.schedule(this);
@@ -1051,6 +1052,30 @@ public class MainActivity extends Activity {
     private boolean hasNotificationPermission() {
         return Build.VERSION.SDK_INT < 33
                 || checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void showGuideOnce() {
+        android.content.SharedPreferences sp = getSharedPreferences("zikr", MODE_PRIVATE);
+        if (sp.getBoolean("guided", false)) return;
+        sp.edit().putBoolean("guided", true).apply();
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(k.dp(22), k.dp(18), k.dp(22), k.dp(6));
+        String[] keys = {"g_1", "g_2", "g_3", "g_4"};
+        for (String key : keys) {
+            TextView tv = k.text(L.t(key), 15, INK);
+            tv.setLineSpacing(0, 1.25f);
+            tv.setPadding(0, k.dp(6), 0, k.dp(8));
+            box.addView(tv);
+        }
+        android.widget.ScrollView sv = new android.widget.ScrollView(this);
+        sv.addView(box);
+        new AlertDialog.Builder(this)
+                .setTitle(L.t("g_title"))
+                .setView(sv)
+                .setCancelable(false)
+                .setPositiveButton(L.t("g_ok"), null)
+                .show();
     }
 
     private void askNotificationPermission() {
