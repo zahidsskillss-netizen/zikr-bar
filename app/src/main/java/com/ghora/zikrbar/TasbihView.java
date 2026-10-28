@@ -18,7 +18,7 @@ import android.view.View;
 public class TasbihView extends View {
 
     /** The designs offered, in picker order (ids; 6–8 are the white, gold and black ring counters). */
-    static final int[] STYLES = {6, 7, 8, 0, 2, 3, 10, 11, 12, 13, 14};
+    static final int[] STYLES = {15, 16, 17, 6, 7, 8, 0, 2, 3, 10, 11, 12, 13, 14};
     static final int COUNT = STYLES.length;
 
     static String name(int id) {
@@ -186,6 +186,12 @@ public class TasbihView extends View {
                 h = pillH(15) + dp(2) + BMP_H * sc;
                 break;
             }
+            case 15:
+            case 16:
+            case 17:
+                w = Math.max(dp(170), pillW(15, maxPill));
+                h = pillH(15) + dp(6) + dp(236);
+                break;
             case 4:
                 w = dp(200);
                 h = dp(196);
@@ -220,6 +226,9 @@ public class TasbihView extends View {
             case 2: drawBeads(c, w); break;
             case 3: drawPill(c, w); break;
             case 4: drawGold(c, w); break;
+            case 15:
+            case 16:
+            case 17: drawTally(c, w, style - 15); break;
             case 6:
             case 7:
             case 8: drawRingCounter(c, w, style - 6); break;
@@ -283,6 +292,82 @@ public class TasbihView extends View {
         }
         RectF lcd = new RectF(left + LCD_L * sc, top + LCD_T * sc, left + LCD_R * sc, top + LCD_B * sc);
         sevenSeg(c, String.valueOf(count), lcd, 0xFF2B322A);
+    }
+
+
+    // body top, body bottom, button top, button bottom, glow
+    private static final int[][] TALLY = {
+            {0xFF4FA3FF, 0xFF0B4CC4, 0xFF06307F, 0xFF59B6FF},
+            {0xFF34C27A, 0xFF0F7A47, 0xFF07492A, 0xFFF2C94C},
+            {0xFF4A4F57, 0xFF1B1E23, 0xFF0B0C0E, 0xFFE8C45A}};
+
+    /** A realistic hand-held tally counter: glossy body, LCD window, silver press button and glow rings. */
+    private void drawTally(Canvas c, float w, int v) {
+        int[] col = TALLY[v];
+        float cx = w / 2;
+        pill(c, cx, 0, 15, dp(220), 0xB0000000, Color.WHITE);
+        float top = pillH(15) + dp(6);
+        float bw = dp(150), bh = dp(230);
+        RectF body = new RectF(cx - bw / 2, top, cx + bw / 2, top + bh);
+        p.setShader(null);
+        p.setStyle(Paint.Style.STROKE);
+        for (int i = 0; i < 3; i++) {
+            p.setStrokeWidth(dp(2));
+            p.setColor((col[3] & 0xFFFFFF) | ((70 - i * 20) << 24));
+            c.drawRoundRect(body.left - dp(4 + i * 5), body.top - dp(4 + i * 5), body.right + dp(4 + i * 5), body.bottom + dp(4 + i * 5), dp(40 + i * 5), dp(40 + i * 5), p);
+        }
+        p.setStyle(Paint.Style.FILL);
+        p.setShader(new android.graphics.LinearGradient(0, body.top, 0, body.bottom, col[0], col[1], android.graphics.Shader.TileMode.CLAMP));
+        p.setShadowLayer(dp(10), 0, dp(5), 0x66000000);
+        c.drawRoundRect(body, dp(36), dp(36), p);
+        p.clearShadowLayer();
+        // gloss
+        p.setShader(new android.graphics.LinearGradient(0, body.top, 0, body.top + bh * 0.45f, 0x55FFFFFF, 0x00FFFFFF, android.graphics.Shader.TileMode.CLAMP));
+        c.drawRoundRect(body.left + dp(4), body.top + dp(3), body.right - dp(4), body.top + bh * 0.45f, dp(32), dp(32), p);
+        p.setShader(null);
+        // label
+        np.setTypeface(Typeface.DEFAULT_BOLD);
+        np.setTextSize(dp(8.5f));
+        np.setColor(0xDDFFFFFF);
+        np.setTextAlign(Paint.Align.CENTER);
+        c.drawText("TALLY COUNTER", cx, body.top + dp(18), np);
+        // LCD window
+        RectF lcd = new RectF(body.left + dp(16), body.top + dp(26), body.right - dp(16), body.top + dp(80));
+        p.setColor(0xFF0A1220);
+        c.drawRoundRect(lcd, dp(10), dp(10), p);
+        RectF in = new RectF(lcd.left + dp(3), lcd.top + dp(3), lcd.right - dp(3), lcd.bottom - dp(3));
+        p.setShader(new android.graphics.LinearGradient(0, in.top, 0, in.bottom, 0xFFCFE0C4, 0xFFA9C29C, android.graphics.Shader.TileMode.CLAMP));
+        c.drawRoundRect(in, dp(8), dp(8), p);
+        p.setShader(null);
+        sevenSeg(c, String.valueOf(count), in, 0xFF1F2A1C);
+        // round count in goal
+        np.setTextSize(dp(10));
+        np.setColor(0xCCFFFFFF);
+        c.drawText(inRound() + " / " + goal(), cx, lcd.bottom + dp(15), np);
+        // silver button
+        float bx = cx, by = body.top + dp(150), br = dp(46);
+        p.setStyle(Paint.Style.FILL);
+        p.setColor(col[2]);
+        c.drawCircle(bx, by, br + dp(5), p);
+        p.setShader(new android.graphics.LinearGradient(0, by - br, 0, by + br, 0xFFF4F6F8, 0xFF8C96A3, android.graphics.Shader.TileMode.CLAMP));
+        p.setShadowLayer(dp(5), 0, dp(3), 0x66000000);
+        c.drawCircle(bx, by, br, p);
+        p.clearShadowLayer();
+        p.setShader(new android.graphics.RadialGradient(bx - br * 0.2f, by - br * 0.3f, br, 0x55FFFFFF, 0x00FFFFFF, android.graphics.Shader.TileMode.CLAMP));
+        c.drawCircle(bx, by, br * 0.82f, p);
+        p.setShader(null);
+        p.setStyle(Paint.Style.STROKE);
+        p.setStrokeWidth(dp(1));
+        p.setColor(0x33000000);
+        c.drawCircle(bx, by, br * 0.82f, p);
+        p.setStyle(Paint.Style.FILL);
+        // small reset button
+        p.setShader(new android.graphics.LinearGradient(0, body.bottom - dp(34), 0, body.bottom - dp(14), 0xFFE9EDF1, 0xFF8C96A3, android.graphics.Shader.TileMode.CLAMP));
+        c.drawCircle(body.right - dp(30), body.bottom - dp(24), dp(10), p);
+        p.setShader(null);
+        np.setTextSize(dp(8));
+        np.setColor(0xCCFFFFFF);
+        c.drawText("RESET", body.right - dp(30), body.bottom - dp(5), np);
     }
 
     private static final String[] SEGS = {"abcdef", "bc", "abged", "abgcd", "fgbc", "afgcd", "afgedc", "abc", "abcdefg", "abcfgd"};
