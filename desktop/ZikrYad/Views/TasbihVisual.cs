@@ -9,7 +9,7 @@ namespace ZikrYad.Views
     /// <summary>Draws the tasbih counter in one of six designs (same designs as the Android app).</summary>
     public class TasbihVisual : FrameworkElement
     {
-        public const int Count = 6;
+        public const int Count = 9;
         public static string Name(int i) => L.T("d" + i);
 
         private const double Pad = 12;
@@ -97,6 +97,7 @@ namespace ZikrYad.Views
                 case 2: w = Math.Max(Dp(154), PillW(16, maxPill)); h = PillH(16) + Dp(10) + Dp(150); break;
                 case 3: w = Dp(280); h = Dp(60); break;
                 case 4: w = Dp(200); h = Dp(196); break;
+                case 6: case 7: case 8: w = Math.Max(Dp(170), PillW(15, maxPill)); h = PillH(15) + Dp(6) + Dp(236); break;
                 default:
                     var ft = Ft(_text, Theme.AmiriBold, Dp(14), Brushes.White);
                     w = Math.Min(ft.Width, Dp(180)) + Dp(20) + Dp(8) + Dp(60);
@@ -117,6 +118,7 @@ namespace ZikrYad.Views
                 case 2: Beads(dc, w); break;
                 case 3: Bar(dc, w); break;
                 case 4: GoldCard(dc, w); break;
+                case 6: case 7: case 8: Tally(dc, w, _style - 6); break;
                 default: Head(dc, w); break;
             }
             dc.Pop();
@@ -159,6 +161,76 @@ namespace ZikrYad.Views
                 new GradientStop(Colors.White, 0), new GradientStop(Color.FromRgb(0xB8, 0xBE, 0xC4), 0.45), new GradientStop(Color.FromRgb(0x6F, 0x76, 0x7C), 1)
             }) { GradientOrigin = new Point(0.4, 0.3), Center = new Point(0.4, 0.3), RadiusX = 0.7, RadiusY = 0.7 };
             dc.DrawEllipse(chrome, null, new Point(cx, oy), Dp(29), Dp(17));
+        }
+
+
+        private static readonly uint[][] TallyCols =
+        {
+            new uint[] { 0xFF4FA3FF, 0xFF0B4CC4, 0xFF06307F, 0xFF59B6FF },
+            new uint[] { 0xFF34C27A, 0xFF0F7A47, 0xFF07492A, 0xFFF2C94C },
+            new uint[] { 0xFF4A4F57, 0xFF1B1E23, 0xFF0B0C0E, 0xFFE8C45A },
+        };
+
+        private static Color Cc(uint a) => Color.FromArgb((byte)(a >> 24), (byte)(a >> 16), (byte)(a >> 8), (byte)a);
+
+        private static LinearGradientBrush Vg(Color a, Color b) => new LinearGradientBrush(a, b, 90);
+
+        // 7-9 — realistic 3D hand-held tally counter
+        private void Tally(DrawingContext dc, double w, int v)
+        {
+            var col = TallyCols[v];
+            double cx = w / 2;
+            Pill(dc, cx, 0, 15, Dp(220), C(0xB0000000), Brushes.White);
+            double top = PillH(15) + Dp(6);
+            double bw = Dp(150), bh = Dp(230);
+            var body = new Rect(cx - bw / 2, top, bw, bh);
+            // glow rings
+            for (int i = 0; i < 3; i++)
+            {
+                double g = Dp(4 + i * 6);
+                var c4 = Cc(col[3]);
+                dc.DrawRoundedRectangle(null, new Pen(new SolidColorBrush(Color.FromArgb((byte)(80 - i * 22), c4.R, c4.G, c4.B)), Dp(2)),
+                    new Rect(body.Left - g, body.Top - g, body.Width + g * 2, body.Height + g * 2), Dp(40 + i * 6), Dp(40 + i * 6));
+            }
+            // ground shadow + side thickness
+            dc.DrawEllipse(C(0x55000000), null, new Point(cx, body.Bottom + Dp(8)), Dp(60), Dp(7));
+            dc.DrawRoundedRectangle(new SolidColorBrush(Cc(col[2])), null, new Rect(body.Left, body.Top + Dp(5), body.Width, body.Height), Dp(40), Dp(40));
+            var main = new RadialGradientBrush(Cc(col[0]), Cc(col[1]))
+            { GradientOrigin = new Point(0.3, 0.12), Center = new Point(0.4, 0.4), RadiusX = 0.9, RadiusY = 0.9 };
+            dc.DrawRoundedRectangle(main, null, body, Dp(40), Dp(40));
+            // gloss
+            dc.DrawRoundedRectangle(Vg(Color.FromArgb(0x66, 255, 255, 255), Color.FromArgb(0, 255, 255, 255)), null,
+                new Rect(body.Left + Dp(6), body.Top + Dp(4), body.Width - Dp(12), bh * 0.42), Dp(34), Dp(34));
+            // LCD with black label strip
+            var lcd = new Rect(body.Left + Dp(16), body.Top + Dp(24), bw - Dp(32), Dp(64));
+            dc.DrawRoundedRectangle(C(0xFF050608), null, lcd, Dp(12), Dp(12));
+            var lbl = Ft("TALLY COUNTER", Theme.SegoeBold, Dp(9.5), Brushes.White, 0, false);
+            dc.DrawText(lbl, new Point(lcd.Left + (lcd.Width - lbl.Width) / 2, lcd.Top + Dp(3)));
+            var inner = new Rect(lcd.Left + Dp(3), lcd.Top + Dp(19), lcd.Width - Dp(6), lcd.Height - Dp(22));
+            dc.DrawRoundedRectangle(Vg(Color.FromRgb(0xC3, 0xC8, 0xC0), Color.FromRgb(0x9E, 0xA6, 0x9A)), null, inner, Dp(6), Dp(6));
+            var ghost = Ft("888", Theme.Consolas, Dp(26), C(0x1A000000), 0, false);
+            dc.DrawText(ghost, new Point(inner.Right - Dp(6) - ghost.Width, inner.Top + (inner.Height - ghost.Height) / 2));
+            var num = Ft(_count.ToString(CultureInfo.InvariantCulture), Theme.Consolas, Dp(_count >= 10000 ? 18 : 26), C(0xFF15190F), 0, false);
+            dc.DrawText(num, new Point(inner.Right - Dp(6) - num.Width, inner.Top + (inner.Height - num.Height) / 2));
+            dc.DrawRoundedRectangle(Vg(Color.FromArgb(0x55, 255, 255, 255), Color.FromArgb(0, 255, 255, 255)), null,
+                new Rect(inner.Left, inner.Top, inner.Width, inner.Height * 0.45), Dp(6), Dp(6));
+            var rd = Ft(InRound + " / " + Goal, Theme.SegoeBold, Dp(10), C(0xCCFFFFFF), 0, false);
+            dc.DrawText(rd, new Point(cx - rd.Width / 2, lcd.Bottom + Dp(4)));
+            // big silver oval button
+            var bc = new Point(cx - Dp(8), body.Top + Dp(156));
+            dc.DrawEllipse(new SolidColorBrush(Cc(col[2])), null, bc, Dp(44), Dp(52));
+            dc.DrawEllipse(C(0x59000000), null, new Point(bc.X, bc.Y + Dp(4)), Dp(40), Dp(48));
+            var chrome = new RadialGradientBrush(new GradientStopCollection
+            {
+                new GradientStop(Colors.White, 0), new GradientStop(Color.FromRgb(0xD9, 0xDE, 0xE4), 0.3),
+                new GradientStop(Color.FromRgb(0x8A, 0x95, 0xA3), 0.75), new GradientStop(Color.FromRgb(0x59, 0x63, 0x6F), 1)
+            }) { GradientOrigin = new Point(0.3, 0.22), Center = new Point(0.4, 0.4), RadiusX = 0.8, RadiusY = 0.8 };
+            dc.DrawEllipse(chrome, null, bc, Dp(40), Dp(48));
+            dc.DrawEllipse(Vg(Color.FromArgb(0xB0, 255, 255, 255), Color.FromArgb(0, 255, 255, 255)), null, new Point(bc.X - Dp(11), bc.Y - Dp(22)), Dp(8), Dp(16));
+            // small button
+            var sc = new Point(body.Right - Dp(24), body.Top + Dp(134));
+            dc.DrawEllipse(new SolidColorBrush(Cc(col[2])), null, sc, Dp(13), Dp(15));
+            dc.DrawEllipse(chrome, null, sc, Dp(11), Dp(13));
         }
 
         private static Geometry Arc(Point c, double r, double startDeg, double sweepDeg)

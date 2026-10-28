@@ -36,7 +36,7 @@ namespace ZikrYad.Core
         public int IntervalMinutes { get; set; } = 5;
         public bool PopupDhikr { get; set; } = true;
         public bool Overlay { get; set; } = true;
-        public int TasbihStyle { get; set; } = 0;
+        public int TasbihStyle { get; set; } = 6;
         public int TasbihIndex { get; set; } = 2;
         public int Target { get; set; } = 33;
         public int Count { get; set; } = 0;

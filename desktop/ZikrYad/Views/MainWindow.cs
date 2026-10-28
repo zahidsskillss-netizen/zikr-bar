@@ -25,10 +25,9 @@ namespace ZikrYad.Views
         public MainWindow()
         {
             Title = L.T("app_name");
-            Width = 560;
-            Height = 860;
             MinWidth = 440;
             MinHeight = 520;
+            WindowState = WindowState.Maximized;
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
             Background = Theme.B(Theme.Bg);
             Icon = Theme.Image("app.ico");
@@ -51,6 +50,8 @@ namespace ZikrYad.Views
             credit.Margin = new Thickness(16, 22, 16, 0);
             root.Children.Add(credit);
 
+            root.MaxWidth = 760;
+            root.HorizontalAlignment = HorizontalAlignment.Center;
             Content = new ScrollViewer { Content = root, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
             RefreshState();
         }
