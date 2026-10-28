@@ -103,7 +103,6 @@ public class MainActivity extends Activity {
         highlightBox = new LinearLayout(this);
         highlightBox.setOrientation(LinearLayout.VERTICAL);
         root.addView(highlightBox, k.matchWrap());
-        root.addView(adhkarRow());
         root.addView(toolsRow());
         TextView words = k.button("\uD83D\uDCD6\u2003" + L.t("sw_title"), false, v -> startActivity(new Intent(this, SalahWordsActivity.class)));
         LinearLayout.LayoutParams wlp = k.matchWrap();
@@ -218,7 +217,7 @@ public class MainActivity extends Activity {
         LinearLayout h = new LinearLayout(this);
         h.setOrientation(LinearLayout.VERTICAL);
         h.setGravity(Gravity.CENTER_HORIZONTAL);
-        h.setPadding(k.dp(18), k.dp(14), k.dp(18), k.dp(58));
+        h.setPadding(k.dp(14), k.dp(12), k.dp(14), k.dp(54));
         h.setBackground(k.headerBackground());
 
         // top bar: language chip + share
@@ -242,25 +241,51 @@ public class MainActivity extends Activity {
         share.setBackground(new RippleDrawable(ColorStateList.valueOf(0x40FFFFFF), k.rounded(0x1A000000, 18, 0x66F3E3A5), null));
         share.setOnClickListener(v -> InfoActivity.share(this));
         top.addView(share);
+        powerChip = k.strong("", 13.5f, WHITE);
+        powerChip.setPadding(k.dp(12), k.dp(6), k.dp(12), k.dp(8));
+        powerChip.setOnClickListener(v -> {
+            if (Prefs.running(this)) stopBar(); else startBar();
+            refresh();
+        });
+        LinearLayout.LayoutParams pcp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        pcp.setMarginStart(k.dp(8));
+        top.addView(powerChip, pcp);
+        paintPower();
         h.addView(top, k.matchWrap());
 
+        h.addView(adhkarRow());
+
+        LinearLayout brand = new LinearLayout(this);
+        brand.setOrientation(LinearLayout.HORIZONTAL);
+        brand.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+        brand.setGravity(Gravity.CENTER_VERTICAL | Gravity.CENTER_HORIZONTAL);
         ImageView logo = new ImageView(this);
         logo.setImageResource(R.drawable.logo);
-        Theme.elev(logo, k.dp(8));
         logo.setOutlineProvider(android.view.ViewOutlineProvider.BACKGROUND);
-        logo.setBackground(k.rounded(0x00000000, 24, 0));
+        logo.setBackground(k.rounded(0x00000000, 9, 0));
         logo.setClipToOutline(true);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(k.dp(96), k.dp(96));
-        lp.topMargin = k.dp(18);
-        h.addView(logo, lp);
-
-        TextView title = k.title(L.t("app_name"), 34, WHITE);
-        title.setGravity(Gravity.CENTER);
-        title.setPadding(0, k.dp(14), 0, k.dp(6));
-        h.addView(title);
-
-        h.addView(k.arabic(AYAH, 19, 0xE6FFFFFF));
+        brand.addView(logo, new LinearLayout.LayoutParams(k.dp(34), k.dp(34)));
+        TextView title = k.title(L.t("app_name"), 20, WHITE);
+        title.setPadding(k.dp(8), 0, k.dp(8), 0);
+        title.setSingleLine(true);
+        brand.addView(title);
+        TextView ayah = k.arabic(AYAH, 13, 0xE6FFFFFF);
+        ayah.setSingleLine(true);
+        brand.addView(ayah);
+        h.addView(brand, k.topMargin(10));
         return h;
+    }
+
+    private TextView powerChip;
+
+    /** The quick on/off chip at the left of the top bar. */
+    private void paintPower() {
+        if (powerChip == null) return;
+        boolean on = Prefs.running(this);
+        powerChip.setText("\u23FB  " + L.t(on ? "on" : "off"));
+        powerChip.setTextColor(on ? 0xFF0B3319 : WHITE);
+        powerChip.setBackground(new RippleDrawable(ColorStateList.valueOf(0x40FFFFFF),
+                k.rounded(on ? 0xFF7CE0A1 : 0x33FF5252, 18, on ? 0xFFB6F2CB : 0x88FF8A8A), null));
     }
 
     private void chooseTheme() {
@@ -340,7 +365,7 @@ public class MainActivity extends Activity {
         row.setClipChildren(false);
         row.setClipToPadding(false);
         LinearLayout.LayoutParams lp = k.matchWrap();
-        lp.setMargins(k.dp(12), k.dp(22), k.dp(12), k.dp(4));
+        lp.setMargins(0, k.dp(16), 0, k.dp(2));
         row.setLayoutParams(lp);
         row.addView(hangCard(L.t("morning"), "\u2600", 0xFFD4A8F0, 0xFF9A63C9, 0xFFF8CFE2, 0xFFFFFFFF, 0f,
                 v -> startActivity(new Intent(this, AdhkarActivity.class).putExtra(AdhkarActivity.EXTRA_TAB, AdhkarData.MORNING))));
@@ -455,7 +480,7 @@ public class MainActivity extends Activity {
             int done = AdhkarData.doneCount(left);
             LinearLayout box = new LinearLayout(this);
             box.setOrientation(LinearLayout.VERTICAL);
-            box.setPadding(k.dp(14), k.dp(12), k.dp(14), k.dp(14));
+            box.setPadding(k.dp(12), k.dp(8), k.dp(12), k.dp(10));
             box.setBackground(new RippleDrawable(ColorStateList.valueOf(0x201B5E20), k.rounded(SOFT, 18, LINE), null));
             LinearLayout top = k.row();
             top.addView(k.iconGap(k.badge(AdhkarData.glyph(cat), 34), 12));
@@ -477,16 +502,16 @@ public class MainActivity extends Activity {
             int next = -1;
             for (int i = 0; i < left.length; i++) if (left[i] > 0) { next = i; break; }
             if (next >= 0) {
-                TextView ar = k.arabic(items[next].text, 18, INK);
-                ar.setMaxLines(2);
+                TextView ar = k.arabic(items[next].text, 15, INK);
+                ar.setMaxLines(1);
                 ar.setEllipsize(android.text.TextUtils.TruncateAt.END);
                 ar.setTextDirection(View.TEXT_DIRECTION_RTL);
-                ar.setPadding(0, k.dp(10), 0, k.dp(4));
+                ar.setPadding(0, k.dp(6), 0, k.dp(2));
                 box.addView(ar);
             }
             String go = done == items.length ? L.t("hl_again") : done > 0 ? L.t("hl_continue") : L.t("hl_start");
             TextView b = k.button(go + "  " + (L.rtl() ? "\u2190" : "\u2192"), done < items.length, null);
-            box.addView(b, k.topMargin(10));
+            box.addView(b, k.topMargin(6));
             final int fc = cat;
             View.OnClickListener open = v -> startActivity(new Intent(this, AdhkarActivity.class).putExtra(AdhkarActivity.EXTRA_TAB, fc));
             b.setOnClickListener(open);
@@ -498,7 +523,7 @@ public class MainActivity extends Activity {
         if (day != null && day.parts.length > 0) {
             LinearLayout box = new LinearLayout(this);
             box.setOrientation(LinearLayout.VERTICAL);
-            box.setPadding(k.dp(14), k.dp(12), k.dp(14), k.dp(14));
+            box.setPadding(k.dp(12), k.dp(8), k.dp(12), k.dp(10));
             box.setBackground(new RippleDrawable(ColorStateList.valueOf(0x201B5E20), k.rounded(SOFT, 18, LINE), null));
             LinearLayout top = k.row();
             top.addView(k.iconGap(k.badge("\u2766", 34), 12));
@@ -511,8 +536,8 @@ public class MainActivity extends Activity {
             tx.addView(dt);
             top.addView(tx, k.weight());
             box.addView(top);
-            TextView ar = k.arabic(day.parts[0].text, 18, INK);
-            ar.setMaxLines(3);
+            TextView ar = k.arabic(day.parts[0].text, 15, INK);
+            ar.setMaxLines(2);
             ar.setEllipsize(android.text.TextUtils.TruncateAt.END);
             ar.setTextDirection(View.TEXT_DIRECTION_RTL);
             ar.setPadding(0, k.dp(10), 0, 0);
@@ -1029,6 +1054,7 @@ public class MainActivity extends Activity {
         boolean canDraw = Settings.canDrawOverlays(this);
         int t = Prefs.target(this);
         if (barSwitch != null) barSwitch.setChecked(running);
+        paintPower();
         if (tasbihSwitch != null) tasbihSwitch.setChecked(Prefs.overlay(this) && canDraw && running);
         if (faceSwitch != null) faceSwitch.setChecked(FaceService.running);
         if (unlockSwitch != null) unlockSwitch.setChecked(Prefs.unlockPopup(this) && canDraw && running);
