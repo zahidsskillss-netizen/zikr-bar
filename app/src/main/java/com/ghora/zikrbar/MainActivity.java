@@ -227,7 +227,7 @@ public class MainActivity extends Activity {
         lang.setBackground(new RippleDrawable(ColorStateList.valueOf(0x40FFFFFF), k.rounded(0x26FFFFFF, 18, 0x40FFFFFF), null));
         lang.setOnClickListener(v -> chooseLanguage());
         top.addView(lang);
-        TextView theme = k.strong("\u2726  " + L.t(Theme.KEYS[Theme.id]), 13.5f, WHITE);
+        TextView theme = k.strong("\u2726", 15f, WHITE);
         theme.setPadding(k.dp(14), k.dp(6), k.dp(14), k.dp(8));
         theme.setBackground(new RippleDrawable(ColorStateList.valueOf(0x40FFFFFF), k.rounded(0x26FFFFFF, 18, 0x40FFFFFF), null));
         theme.setOnClickListener(v -> chooseTheme());
@@ -282,7 +282,7 @@ public class MainActivity extends Activity {
     private void paintPower() {
         if (powerChip == null) return;
         boolean on = Prefs.running(this);
-        powerChip.setText("\u23FB  " + L.t(on ? "on" : "off"));
+        powerChip.setText("\u23FB  " + L.t("bar_power") + "  " + L.t(on ? "on" : "off"));
         powerChip.setTextColor(on ? 0xFF0B3319 : WHITE);
         powerChip.setBackground(new RippleDrawable(ColorStateList.valueOf(0x40FFFFFF),
                 k.rounded(on ? 0xFF7CE0A1 : 0x33FF5252, 18, on ? 0xFFB6F2CB : 0x88FF8A8A), null));
