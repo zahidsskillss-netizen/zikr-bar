@@ -317,6 +317,14 @@ public class TasbihView extends View {
             c.drawRoundRect(body.left - dp(4 + i * 5), body.top - dp(4 + i * 5), body.right + dp(4 + i * 5), body.bottom + dp(4 + i * 5), dp(40 + i * 5), dp(40 + i * 5), p);
         }
         p.setStyle(Paint.Style.FILL);
+        p.setShader(new android.graphics.RadialGradient(cx, body.centerY(), bw * 0.95f, (col[3] & 0xFFFFFF) | 0x66000000, col[3] & 0xFFFFFF, android.graphics.Shader.TileMode.CLAMP));
+        c.drawCircle(cx, body.centerY(), bw * 0.95f, p);
+        p.setShader(null);
+        p.setColor(0x55000000);
+        c.drawOval(body.left + dp(8), body.bottom + dp(2), body.right - dp(8), body.bottom + dp(12), p);
+        p.setColor(col[2]);
+        c.drawRoundRect(body.left, body.top + dp(5), body.right, body.bottom + dp(5), dp(36), dp(36), p);
+        p.setShader(new android.graphics.LinearGradient(body.left, 0, body.right, 0, 0x55FFFFFF, 0x00FFFFFF, android.graphics.Shader.TileMode.CLAMP));
         p.setShader(new android.graphics.LinearGradient(0, body.top, 0, body.bottom, col[0], col[1], android.graphics.Shader.TileMode.CLAMP));
         p.setShadowLayer(dp(10), 0, dp(5), 0x66000000);
         c.drawRoundRect(body, dp(36), dp(36), p);
@@ -325,6 +333,11 @@ public class TasbihView extends View {
         p.setShader(new android.graphics.LinearGradient(0, body.top, 0, body.top + bh * 0.45f, 0x55FFFFFF, 0x00FFFFFF, android.graphics.Shader.TileMode.CLAMP));
         c.drawRoundRect(body.left + dp(4), body.top + dp(3), body.right - dp(4), body.top + bh * 0.45f, dp(32), dp(32), p);
         p.setShader(null);
+        p.setStyle(Paint.Style.STROKE);
+        p.setStrokeWidth(dp(1.5f));
+        p.setColor(0x66FFFFFF);
+        c.drawRoundRect(body.left + dp(1), body.top + dp(1), body.right - dp(1), body.bottom - dp(1), dp(35), dp(35), p);
+        p.setStyle(Paint.Style.FILL);
         // label
         np.setTypeface(Typeface.DEFAULT_BOLD);
         np.setTextSize(dp(8.5f));
@@ -340,6 +353,9 @@ public class TasbihView extends View {
         c.drawRoundRect(in, dp(8), dp(8), p);
         p.setShader(null);
         sevenSeg(c, String.valueOf(count), in, 0xFF1F2A1C);
+        p.setShader(new android.graphics.LinearGradient(0, in.top, 0, in.centerY(), 0x66FFFFFF, 0x00FFFFFF, android.graphics.Shader.TileMode.CLAMP));
+        c.drawRoundRect(in.left, in.top, in.right, in.centerY(), dp(8), dp(8), p);
+        p.setShader(null);
         // round count in goal
         np.setTextSize(dp(10));
         np.setColor(0xCCFFFFFF);
@@ -360,6 +376,12 @@ public class TasbihView extends View {
         p.setStrokeWidth(dp(1));
         p.setColor(0x33000000);
         c.drawCircle(bx, by, br * 0.82f, p);
+        c.drawCircle(bx, by, br * 0.6f, p);
+        p.setColor(0x99FFFFFF);
+        c.drawArc(bx - br * 0.9f, by - br * 0.9f, bx + br * 0.9f, by + br * 0.9f, 200, 70, false, p);
+        p.setStyle(Paint.Style.FILL);
+        p.setColor(0xCCFFFFFF);
+        c.drawOval(bx - br * 0.35f, by - br * 0.7f, bx + br * 0.1f, by - br * 0.5f, p);
         p.setStyle(Paint.Style.FILL);
         // small reset button
         p.setShader(new android.graphics.LinearGradient(0, body.bottom - dp(34), 0, body.bottom - dp(14), 0xFFE9EDF1, 0xFF8C96A3, android.graphics.Shader.TileMode.CLAMP));
