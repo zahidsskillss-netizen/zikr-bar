@@ -129,10 +129,10 @@ public class MainActivity extends Activity {
         String[][] f = {{"\u06DE", "tilawat", "tl_title"}, {"\uFDF2", "bar", "c_bar_t"}, {L.num(33), "tasbih", "c_tas_t"},
                 {"\u25C9", "face", "c_face_t"}, {"\u2600", "unlock", "c_unl_t"}, {"\u263E", "reminder", "c_rem_t"},
                 {"\u2261", "list", "c_list_t"}, {"\u2726", "more", "c_more_t"}};
-        for (int r = 0; r < 3; r++) {
+        for (int r = 0; r < 2; r++) {
             LinearLayout line = k.row();
-            for (int i = 0; i < 3; i++) {
-                int idx = r * 3 + i;
+            for (int i = 0; i < 4; i++) {
+                int idx = r * 4 + i;
                 if (idx < f.length) {
                     LinearLayout.LayoutParams tp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
                     tp.setMargins(k.dp(3), k.dp(3), k.dp(3), k.dp(3));
@@ -152,8 +152,8 @@ public class MainActivity extends Activity {
         t.setGravity(Gravity.CENTER_HORIZONTAL);
         t.setPadding(k.dp(4), k.dp(12), k.dp(4), k.dp(10));
         t.setBackground(new RippleDrawable(ColorStateList.valueOf(0x201B5E20), k.rounded(0x14FFFFFF, 16, 0x22000000), null));
-        t.addView(k.badge(glyph, 38));
-        TextView n = k.strong(title, 11.5f, INK);
+        t.addView(k.badge(glyph, 42));
+        TextView n = k.strong(title, 9.5f, INK);
         n.setGravity(Gravity.CENTER);
         n.setPadding(0, k.dp(8), 0, 0);
         n.setMaxLines(2);
@@ -342,11 +342,11 @@ public class MainActivity extends Activity {
         LinearLayout.LayoutParams lp = k.matchWrap();
         lp.setMargins(k.dp(12), k.dp(22), k.dp(12), k.dp(4));
         row.setLayoutParams(lp);
-        row.addView(hangCard(L.t("morning") + " \u00B7 " + L.t("evening"), "\uFDF2",
-                0xFF171923, 0xFF07080C, 0xFFE0B345, 0xFFF0C85A, 0f,
+        row.addView(hangCard(L.t("morning"), "\u2600", 0xFFD4A8F0, 0xFF9A63C9, 0xFFF8CFE2, 0xFFFFFFFF, 0f,
                 v -> startActivity(new Intent(this, AdhkarActivity.class).putExtra(AdhkarActivity.EXTRA_TAB, AdhkarData.MORNING))));
-        row.addView(hangCard(L.t("tile_prayer"), "\uD83D\uDD4C",
-                0xFF23AA6E, 0xFF085C3A, 0xFFFFE9A3, 0xFFFFE9A3, 1.7f,
+        row.addView(hangCard(L.t("evening"), "\u263E", 0xFF171923, 0xFF07080C, 0xFFE0B345, 0xFFF0C85A, 1.1f,
+                v -> startActivity(new Intent(this, AdhkarActivity.class).putExtra(AdhkarActivity.EXTRA_TAB, AdhkarData.EVENING))));
+        row.addView(hangCard(L.t("tile_prayer"), "\uD83D\uDD4C", 0xFF23AA6E, 0xFF085C3A, 0xFFFFE9A3, 0xFFFFE9A3, 1.7f,
                 v -> startActivity(new Intent(this, PrayerActivity.class))));
         return row;
     }
@@ -356,23 +356,23 @@ public class MainActivity extends Activity {
         FrameLayout box = new FrameLayout(this);
         box.setClipChildren(false);
         box.setClipToPadding(false);
-        int w = k.dp(150), h = k.dp(190);
+        int w = k.dp(100), h = k.dp(138);
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
         card.setGravity(Gravity.CENTER);
-        card.setPadding(k.dp(12), k.dp(30), k.dp(12), k.dp(14));
+        card.setPadding(k.dp(8), k.dp(24), k.dp(8), k.dp(10));
         GradientDrawable bg = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, new int[]{top, bottom});
-        float big = k.dp(75), sm = k.dp(16);
+        float big = k.dp(50), sm = k.dp(12);
         bg.setCornerRadii(new float[]{big, big, big, big, sm, sm, sm, sm});
         bg.setStroke(k.dp(2), edge);
         card.setBackground(new RippleDrawable(ColorStateList.valueOf(0x40FFFFFF), bg, null));
         card.setElevation(k.dp(8));
-        TextView g = k.strong(glyph, 34, ink);
+        TextView g = k.strong(glyph, 26, ink);
         g.setGravity(Gravity.CENTER);
         card.addView(g);
-        TextView t = k.strong(title, 14, ink);
+        TextView t = k.strong(title, 11.5f, ink);
         t.setGravity(Gravity.CENTER);
-        t.setPadding(0, k.dp(8), 0, 0);
+        t.setPadding(0, k.dp(6), 0, 0);
         card.addView(t);
         card.setOnClickListener(open);
         box.addView(card, new FrameLayout.LayoutParams(w, h, Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM));
@@ -381,13 +381,13 @@ public class MainActivity extends Activity {
         rg.setShape(GradientDrawable.OVAL);
         rg.setStroke(k.dp(3), 0xFFC9CED6);
         ring.setBackground(rg);
-        FrameLayout.LayoutParams rp = new FrameLayout.LayoutParams(k.dp(26), k.dp(26), Gravity.CENTER_HORIZONTAL | Gravity.TOP);
+        FrameLayout.LayoutParams rp = new FrameLayout.LayoutParams(k.dp(22), k.dp(22), Gravity.CENTER_HORIZONTAL | Gravity.TOP);
         rp.topMargin = k.dp(2);
         box.addView(ring, rp);
-        LinearLayout.LayoutParams bp = new LinearLayout.LayoutParams(k.dp(160), k.dp(222));
-        bp.setMargins(k.dp(6), 0, k.dp(6), 0);
+        LinearLayout.LayoutParams bp = new LinearLayout.LayoutParams(k.dp(108), k.dp(164));
+        bp.setMargins(k.dp(4), 0, k.dp(4), 0);
         box.setLayoutParams(bp);
-        box.setPivotX(k.dp(80));
+        box.setPivotX(k.dp(54));
         box.setPivotY(k.dp(14));
         android.animation.ObjectAnimator sw = android.animation.ObjectAnimator.ofFloat(box, View.ROTATION, -4f, 4f);
         sw.setDuration(2400);
@@ -408,8 +408,8 @@ public class MainActivity extends Activity {
         LinearLayout.LayoutParams lp = k.matchWrap();
         lp.setMargins(k.dp(12), k.dp(8), k.dp(12), 0);
         row.setLayoutParams(lp);
-        String[][] tiles = {{"\uD83D\uDCFF", "tile_tasbih"}, {"\uD83E\uDD32", "tile_duas"}, {"\uD83D\uDD4C", "tile_prayer"}};
-        Class<?>[] pages = {TasbihActivity.class, DuaActivity.class, PrayerActivity.class};
+        String[][] tiles = {{"\uD83D\uDCFF", "tile_tasbih"}, {"\uD83E\uDD32", "tile_duas"}};
+        Class<?>[] pages = {TasbihActivity.class, DuaActivity.class};
         for (int i = 0; i < tiles.length; i++) {
             final Class<?> page = pages[i];
             LinearLayout t = new LinearLayout(this);
