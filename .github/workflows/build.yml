@@ -34,6 +34,7 @@ jobs:
           ls app/build/outputs/apk/debug/
           cp app/build/outputs/apk/debug/app-arm64-v8a-debug.apk ZikrYad.apk
           cp app/build/outputs/apk/debug/app-armeabi-v7a-debug.apk ZikrYad-32bit.apk
+          cp app/build/outputs/apk/debug/app-universal-debug.apk ZikrYad-Universal.apk
 
       - uses: actions/upload-artifact@v4
         with:
@@ -41,6 +42,7 @@ jobs:
           path: |
             ZikrYad.apk
             ZikrYad-32bit.apk
+            ZikrYad-Universal.apk
 
       - name: Publish release (direct download link)
         uses: softprops/action-gh-release@v2
@@ -50,4 +52,5 @@ jobs:
           files: |
             ZikrYad.apk
             ZikrYad-32bit.apk
+            ZikrYad-Universal.apk
           make_latest: true
