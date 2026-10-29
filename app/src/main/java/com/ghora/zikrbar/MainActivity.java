@@ -203,8 +203,8 @@ public class MainActivity extends Activity {
             case "bar": root.addView(statusCard()); break;
             case "tasbih": root.addView(tasbihCard()); break;
             case "face": root.addView(faceCard()); break;
-            case "unlock": root.addView(unlockCard()); root.addView(periodicCard()); break;
-            case "reminder": root.addView(reminderCard()); break;
+            case "unlock": root.addView(unlockCard()); break;
+            case "reminder": root.addView(periodicCard()); root.addView(reminderCard()); break;
             case "list": root.addView(listCard()); break;
             default: root.addView(moreCard()); break;
         }
@@ -929,13 +929,26 @@ public class MainActivity extends Activity {
             Prefs.setPopupOn(this, on);
             if (on && !Prefs.running(this)) startBar(); else refreshService();
         });
+        Switch own = new Switch(this);
+        own.setChecked(Prefs.popupOwn(this));
+        c.addView(switchRow(L.t("pp_own"), own));
+        own.setOnCheckedChangeListener((b, on) -> { if (!binding) Prefs.setPopupOwn(this, on); });
+        Switch adk = new Switch(this);
+        adk.setChecked(Prefs.popupAdhkar(this));
+        c.addView(switchRow(L.t("pp_adhkar"), adk));
+        adk.setOnCheckedChangeListener((b, on) -> { if (!binding) Prefs.setPopupAdhkar(this, on); });
+        c.addView(k.button("+\u2003" + L.t("pp_add"), false,
+                v -> startActivity(new Intent(this, SectionActivity.class).putExtra("section", "list"))), k.topMargin(6));
+        TextView win = k.text(L.t("pp_window"), 13, MUTED);
+        win.setPadding(0, k.dp(8), 0, 0);
+        c.addView(win);
         c.addView(k.label(L.t("pp_every")));
         HorizontalScrollView cs = new HorizontalScrollView(this);
         cs.setHorizontalScrollBarEnabled(false);
         LinearLayout crow = new LinearLayout(this);
         ppChips.clear();
         for (int m : PeriodicStyles.EVERY) {
-            TextView chip = k.strong(m == 1 ? L.t("minute1") : L.f("minutes", L.num(m)), 13.5f, INK);
+            TextView chip = k.strong(minuteLabel(m), 13.5f, INK);
             chip.setGravity(Gravity.CENTER);
             chip.setPadding(k.dp(16), k.dp(10), k.dp(16), k.dp(10));
             chip.setOnClickListener(v -> {
@@ -1043,6 +1056,13 @@ public class MainActivity extends Activity {
         Ui.startZikrService(this, new Intent(this, ZikrService.class).setAction(ZikrService.ACTION_PREVIEW_UNLOCK));
     }
 
+    private String minuteLabel(int m) {
+        if (m == 0) return L.t("rem_off");
+        if (m == 1) return L.t("minute1");
+        if (m < 60) return L.f("minutes", L.num(m));
+        return m == 60 ? L.t("hour1") : L.f("hours", L.num(m / 60));
+    }
+
     private View reminderCard() {
         LinearLayout c = k.card("☾", L.t("c_rem_t"), L.t("c_rem_s"));
         TextView ayah = k.arabic(AYAH, 22, GREEN);
@@ -1051,17 +1071,14 @@ public class MainActivity extends Activity {
         c.addView(ayah, k.topMargin(6));
 
         c.addView(k.label(L.t("after_hours")));
-        String[] labels = new String[Prefs.REMINDER_HOURS.length];
-        for (int i = 0; i < labels.length; i++) {
-            int h = Prefs.REMINDER_HOURS[i];
-            labels[i] = h == 0 ? L.t("rem_off") : h == 1 ? L.t("hour1") : L.f("hours", L.num(h));
-        }
+        String[] labels = new String[Prefs.REMINDER_MINUTES.length];
+        for (int i = 0; i < labels.length; i++) labels[i] = minuteLabel(Prefs.REMINDER_MINUTES[i]);
         reminderSpinner = k.spinner(labels, false);
         c.addView(reminderSpinner, k.matchWrap());
         reminderSpinner.setOnItemSelectedListener(onSelect(pos -> {
-            int h = Prefs.REMINDER_HOURS[pos];
-            if (h == Prefs.reminderHours(this)) return;
-            Prefs.setReminderHours(this, h);
+            int mm = Prefs.REMINDER_MINUTES[pos];
+            if (mm == Prefs.reminderMinutes(this)) return;
+            Prefs.setReminderMinutes(this, mm);
             Prefs.setLastReminder(this, 0);
         }));
 

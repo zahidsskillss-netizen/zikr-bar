@@ -230,6 +230,7 @@ final class Kit {
         s.setAdapter(adapter(items, arabicFont));
         s.setBackground(rounded(SOFT, 16, LINE));
         s.setPadding(dp(10), dp(6), dp(10), dp(6));
+        s.setPopupBackgroundDrawable(rounded(0xFF000000 | (BG & 0xFFFFFF), 14, LINE));
         return s;
     }
 

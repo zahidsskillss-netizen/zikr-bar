@@ -20,7 +20,7 @@ final class PeriodicStyles {
 
     static final int COUNT = 6;
     static final String[] KEYS = {"pp_0", "pp_1", "pp_2", "pp_3", "pp_4", "pp_5"};
-    static final int[] EVERY = {1, 5, 15, 30, 60};
+    static final int[] EVERY = {1, 5, 15, 30, 45, 60, 120, 180};
 
     private PeriodicStyles() {}
 

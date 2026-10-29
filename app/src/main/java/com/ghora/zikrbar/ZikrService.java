@@ -74,7 +74,8 @@ public class ZikrService extends Service {
         @Override
         public void run() {
             if (Prefs.popupOn(ZikrService.this)) {
-                if (Settings.canDrawOverlays(ZikrService.this) && unlockPopup == null) showPeriodic();
+                int hr = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
+                if (hr >= 6 && hr < 21 && Settings.canDrawOverlays(ZikrService.this) && unlockPopup == null) showPeriodic();
                 handler.postDelayed(this, Prefs.popupEvery(ZikrService.this) * 60_000L);
             }
         }
@@ -83,7 +84,7 @@ public class ZikrService extends Service {
     private void showPeriodic() {
         try {
             removeUnlockPopup();
-            showShown(PeriodicStyles.build(this, Prefs.popupStyle(this), Prefs.nextUnlockText(this), screen()));
+            showShown(PeriodicStyles.build(this, Prefs.popupStyle(this), Prefs.periodicText(this), screen()));
         } catch (RuntimeException ignored) {
         }
     }
@@ -336,10 +337,11 @@ public class ZikrService extends Service {
 
     /** Sends «فَاذْكُرُونِي أَذْكُرْكُمْ» when no dhikr was counted for the chosen number of hours. */
     private void checkReminder() {
-        int hours = Prefs.reminderHours(this);
-        if (hours <= 0) return;
+        int mins = Prefs.reminderMinutes(this);
+        if (mins <= 0) return;
+        int hours = mins / 60;
         long now = System.currentTimeMillis();
-        long gap = hours * 3_600_000L;
+        long gap = mins * 60_000L;
         if (now - Prefs.lastZikr(this) < gap) return;
         if (now - Prefs.lastReminder(this) < gap) return;
         int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
@@ -348,8 +350,8 @@ public class ZikrService extends Service {
         PendingIntent show = PendingIntent.getService(this, 2,
                 new Intent(this, ZikrService.class).setAction(ACTION_SHOW_TASBIH),
                 PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
-        String body = hours == 1
-                ? L.t("rem_1h")
+        String body = mins % 60 != 0 ? L.f("rem_nmin", L.num(mins))
+                : hours == 1 ? L.t("rem_1h")
                 : L.f("rem_nh", L.num(hours));
         Notification n = Ui.notif(this, CHANNEL_REMIND, false)
                 .setSmallIcon(Icon.createWithBitmap(allahIcon()))

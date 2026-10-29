@@ -178,6 +178,16 @@ public final class Prefs {
 
     // ---- reminder ----
     static final int[] REMINDER_HOURS = {0, 1, 2, 3};
+    static final int[] REMINDER_MINUTES = {0, 15, 30, 45, 60, 120, 180};
+
+    static int reminderMinutes(Context c) {
+        int m = sp(c).getInt("remM", -1);
+        return m >= 0 ? m : reminderHours(c) * 60;
+    }
+
+    static void setReminderMinutes(Context c, int m) {
+        sp(c).edit().putInt("remM", m).apply();
+    }
 
     static int reminderHours(Context c) {
         return sp(c).getInt("remH", 2);
@@ -201,6 +211,25 @@ public final class Prefs {
 
     static void setLastReminder(Context c, long t) {
         sp(c).edit().putLong("lastRem", t).apply();
+    }
+
+    static boolean popupOwn(Context c) { return sp(c).getBoolean("pOwn", true); }
+    static void setPopupOwn(Context c, boolean on) { sp(c).edit().putBoolean("pOwn", on).apply(); }
+    static boolean popupAdhkar(Context c) { return sp(c).getBoolean("pAdhkar", true); }
+    static void setPopupAdhkar(Context c, boolean on) { sp(c).edit().putBoolean("pAdhkar", on).apply(); }
+
+    /** A dhikr for the periodic popup: the person's own list and/or the morning (6-15) or evening (15-21) adhkar. */
+    static String periodicText(Context c) {
+        java.util.ArrayList<String> all = new java.util.ArrayList<>();
+        if (popupOwn(c)) all.addAll(list(c));
+        if (popupAdhkar(c)) {
+            int h = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY);
+            for (AdhkarData.Item it : AdhkarData.items(c, h < 15 ? AdhkarData.MORNING : AdhkarData.EVENING)) {
+                if (it.text != null && it.text.length() > 0 && it.text.length() <= 90) all.add(it.text);
+            }
+        }
+        if (all.isEmpty()) all.addAll(list(c));
+        return all.get(new java.util.Random().nextInt(all.size()));
     }
 
     // ---- periodic animated popup (every few minutes, over any app) ----
