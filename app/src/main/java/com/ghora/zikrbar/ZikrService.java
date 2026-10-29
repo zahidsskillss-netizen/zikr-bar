@@ -53,6 +53,7 @@ public class ZikrService extends Service {
     static final String ACTION_TOGGLE_TASBIH = "com.ghora.zikrbar.TOGGLE_TASBIH";
     static final String ACTION_SHOW_TASBIH = "com.ghora.zikrbar.SHOW_TASBIH";
     static final String ACTION_PREVIEW_UNLOCK = "com.ghora.zikrbar.PREVIEW_UNLOCK";
+    static final String ACTION_PREVIEW_PERIODIC = "com.ghora.zikrbar.PREVIEW_PERIODIC";
 
     private static final String CHANNEL = "zikr_bar";
     private static final String CHANNEL_REMIND = "zikr_reminder";
@@ -69,6 +70,24 @@ public class ZikrService extends Service {
             handler.postDelayed(this, Prefs.intervalMs(ZikrService.this));
         }
     };
+    private final Runnable popupTick = new Runnable() {
+        @Override
+        public void run() {
+            if (Prefs.popupOn(ZikrService.this)) {
+                if (Settings.canDrawOverlays(ZikrService.this) && unlockPopup == null) showPeriodic();
+                handler.postDelayed(this, Prefs.popupEvery(ZikrService.this) * 60_000L);
+            }
+        }
+    };
+
+    private void showPeriodic() {
+        try {
+            removeUnlockPopup();
+            showShown(PeriodicStyles.build(this, Prefs.popupStyle(this), Prefs.nextUnlockText(this), screen()));
+        } catch (RuntimeException ignored) {
+        }
+    }
+
     private final Runnable reminderCheck = new Runnable() {
         @Override
         public void run() {
@@ -223,6 +242,8 @@ public class ZikrService extends Service {
             if (on) Prefs.setMini(this, 0, Prefs.miniY(this));
         } else if (ACTION_PREVIEW_UNLOCK.equals(action)) {
             if (Settings.canDrawOverlays(this)) handler.postDelayed(this::showUnlockPopup, 120);
+        } else if (ACTION_PREVIEW_PERIODIC.equals(action)) {
+            if (Settings.canDrawOverlays(this)) handler.postDelayed(this::showPeriodic, 120);
         } else if (ACTION_SHOW_TASBIH.equals(action)) {
             getSystemService(NotificationManager.class).cancel(REMIND_ID);
             if (Settings.canDrawOverlays(this)) {
@@ -249,6 +270,8 @@ public class ZikrService extends Service {
         handler.postDelayed(tick, Prefs.intervalMs(this));
         handler.removeCallbacks(reminderCheck);
         handler.postDelayed(reminderCheck, 60_000);
+        handler.removeCallbacks(popupTick);
+        if (Prefs.popupOn(this)) handler.postDelayed(popupTick, Prefs.popupEvery(this) * 60_000L);
         return START_STICKY;
     }
 

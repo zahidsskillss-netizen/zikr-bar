@@ -203,7 +203,7 @@ public class MainActivity extends Activity {
             case "bar": root.addView(statusCard()); break;
             case "tasbih": root.addView(tasbihCard()); break;
             case "face": root.addView(faceCard()); break;
-            case "unlock": root.addView(unlockCard()); break;
+            case "unlock": root.addView(unlockCard()); root.addView(periodicCard()); break;
             case "reminder": root.addView(reminderCard()); break;
             case "list": root.addView(listCard()); break;
             default: root.addView(moreCard()); break;
@@ -241,13 +241,13 @@ public class MainActivity extends Activity {
         share.setBackground(new RippleDrawable(ColorStateList.valueOf(0x40FFFFFF), k.rounded(0x1A000000, 18, 0x66F3E3A5), null));
         share.setOnClickListener(v -> InfoActivity.share(this));
         top.addView(share);
-        powerChip = k.strong("", 13.5f, WHITE);
-        powerChip.setPadding(k.dp(12), k.dp(6), k.dp(12), k.dp(8));
+        powerChip = new PowerButton(this);
+        powerChip.setContentDescription(L.t("bar_power"));
         powerChip.setOnClickListener(v -> {
             if (Prefs.running(this)) stopBar(); else startBar();
             refresh();
         });
-        LinearLayout.LayoutParams pcp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        LinearLayout.LayoutParams pcp = new LinearLayout.LayoutParams(k.dp(46), k.dp(46));
         pcp.setMarginStart(k.dp(8));
         top.addView(powerChip, pcp);
         paintPower();
@@ -276,16 +276,51 @@ public class MainActivity extends Activity {
         return h;
     }
 
-    private TextView powerChip;
+    private PowerButton powerChip;
 
     /** The quick on/off chip at the left of the top bar. */
     private void paintPower() {
         if (powerChip == null) return;
-        boolean on = Prefs.running(this);
-        powerChip.setText("\u23FB  " + L.t("bar_power") + "  " + L.t(on ? "on" : "off"));
-        powerChip.setTextColor(on ? 0xFF0B3319 : WHITE);
-        powerChip.setBackground(new RippleDrawable(ColorStateList.valueOf(0x40FFFFFF),
-                k.rounded(on ? 0xFF7CE0A1 : 0x33FF5252, 18, on ? 0xFFB6F2CB : 0x88FF8A8A), null));
+        powerChip.setOn(Prefs.running(this));
+    }
+
+    /** A round power button (drawn icon, glows green when the status-bar zikr is on). */
+    static final class PowerButton extends View {
+        private boolean on;
+        private final android.graphics.Paint p = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+
+        PowerButton(android.content.Context c) {
+            super(c);
+            setClickable(true);
+            setLayerType(LAYER_TYPE_SOFTWARE, null);
+        }
+
+        void setOn(boolean v) {
+            on = v;
+            invalidate();
+        }
+
+        @Override
+        protected void onDraw(android.graphics.Canvas c) {
+            float w = getWidth(), cx = w / 2, r = w / 2 - w * 0.08f;
+            p.setStyle(android.graphics.Paint.Style.FILL);
+            p.setShader(new android.graphics.RadialGradient(cx - r * 0.3f, cx - r * 0.4f, r * 1.6f,
+                    on ? new int[]{0xFF8DF0B0, 0xFF138A4C} : new int[]{0xFFFF9A9A, 0xFFC62828}, null, android.graphics.Shader.TileMode.CLAMP));
+            p.setShadowLayer(w * 0.14f, 0, w * 0.05f, on ? 0xAA3DFF8A : 0x88000000);
+            c.drawCircle(cx, cx, r, p);
+            p.setShader(null);
+            p.clearShadowLayer();
+            p.setStyle(android.graphics.Paint.Style.STROKE);
+            p.setColor(0x99FFFFFF);
+            p.setStrokeWidth(w * 0.035f);
+            c.drawCircle(cx, cx, r, p);
+            p.setColor(0xFFFFFFFF);
+            p.setStrokeWidth(w * 0.085f);
+            p.setStrokeCap(android.graphics.Paint.Cap.ROUND);
+            float ar = r * 0.5f;
+            c.drawArc(cx - ar, cx - ar, cx + ar, cx + ar, -55, 290, false, p);
+            c.drawLine(cx, cx - ar * 1.15f, cx, cx - ar * 0.1f, p);
+        }
     }
 
     private void chooseTheme() {
@@ -873,6 +908,104 @@ public class MainActivity extends Activity {
         c.addView(k.button(L.t("us_keep_btn"), false, v -> openBatterySettings()), k.topMargin(8));
         paintStyles();
         return c;
+    }
+
+    private final List<LinearLayout> ppTiles = new ArrayList<>();
+    private final List<TextView> ppChips = new ArrayList<>();
+
+    /** The animated popup that appears over any app every few minutes. */
+    private View periodicCard() {
+        LinearLayout c = k.card("\u23F1", L.t("pp_title"), L.t("pp_sub"));
+        Switch sw = new Switch(this);
+        sw.setChecked(Prefs.popupOn(this));
+        c.addView(switchRow(L.t("enabled"), sw));
+        sw.setOnCheckedChangeListener((b, on) -> {
+            if (binding) return;
+            if (on && !Settings.canDrawOverlays(this)) {
+                sw.setChecked(false);
+                askOverlay();
+                return;
+            }
+            Prefs.setPopupOn(this, on);
+            if (on && !Prefs.running(this)) startBar(); else refreshService();
+        });
+        c.addView(k.label(L.t("pp_every")));
+        HorizontalScrollView cs = new HorizontalScrollView(this);
+        cs.setHorizontalScrollBarEnabled(false);
+        LinearLayout crow = new LinearLayout(this);
+        ppChips.clear();
+        for (int m : PeriodicStyles.EVERY) {
+            TextView chip = k.strong(m == 1 ? L.t("minute1") : L.f("minutes", L.num(m)), 13.5f, INK);
+            chip.setGravity(Gravity.CENTER);
+            chip.setPadding(k.dp(16), k.dp(10), k.dp(16), k.dp(10));
+            chip.setOnClickListener(v -> {
+                Prefs.setPopupEvery(this, m);
+                paintPeriodic();
+                refreshService();
+            });
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-2, -2);
+            lp.setMarginEnd(k.dp(8));
+            crow.addView(chip, lp);
+            ppChips.add(chip);
+        }
+        cs.addView(crow);
+        c.addView(cs, k.matchWrap());
+        c.addView(k.label(L.t("us_choose")));
+        HorizontalScrollView hs = new HorizontalScrollView(this);
+        hs.setHorizontalScrollBarEnabled(false);
+        LinearLayout row = new LinearLayout(this);
+        String[] marks = {"\u25C9", "\u2B2D", "\u25D0", "\u25AD", "\u25CE", "\u2550"};
+        ppTiles.clear();
+        for (int i = 0; i < PeriodicStyles.COUNT; i++) {
+            final int st = i;
+            LinearLayout t = new LinearLayout(this);
+            t.setOrientation(LinearLayout.VERTICAL);
+            t.setGravity(Gravity.CENTER);
+            t.setPadding(k.dp(12), k.dp(12), k.dp(12), k.dp(10));
+            TextView mk = k.strong(marks[i], 24, GOLD_LINE);
+            mk.setGravity(Gravity.CENTER);
+            t.addView(mk);
+            TextView n = k.strong(L.num(i + 1) + " \u00B7 " + L.t(PeriodicStyles.KEYS[i]), 12.5f, INK);
+            n.setGravity(Gravity.CENTER);
+            n.setPadding(0, k.dp(6), 0, 0);
+            t.addView(n);
+            t.setOnClickListener(v -> {
+                Prefs.setPopupStyle(this, st);
+                paintPeriodic();
+                previewPeriodic();
+            });
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-2, -2);
+            lp.setMarginEnd(k.dp(8));
+            row.addView(t, lp);
+            ppTiles.add(t);
+        }
+        hs.addView(row);
+        c.addView(hs, k.matchWrap());
+        c.addView(k.button("\u25B6\u2003" + L.t("us_preview"), false, v -> previewPeriodic()), k.topMargin(12));
+        paintPeriodic();
+        return c;
+    }
+
+    private void paintPeriodic() {
+        int sel = Prefs.popupStyle(this), every = Prefs.popupEvery(this);
+        for (int i = 0; i < ppTiles.size(); i++) {
+            ppTiles.get(i).setBackground(i == sel ? k.rounded(Theme.ov(0x1A), 18, GOLD_LINE) : k.rounded(SOFT, 18, LINE));
+        }
+        for (int i = 0; i < ppChips.size(); i++) {
+            ppChips.get(i).setBackground(PeriodicStyles.EVERY[i] == every ? k.rounded(Theme.ov(0x1A), 20, GOLD_LINE) : k.rounded(SOFT, 20, LINE));
+        }
+    }
+
+    private void previewPeriodic() {
+        if (!Settings.canDrawOverlays(this)) {
+            askOverlay();
+            return;
+        }
+        if (!Prefs.running(this)) {
+            Toast.makeText(this, L.t("us_need_on"), Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Ui.startZikrService(this, new Intent(this, ZikrService.class).setAction(ZikrService.ACTION_PREVIEW_PERIODIC));
     }
 
     private final List<LinearLayout> styleTiles = new ArrayList<>();

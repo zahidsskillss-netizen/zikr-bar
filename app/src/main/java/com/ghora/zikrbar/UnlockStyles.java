@@ -78,7 +78,7 @@ final class UnlockStyles {
         return n > 90 ? big * 0.62f : n > 55 ? big * 0.72f : n > 30 ? big * 0.84f : big;
     }
 
-    private static TextView dhikr(Kit k, String text, float sp, int color, int lines) {
+    static TextView dhikr(Kit k, String text, float sp, int color, int lines) {
         TextView t = k.arabic(text, fit(text, sp), color);
         t.setLineSpacing(0, 1.12f);
         t.setMaxLines(lines);
@@ -86,7 +86,7 @@ final class UnlockStyles {
         return t;
     }
 
-    private static GradientDrawable grad(int a, int b, float radius, int strokePx, int stroke) {
+    static GradientDrawable grad(int a, int b, float radius, int strokePx, int stroke) {
         GradientDrawable g = new GradientDrawable(GradientDrawable.Orientation.TL_BR, new int[]{a, b});
         g.setCornerRadius(radius);
         if (strokePx > 0) g.setStroke(strokePx, stroke);
