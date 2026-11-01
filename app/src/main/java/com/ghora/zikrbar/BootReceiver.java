@@ -20,11 +20,14 @@ public class BootReceiver extends BroadcastReceiver {
         String a = intent.getAction();
         if (ACTION_WATCHDOG.equals(a)) {
             ensureRunning(context);
+            Tasks.resumeDue(context);
             return;
         }
         AdhkarAlarm.scheduleAll(context);
         PrayerAlarm.schedule(context);
         LearnAlarm.schedule(context);
+        Tasks.scheduleAll(context);
+        Tasks.resumeDue(context);
         if ((Intent.ACTION_BOOT_COMPLETED.equals(a) || Intent.ACTION_MY_PACKAGE_REPLACED.equals(a)) && Prefs.running(context)) {
             ensureRunning(context);
             scheduleWatchdog(context);

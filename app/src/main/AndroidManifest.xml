@@ -102,6 +102,23 @@
         </service>
 
         <activity
+            android:name=".TasksActivity"
+            android:exported="false" />
+
+        <service
+            android:name=".TaskOverlayService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Shows the user's own task reminder over other apps until it is done or moved to a new time" />
+        </service>
+
+        <receiver
+            android:name=".TaskAlarm"
+            android:exported="false" />
+
+        <activity
             android:name=".SleepActivity"
             android:exported="false"
             android:excludeFromRecents="true"

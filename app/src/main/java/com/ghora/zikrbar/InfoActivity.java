@@ -22,12 +22,10 @@ import static com.ghora.zikrbar.Kit.*;
 public class InfoActivity extends Activity {
 
     static final String EXTRA_PAGE = "page";
-    static final int PAGE_ABOUT = 0, PAGE_DEV = 1, PAGE_DONATE = 2;
+    static final int PAGE_ABOUT = 0, PAGE_DEV = 1;
+    static final String WEBSITE = "https://ghoragraphics.com";
 
     static final String SHARE_LINK = "https://github.com/zahidsskillss-netizen/zikr-bar/releases/latest";
-    static final String HESAB = "0780630100";
-    static final String ATOMA = "0773233182";
-    static final String PAYONEER = "zahidalkozii@gmail.com";
 
     private Kit k;
 
@@ -45,7 +43,6 @@ public class InfoActivity extends Activity {
         root.setPadding(0, 0, 0, k.dp(32));
 
         if (page == PAGE_DEV) buildDeveloper(root);
-        else if (page == PAGE_DONATE) buildDonate(root);
         else buildAbout(root);
 
         ScrollView scroll = new ScrollView(this);
@@ -86,6 +83,8 @@ public class InfoActivity extends Activity {
         for (int i = 0; i < 6; i++) feat.addView(bullet(marks[i], L.t("f" + (i + 1))));
         root.addView(feat);
 
+        root.addView(websiteAd());
+
         LinearLayout privacy = k.card("✓", L.t("privacy_t"), null);
         privacy.addView(para(L.t("privacy")));
         root.addView(privacy);
@@ -117,16 +116,51 @@ public class InfoActivity extends Activity {
         LinearLayout contact = k.card("☎", L.t("contact"), null);
         contact.addView(contactRow(L.t("whatsapp"), PHONE, WHATSAPP_LINK));
         contact.addView(contactRow(L.t("telegram"), "t.me/zahid_af", TELEGRAM));
-        contact.addView(contactRow(L.t("facebook"), "zahid.alkozai", FACEBOOK));
+        contact.addView(contactRow(L.t("facebook"), "zahidalokozi", FACEBOOK));
         contact.addView(contactRow(L.t("call"), PHONE, "tel:" + PHONE));
         root.addView(contact);
 
         root.addView(ghoraAd());
 
-        LinearLayout support = k.card("\u2665\uFE0E", L.t("support_t"), null);
-        support.addView(para(L.t("support_text")));
-        support.addView(k.button(L.t("donate_btn"), true, v -> openPage(PAGE_DONATE)), k.topMargin(12));
-        root.addView(support);
+    }
+
+    /** A short, strong announcement of the Ghora Graphics website and what it offers. */
+    private View websiteAd() {
+        LinearLayout ad = new LinearLayout(this);
+        ad.setOrientation(LinearLayout.VERTICAL);
+        ad.setPadding(k.dp(20), k.dp(22), k.dp(20), k.dp(20));
+        GradientDrawable bg = new GradientDrawable(GradientDrawable.Orientation.TL_BR, new int[]{0xFF14432A, 0xFF061A0E});
+        bg.setCornerRadius(k.dp(24));
+        bg.setStroke(k.dp(1.5f), GOLD_LINE);
+        ad.setBackground(bg);
+        Theme.elev(ad, k.dp(3));
+        LinearLayout.LayoutParams alp = k.matchWrap();
+        alp.setMargins(k.dp(16), k.dp(14), k.dp(16), 0);
+        ad.setLayoutParams(alp);
+
+        TextView t = k.title(L.t("web_t"), 24, GOLD);
+        t.setGravity(Gravity.CENTER);
+        ad.addView(t);
+        TextView tag = k.text(L.t("web_tag"), 15, WHITE);
+        tag.setGravity(Gravity.CENTER);
+        tag.setPadding(0, k.dp(8), 0, k.dp(10));
+        ad.addView(tag);
+        for (String key : new String[]{"web_f1", "web_f2", "web_f3", "web_f4", "web_f5"}) {
+            LinearLayout r = k.row();
+            r.setPadding(0, k.dp(5), 0, k.dp(5));
+            r.addView(k.text("\u2726", 13, GOLD));
+            TextView f = k.text(L.t(key), 15, WHITE);
+            f.setPadding(k.dp(10), 0, k.dp(10), 0);
+            r.addView(f, k.weight());
+            ad.addView(r);
+        }
+        TextView url = k.strong(WEBSITE.replace("https://", ""), 14, 0xB3F3E3A5);
+        url.setGravity(Gravity.CENTER);
+        url.setTextDirection(View.TEXT_DIRECTION_LTR);
+        url.setPadding(0, k.dp(12), 0, k.dp(8));
+        ad.addView(url);
+        ad.addView(k.goldButton(L.t("web_btn"), v -> open(WEBSITE)), k.matchWrap());
+        return ad;
     }
 
     private View ghoraAd() {
@@ -178,46 +212,6 @@ public class InfoActivity extends Activity {
         more.addView(darkButton(L.t("facebook"), v -> open(FACEBOOK)), k.weight());
         ad.addView(more, k.topMargin(10));
         return ad;
-    }
-
-    private void buildDonate(LinearLayout root) {
-        root.addView(header(glyphCircle("\u2665\uFE0E"), L.t("support_t"), L.t("donate_sub")));
-
-        LinearLayout intro = k.card(null, L.t("why_t"), null);
-        LinearLayout who = k.row();
-        who.setPadding(0, k.dp(4), 0, k.dp(10));
-        who.addView(k.photo(52));
-        LinearLayout wt = new LinearLayout(this);
-        wt.setOrientation(LinearLayout.VERTICAL);
-        wt.setPadding(k.dp(12), 0, k.dp(12), 0);
-        wt.addView(k.title(L.t("dev_name"), 16, INK));
-        wt.addView(k.text(L.t("maker") + " · " + L.t("ghora"), 12.5f, MUTED));
-        who.addView(wt, k.weight());
-        intro.addView(who);
-        intro.addView(para(L.t("why_text")));
-        root.addView(intro);
-
-        root.addView(payCard("H", "HesabPay", HESAB));
-        root.addView(payCard("A", "Atoma Pay", ATOMA));
-
-        LinearLayout pay = k.card("P", "Payoneer", L.t("payoneer_s"));
-        pay.addView(valueBox(PAYONEER), k.topMargin(8));
-        pay.addView(k.button(L.t("copy_email"), false, v -> copy("Payoneer", PAYONEER, L.t("copied"))), k.topMargin(12));
-        root.addView(pay);
-
-        TextView dua = k.arabic("جَزَاكُمُ اللَّهُ خَيْرًا", 24, GREEN);
-        dua.setPadding(0, k.dp(22), 0, 0);
-        root.addView(dua);
-    }
-
-    /** A wallet card: shows the full number; copy gives the 9 digits without the leading 0. */
-    private View payCard(String glyph, String title, String number) {
-        LinearLayout c = k.card(glyph, title, L.t("mobile_no"));
-        c.addView(valueBox(number), k.topMargin(8));
-        String copyValue = number.startsWith("0") ? number.substring(1) : number;
-        c.addView(k.button(L.t("copy") + "  (" + copyValue + ")", false,
-                v -> copy(title, copyValue, L.f("copied_9", copyValue))), k.topMargin(12));
-        return c;
     }
 
     // ================= actions =================

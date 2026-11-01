@@ -64,6 +64,7 @@ public class MainActivity extends Activity {
             askNotificationPermission();
             AdhkarAlarm.scheduleAll(this);
             PrayerAlarm.schedule(this);
+            Tasks.scheduleAll(this);
             LearnAlarm.schedule(this);
         }
     }
@@ -127,11 +128,11 @@ public class MainActivity extends Activity {
         LinearLayout c = k.card("\u2699", L.t("home_f_t"), L.t("home_f_s"));
         String[][] f = {{"\u06DE", "tilawat", "tl_title"}, {"\uFDF2", "bar", "c_bar_t"}, {L.num(33), "tasbih", "c_tas_t"},
                 {"\u25C9", "face", "c_face_t"}, {"\u2600", "unlock", "c_unl_t"}, {"\u263E", "reminder", "c_rem_t"},
-                {"\u2261", "list", "c_list_t"}, {"\u2726", "more", "c_more_t"}};
+                {"\u2714", "tasks", "tk_tile"}, {"\u2261", "list", "c_list_t"}, {"\u2726", "more", "c_more_t"}};
         for (int r = 0; r < 2; r++) {
             LinearLayout line = k.row();
-            for (int i = 0; i < 4; i++) {
-                int idx = r * 4 + i;
+            for (int i = 0; i < 5; i++) {
+                int idx = r * 5 + i;
                 if (idx < f.length) {
                     LinearLayout.LayoutParams tp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
                     tp.setMargins(k.dp(3), k.dp(3), k.dp(3), k.dp(3));
@@ -166,6 +167,7 @@ public class MainActivity extends Activity {
         subs.put(id, s);
         t.setOnClickListener(v -> {
             if (id.equals("tilawat")) startActivity(new Intent(this, TilawatActivity.class));
+            else if (id.equals("tasks")) startActivity(new Intent(this, TasksActivity.class));
             else startActivity(new Intent(this, SectionActivity.class).putExtra("section", id));
         });
         return t;
@@ -1099,7 +1101,6 @@ public class MainActivity extends Activity {
 
     private View moreCard() {
         LinearLayout c = k.card("✦", L.t("c_more_t"), L.t("c_more_s"));
-        c.addView(navRow(k.badge("\u2665\uFE0E", 38), L.t("nav_donate"), "HesabPay · Atoma Pay · Payoneer", InfoActivity.PAGE_DONATE));
         c.addView(navRow(k.badge("ﷲ", 38), L.t("nav_about"), L.t("nav_about_s"), InfoActivity.PAGE_ABOUT));
         ImageView ph = k.photo(38);
         c.addView(navRow(ph, L.t("nav_dev"), L.t("dev_name") + " · " + L.t("ghora"), InfoActivity.PAGE_DEV));
@@ -1254,6 +1255,8 @@ public class MainActivity extends Activity {
             setSub("face", FaceService.running ? L.t("on") : L.t("off"), FaceService.running ? GREEN : MUTED);
             boolean uOn = Prefs.unlockPopup(this) && canDraw && running;
             setSub("unlock", uOn ? L.t("on") : L.t("off"), uOn ? GREEN : MUTED);
+            int nTasks = Tasks.pendingCount(this);
+            setSub("tasks", nTasks > 0 ? L.num(nTasks) : "", GREEN);
         }
         binding = false;
     }

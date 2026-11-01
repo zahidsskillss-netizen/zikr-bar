@@ -35,10 +35,10 @@ final class Kit {
     static int CARD = 0xFFFFFFFF, ON_CARD_DIM = 0x1A000000;
     static final int WHITE = 0xFFFFFFFF;
 
-    static final String FACEBOOK = "https://www.facebook.com/zahid.alkozai";
+    static final String FACEBOOK = "https://www.facebook.com/zahidalokozi";
     static final String TELEGRAM = "https://t.me/zahid_af";
-    static final String PHONE = "0780630100";
-    static final String WHATSAPP_LINK = "https://wa.me/93780630100";
+    static final String PHONE = "0773233182";
+    static final String WHATSAPP_LINK = "https://wa.me/93773233182";
 
     static void open(Context c, String url) {
         try {
