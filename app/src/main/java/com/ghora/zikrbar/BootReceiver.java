@@ -26,6 +26,8 @@ public class BootReceiver extends BroadcastReceiver {
         AdhkarAlarm.scheduleAll(context);
         PrayerAlarm.schedule(context);
         LearnAlarm.schedule(context);
+        AnnounceAlarm.scheduleAll(context);
+        if (!Prefs.running(context) && AnnounceAlarm.isOn(context, AnnounceAlarm.POWER) && Prefs.sp(context).getBoolean("barOffByHand", false)) AnnounceAlarm.barStopped(context);
         Tasks.scheduleAll(context);
         Tasks.resumeDue(context);
         if ((Intent.ACTION_BOOT_COMPLETED.equals(a) || Intent.ACTION_MY_PACKAGE_REPLACED.equals(a)) && Prefs.running(context)) {

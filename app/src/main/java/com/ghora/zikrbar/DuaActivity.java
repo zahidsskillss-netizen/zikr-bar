@@ -29,6 +29,8 @@ public class DuaActivity extends Activity {
             {"fasting", "🌙"}, {"funeral", "🥀"}, {"nature", "🌦️"},
             {"home", "🚪"}, {"marriage", "💞"}, {"protect", "🛡️"},
             {"manners", "🤝"},
+            {"salah", "🕌"},
+            {"zikr", "📿"},
     };
 
     private Kit k;

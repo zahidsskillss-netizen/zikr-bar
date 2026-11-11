@@ -440,6 +440,7 @@ public class AdhkarActivity extends Activity {
         text.setLineSpacing(0, 1.45f);
         text.setTextDirection(View.TEXT_DIRECTION_RTL);
         c.addView(text);
+        addMeaning(c, it);
 
         if (!it.virtue.isEmpty()) {
             TextView v = k.arabic(it.virtue, 14.5f, MUTED);
@@ -554,6 +555,7 @@ public class AdhkarActivity extends Activity {
             text.setLineSpacing(0, 1.45f);
             text.setTextDirection(View.TEXT_DIRECTION_RTL);
             c.addView(text);
+            addMeaning(c, it);
             if (!it.virtue.isEmpty()) {
                 TextView v = k.text(it.virtue, 14, MUTED);
                 v.setGravity(Gravity.CENTER);
@@ -587,6 +589,7 @@ public class AdhkarActivity extends Activity {
         sub.setGravity(Gravity.CENTER);
         sub.setPadding(k.dp(20), k.dp(16), k.dp(20), k.dp(4));
         root.addView(sub);
+        root.addView(AnnounceAlarm.toggleRow(this, AnnounceAlarm.ASMA_AM, MUTED));
         int cols = 3;
         LinearLayout row = null;
         for (int i = 0; i < Adhkar.NAMES.length; i++) {
@@ -604,7 +607,7 @@ public class AdhkarActivity extends Activity {
     }
 
     private LinearLayout.LayoutParams cellParams() {
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, k.dp(96), 1);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, k.dp(118), 1);
         lp.setMargins(k.dp(4), 0, k.dp(4), 0);
         return lp;
     }
@@ -621,6 +624,13 @@ public class AdhkarActivity extends Activity {
         TextView name = k.arabic(Adhkar.NAMES[i], Adhkar.NAMES[i].length() > 14 ? 15 : 20, GREEN);
         name.setPadding(0, k.dp(2), 0, 0);
         c.addView(name);
+        String mean = nameMeaning(i);
+        if (!mean.isEmpty()) {
+            TextView mt = k.text(mean, 11, MUTED);
+            mt.setGravity(Gravity.CENTER);
+            mt.setPadding(0, k.dp(3), 0, 0);
+            c.addView(mt);
+        }
         return c;
     }
 
@@ -633,5 +643,34 @@ public class AdhkarActivity extends Activity {
         } else {
             v.vibrate(ms);
         }
+    }
+
+    private static String[] nameMeanings;
+
+    private String nameMeaning(int i) {
+        if (nameMeanings == null) {
+            try (java.io.InputStream in = getAssets().open("names_ps.json")) {
+                java.io.ByteArrayOutputStream buf = new java.io.ByteArrayOutputStream();
+                byte[] b = new byte[4096];
+                int n;
+                while ((n = in.read(b)) > 0) buf.write(b, 0, n);
+                org.json.JSONArray a = new org.json.JSONArray(new String(buf.toByteArray(), "UTF-8"));
+                String[] r = new String[a.length()];
+                for (int j = 0; j < r.length; j++) r[j] = a.optString(j);
+                nameMeanings = r;
+            } catch (Exception e) {
+                nameMeanings = new String[0];
+            }
+        }
+        return i < nameMeanings.length && L.lang == 0 ? nameMeanings[i] : "";
+    }
+
+    /** Small meaning text under the Arabic, in the app language. */
+    private void addMeaning(LinearLayout c, AdhkarData.Item it) {
+        if (it.meaning == null || it.meaning.isEmpty()) return;
+        TextView m = k.text(it.meaning, 13, MUTED);
+        m.setLineSpacing(0, 1.3f);
+        m.setPadding(0, k.dp(10), 0, 0);
+        c.addView(m);
     }
 }

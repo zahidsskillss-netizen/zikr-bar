@@ -114,6 +114,19 @@
                 android:value="Shows the user's own task reminder over other apps until it is done or moved to a new time" />
         </service>
 
+        <service
+            android:name=".AnnounceService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Shows a short announcement card over other apps until the user uses or closes it" />
+        </service>
+
+        <receiver
+            android:name=".AnnounceAlarm"
+            android:exported="false" />
+
         <receiver
             android:name=".TaskAlarm"
             android:exported="false" />

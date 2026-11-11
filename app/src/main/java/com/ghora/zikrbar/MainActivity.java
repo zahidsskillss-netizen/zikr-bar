@@ -70,8 +70,19 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
+        if (getIntent().getBooleanExtra("power_on", false)) {
+            getIntent().removeExtra("power_on");
+            if (!Prefs.running(this)) startBar();
+            AnnounceAlarm.barStarted(this);
+        }
         if (waitingOverlay) {
             waitingOverlay = false;
             if (Settings.canDrawOverlays(this)) turnTasbihOn();
@@ -599,6 +610,7 @@ public class MainActivity extends Activity {
 
         barSwitch = new Switch(this);
         c.addView(switchRow(L.t("enabled"), barSwitch));
+        c.addView(AnnounceAlarm.toggleRow(this, AnnounceAlarm.POWER, 0xFF66746A));
         barSwitch.setOnCheckedChangeListener((b, on) -> {
             if (binding) return;
             if (on) startBar(); else stopBar();
@@ -1160,6 +1172,7 @@ public class MainActivity extends Activity {
         }
         Prefs.setRunning(this, true);
         Ui.startZikrService(this, new Intent(this, ZikrService.class).setAction(ZikrService.ACTION_REFRESH));
+        AnnounceAlarm.barStarted(this);
         refresh();
     }
 
@@ -1167,6 +1180,7 @@ public class MainActivity extends Activity {
         Prefs.setRunning(this, false);
         Prefs.setOverlay(this, false);
         stopService(new Intent(this, ZikrService.class));
+        AnnounceAlarm.barStopped(this);
         refresh();
     }
 

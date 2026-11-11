@@ -26,6 +26,7 @@ final class AdhkarData {
 
     static final class Item {
         final String title, text, ref, virtue;
+        String meaning = "";
         final int times;
 
         Item(String title, String text, int times, String ref, String virtue) {
@@ -99,6 +100,9 @@ final class AdhkarData {
                 JSONObject o = a.getJSONObject(i);
                 out[i] = new Item(o.optString("t"), o.optString("z"), o.optInt("n", 1),
                         o.optString("r"), o.optString("v"));
+                Object m = o.opt("m");
+                if (m instanceof JSONObject) out[i].meaning = DuaData.pick((JSONObject) m);
+                else if (m instanceof String) out[i].meaning = (String) m;
             }
         } catch (Exception ignored) {
             out = new Item[0];

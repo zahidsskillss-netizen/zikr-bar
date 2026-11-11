@@ -246,6 +246,7 @@ public class SalahWordsActivity extends Activity {
         root.addView(h);
 
         root.addView(learnCard());
+        root.addView(AnnounceAlarm.toggleRow(this, AnnounceAlarm.SALAH, 0xFF66746A));
         for (int a = 0; a < SECTIONS.length; a++) {
             View c = section(a);
             cards.add(c);
