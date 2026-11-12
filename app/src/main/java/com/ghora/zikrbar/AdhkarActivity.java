@@ -582,56 +582,142 @@ public class AdhkarActivity extends Activity {
         }
     }
 
-    // ================================================== 99 names
+    // ================================================== 99 names (Allah + 98, as in the book)
+    private static String[][] book;
+
+    private String[][] names() {
+        if (book == null) {
+            try (java.io.InputStream in = getAssets().open("names_book.json")) {
+                java.io.ByteArrayOutputStream buf = new java.io.ByteArrayOutputStream();
+                byte[] b = new byte[4096];
+                int n;
+                while ((n = in.read(b)) > 0) buf.write(b, 0, n);
+                org.json.JSONArray a = new org.json.JSONArray(new String(buf.toByteArray(), "UTF-8"));
+                String[][] r = new String[a.length()][2];
+                for (int j = 0; j < r.length; j++) {
+                    r[j][0] = a.getJSONObject(j).optString("n");
+                    r[j][1] = a.getJSONObject(j).optString("m");
+                }
+                book = r;
+            } catch (Exception e) {
+                String[][] r = new String[Adhkar.NAMES.length][2];
+                for (int j = 0; j < r.length; j++) { r[j][0] = Adhkar.NAMES[j]; r[j][1] = ""; }
+                book = r;
+            }
+        }
+        return book;
+    }
+
     private void buildNames() {
         header(L.t("names99"), null);
         TextView sub = k.text(L.t("names_s"), 14, MUTED);
         sub.setGravity(Gravity.CENTER);
         sub.setPadding(k.dp(20), k.dp(16), k.dp(20), k.dp(4));
         root.addView(sub);
+        root.addView(namesIntro());
         root.addView(AnnounceAlarm.toggleRow(this, AnnounceAlarm.ASMA_AM, MUTED));
+        String[][] all = names();
         int cols = 3;
         LinearLayout row = null;
-        for (int i = 0; i < Adhkar.NAMES.length; i++) {
+        for (int i = 0; i < all.length; i++) {
             if (i % cols == 0) {
                 row = new LinearLayout(this);
                 row.setOrientation(LinearLayout.HORIZONTAL);
+                // the names always run from the right, in every language
+                row.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
                 LinearLayout.LayoutParams rp = k.matchWrap();
                 rp.setMargins(k.dp(12), k.dp(8), k.dp(12), 0);
                 root.addView(row, rp);
             }
-            row.addView(nameCell(i), cellParams());
+            row.addView(nameCell(i, all[i][0], all[i][1]), cellParams());
         }
-        int rest = Adhkar.NAMES.length % cols;
+        int rest = all.length % cols;
         if (rest != 0) for (int j = rest; j < cols; j++) row.addView(new View(this), cellParams());
     }
 
     private LinearLayout.LayoutParams cellParams() {
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, k.dp(118), 1);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1);
         lp.setMargins(k.dp(4), 0, k.dp(4), 0);
         return lp;
     }
 
-    private View nameCell(int i) {
+    private View nameCell(int i, String arabic, String meaning) {
         LinearLayout c = new LinearLayout(this);
         c.setOrientation(LinearLayout.VERTICAL);
         c.setGravity(Gravity.CENTER);
+        c.setMinimumHeight(k.dp(112));
         c.setPadding(k.dp(6), k.dp(8), k.dp(6), k.dp(8));
         c.setBackground(k.glass(20));
         TextView n = k.strong(L.num(i + 1), 11, GOLD_LINE);
         n.setGravity(Gravity.CENTER);
         c.addView(n);
-        TextView name = k.arabic(Adhkar.NAMES[i], Adhkar.NAMES[i].length() > 14 ? 15 : 20, GREEN);
+        TextView name = k.arabic(arabic, arabic.length() > 14 ? 15 : 20, GREEN);
+        name.setTextDirection(View.TEXT_DIRECTION_RTL);
+        name.setGravity(Gravity.CENTER);
         name.setPadding(0, k.dp(2), 0, 0);
         c.addView(name);
-        String mean = nameMeaning(i);
-        if (!mean.isEmpty()) {
-            TextView mt = k.text(mean, 11, MUTED);
+        if (!meaning.isEmpty()) {
+            TextView mt = k.text(meaning, 11, MUTED);
             mt.setGravity(Gravity.CENTER);
+            mt.setTextDirection(View.TEXT_DIRECTION_RTL);
             mt.setPadding(0, k.dp(3), 0, 0);
             c.addView(mt);
         }
         return c;
+    }
+
+    /** Evidence from the Qur'an and Sunnah, from the book; folded until the title is tapped. */
+    private View namesIntro() {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(k.dp(16), k.dp(12), k.dp(16), k.dp(12));
+        LinearLayout.LayoutParams lp = k.matchWrap();
+        lp.setMargins(k.dp(14), k.dp(10), k.dp(14), 0);
+        card.setLayoutParams(lp);
+        card.setBackground(k.glass(22));
+
+        TextView head = k.title("📖  " + L.t("an_evidence") + "  ▾", 16, GREEN);
+        head.setGravity(Gravity.CENTER);
+        card.addView(head);
+
+        LinearLayout body = new LinearLayout(this);
+        body.setOrientation(LinearLayout.VERTICAL);
+        body.setVisibility(View.GONE);
+        card.addView(body);
+        introBlock(body, "وَلِلَّهِ الْأَسْمَاءُ الْحُسْنَىٰ فَادْعُوهُ بِهَا", "[الأعراف: ۱۸۰]",
+                "ژباړه: او ښه نومونه یوازې د الله لره دي، نو الله په هغو ښو نومونو سره ر بولئ!\n\nتفسیر: الله تر ټولو ښکلي او غوره نومونه لري، چې په بهترینو معناوو او صفاتو دلالت کوي، نو کله چې غواړئ له الله څخه کوم څه شي وغواړئ، نو د دعاء په وخت کې ورته په همدغو نومونو اواز کوئ.\n\n• که د بخښنې غوښتنه کوئ، نو د «الغفار» په نوم ورته فریاد کوئ: يَا غَفَّارُ اغْفِرْ لِي. ژباړه: ای بخښونکيه ذاته، ماته بخښنه وکړه.\n• که د رحم غوښتنه کوئ، نو د «الرحمن» په نوم ورته فریاد کوئ: يَا رَحْمَنُ ارْحَمْنِي. ژباړه: ای لوراندې او مهربانه ذاته، پر ما رحم وکړه.");
+        introBlock(body, "سُبْحَانَكَ لَا إِلَهَ إِلَّا أَنْتَ، اغْفِرْ لِي ذَنْبِي، وَأَصْلِحْ لِي عَمَلِي، إِنَّكَ تَغْفِرُ الذُّنُوبَ لِمَنْ تَشَاءُ، وَأَنْتَ الْغَفُورُ الرَّحِيمُ. يَا غَفَّارُ اغْفِرْ لِي، يَا تَوَّابُ تُبْ عَلَيَّ، يَا رَحْمَنُ ارْحَمْنِي، يَا عَفُوُّ اعْفُ عَنِّي، يَا رَءُوفُ ارْأَفْ بِي",
+                "المعجم الكبير للطبراني (۲/۱۳۳)",
+                "امام طبراني رحمه الله له عبد الله ابن مسعود رضي الله عنه څخه همدغه ډول دعا را نقلوي.");
+        introBlock(body, "إِنَّ لِلَّهِ تِسْعَةً وَتِسْعِينَ اسْمًا مَنْ أَحْصَاهَا دَخَلَ الْجَنَّةَ", "[متفق علیه]",
+                "رسول الله ﷺ په یوه حدیث شریف کې فرمايي. ژباړه: الله ﷻ لره ۹۹ نومونه دي، که چا دا نومونه یاد کړل، جنت ته به داخل سي.");
+        introBlock(body, "أَيْ مَنْ حَفِظَهَا، وَفَهِمَ مَعَانِيَهَا وَمَدْلُولَهَا، وَأَثْنَى عَلَى اللَّهِ بِهَا، وَسَأَلَهُ بِهَا، وَاعْتَقَدَهَا دَخَلَ الْجَنَّةَ",
+                "وهب القحطاني رحمه الله — شرح أسماء الله الحسنى في ضوء الكتاب والسنة (ص: ۵)",
+                "ژباړه: یعنی که چا یاد کړل، په معنی یې ځان پوه کړ، او الله ﷻ یې په همدې نومونو یادوي، دعا یې په همدغو نومونو کول او عقیده یې ورباندې لرل؛ نو جنت ته به داخل سي.\n\nنو هر مسلمان باید دا مبارک نومونه یاد کړي، په ترجمه یې ځان پوه کړي او په خپلو دعاګانو کې په همدغو نومونو الله ﷻ را وبولي او خپلې غوښتنې ورڅخه وغواړي.");
+
+        head.setOnClickListener(v -> {
+            boolean open = body.getVisibility() == View.VISIBLE;
+            body.setVisibility(open ? View.GONE : View.VISIBLE);
+            head.setText("📖  " + L.t("an_evidence") + (open ? "  ▾" : "  ▴"));
+        });
+        return card;
+    }
+
+    private void introBlock(LinearLayout body, String arabic, String ref, String ps) {
+        TextView z = k.arabic(arabic, 19, INK);
+        z.setLineSpacing(0, 1.4f);
+        z.setTextDirection(View.TEXT_DIRECTION_RTL);
+        z.setPadding(0, k.dp(14), 0, 0);
+        body.addView(z);
+        TextView r = k.text(ref, 11.5f, MUTED);
+        r.setGravity(Gravity.CENTER);
+        r.setPadding(0, k.dp(4), 0, 0);
+        body.addView(r);
+        TextView m = k.text(ps, 13.5f, MUTED);
+        m.setLineSpacing(0, 1.3f);
+        m.setTextDirection(View.TEXT_DIRECTION_RTL);
+        m.setPadding(0, k.dp(6), 0, k.dp(4));
+        body.addView(m);
     }
 
     // ================================================== helpers
@@ -643,26 +729,6 @@ public class AdhkarActivity extends Activity {
         } else {
             v.vibrate(ms);
         }
-    }
-
-    private static String[] nameMeanings;
-
-    private String nameMeaning(int i) {
-        if (nameMeanings == null) {
-            try (java.io.InputStream in = getAssets().open("names_ps.json")) {
-                java.io.ByteArrayOutputStream buf = new java.io.ByteArrayOutputStream();
-                byte[] b = new byte[4096];
-                int n;
-                while ((n = in.read(b)) > 0) buf.write(b, 0, n);
-                org.json.JSONArray a = new org.json.JSONArray(new String(buf.toByteArray(), "UTF-8"));
-                String[] r = new String[a.length()];
-                for (int j = 0; j < r.length; j++) r[j] = a.optString(j);
-                nameMeanings = r;
-            } catch (Exception e) {
-                nameMeanings = new String[0];
-            }
-        }
-        return i < nameMeanings.length && L.lang == 0 ? nameMeanings[i] : "";
     }
 
     /** Small meaning text under the Arabic, in the app language. */
