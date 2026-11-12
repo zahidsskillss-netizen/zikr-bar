@@ -9,6 +9,7 @@ import android.graphics.Canvas;
 import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.RadialGradient;
 import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.drawable.GradientDrawable;
@@ -46,8 +47,11 @@ public class TasbihActivity extends Activity {
     private TextView dhikr, sub;
     private LinearLayout chips;
     private HorizontalScrollView chipScroll;
-    private CounterView counter;
-    private TextView vibBtn, sndBtn;
+    private View counter;
+    private Runnable pulser;
+    private boolean space;
+    private android.media.MediaPlayer music;
+    private TextView vibBtn, sndBtn, musBtn;
 
     private SharedPreferences sp() {
         return getSharedPreferences("tasbih_app", Context.MODE_PRIVATE);
@@ -61,6 +65,8 @@ public class TasbihActivity extends Activity {
         Theme.darkWindow(this);
         list = Prefs.list(this);
         idx = Math.floorMod(sp().getInt("idx", 0), list.size());
+        space = sp().getBoolean("space", true);
+        Sfx.prepare(this);
 
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
@@ -76,16 +82,33 @@ public class TasbihActivity extends Activity {
         GoalArc arc = new GoalArc(this);
         root.addView(arc, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, k.dp(92)));
 
-        counter = new CounterView(this);
+        if (space) {
+            SpaceCounter sc = new SpaceCounter(this);
+            counter = sc;
+            pulser = sc::pulse;
+        } else {
+            CounterView cv = new CounterView(this);
+            counter = cv;
+            pulser = cv::pulse;
+        }
         root.addView(counter, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1));
-        setContentView(root);
+        if (space) {
+            android.widget.FrameLayout frame = new android.widget.FrameLayout(this);
+            frame.addView(new SpaceBackground(this), new android.widget.FrameLayout.LayoutParams(
+                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT, android.widget.FrameLayout.LayoutParams.MATCH_PARENT));
+            frame.addView(root, new android.widget.FrameLayout.LayoutParams(
+                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT, android.widget.FrameLayout.LayoutParams.MATCH_PARENT));
+            setContentView(frame);
+        } else {
+            setContentView(root);
+        }
         select(idx, 0);
     }
 
     // ---------------------------------------------------------------- header
     private View header() {
         LinearLayout h = k.row();
-        h.setBackgroundColor(D_HEAD);
+        h.setBackgroundColor(space ? 0x66000000 : D_HEAD);
         h.setPadding(k.dp(8), k.dp(10), k.dp(8), k.dp(10));
         TextView back = icon(L.rtl() ? "→" : "←", v -> finish());
         h.addView(back);
@@ -104,6 +127,16 @@ public class TasbihActivity extends Activity {
             paintToggles();
         });
         h.addView(sndBtn);
+        musBtn = icon("🎵", v -> {
+            sp().edit().putBoolean("music", !music()).apply();
+            paintToggles();
+            if (music()) startMusic(); else stopMusic();
+        });
+        if (space) h.addView(musBtn);
+        h.addView(icon(space ? "🕋" : "🌌", v -> {
+            sp().edit().putBoolean("space", !space).apply();
+            recreate();
+        }));
         paintToggles();
         return h;
     }
@@ -116,8 +149,9 @@ public class TasbihActivity extends Activity {
         b.setGravity(Gravity.CENTER);
         b.setBackground(k.rounded(Theme.ov(0x14), 14, 0));
         b.setOnClickListener(l);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(k.dp(44), k.dp(44));
-        lp.setMarginStart(k.dp(6));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(k.dp(38), k.dp(38));
+        lp.setMarginStart(k.dp(4));
+        b.setTextSize(19);
         b.setLayoutParams(lp);
         return b;
     }
@@ -127,13 +161,64 @@ public class TasbihActivity extends Activity {
     }
 
     private boolean snd() {
-        return sp().getBoolean("snd", false);
+        return sp().getBoolean("snd", true);
+    }
+
+    private boolean music() {
+        return sp().getBoolean("music", true);
+    }
+
+    private void startMusic() {
+        if (!space || !music()) return;
+        try {
+            if (music == null) {
+                music = android.media.MediaPlayer.create(this, R.raw.ambient);
+                if (music == null) return;
+                music.setLooping(true);
+                music.setVolume(0.55f, 0.55f);
+            }
+            if (!music.isPlaying()) music.start();
+        } catch (RuntimeException ignored) {
+        }
+    }
+
+    private void stopMusic() {
+        try {
+            if (music != null && music.isPlaying()) music.pause();
+        } catch (RuntimeException ignored) {
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        startMusic();
+    }
+
+    @Override
+    protected void onPause() {
+        stopMusic();
+        super.onPause();
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (music != null) {
+            try {
+                music.release();
+            } catch (RuntimeException ignored) {
+            }
+            music = null;
+        }
+        Sfx.release();
+        super.onDestroy();
     }
 
     private void paintToggles() {
         vibBtn.setAlpha(vib() ? 1f : 0.35f);
         sndBtn.setText(snd() ? "🔊" : "🔇");
         sndBtn.setAlpha(snd() ? 1f : 0.5f);
+        if (musBtn != null) musBtn.setAlpha(music() ? 1f : 0.35f);
     }
 
     private void confirmReset() {
@@ -153,8 +238,10 @@ public class TasbihActivity extends Activity {
         c.setOrientation(LinearLayout.VERTICAL);
         c.setGravity(Gravity.CENTER);
         c.setPadding(k.dp(18), k.dp(20), k.dp(18), k.dp(16));
-        c.setBackground(k.glass(26));
-        Theme.elev(c, k.dp(6));
+        if (!space) {
+            c.setBackground(k.glass(26));
+            Theme.elev(c, k.dp(6));
+        }
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, k.dp(150));
         lp.setMargins(k.dp(16), k.dp(16), k.dp(16), 0);
         c.setLayoutParams(lp);
@@ -164,6 +251,7 @@ public class TasbihActivity extends Activity {
         dhikr.setEllipsize(android.text.TextUtils.TruncateAt.END);
         c.addView(dhikr, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1));
         dhikr.setGravity(Gravity.CENTER);
+        if (space) dhikr.setShadowLayer(k.dp(8), 0, 0, 0xAA000000);
         sub = k.strong("", 13, D_MUTED);
         sub.setGravity(Gravity.CENTER);
         c.addView(sub);
@@ -264,12 +352,11 @@ public class TasbihActivity extends Activity {
         Prefs.setLastZikr(this, System.currentTimeMillis());
         if (vib()) vibrate(reached ? 300 : 18);
         if (snd()) {
-            AudioManager am = getSystemService(AudioManager.class);
-            if (am != null) am.playSoundEffect(AudioManager.FX_KEY_CLICK, 0.7f);
+            if (reached) Sfx.chime(); else Sfx.bead();
         }
         if (reached) Toast.makeText(this, L.t("goal_done"), Toast.LENGTH_SHORT).show();
         refresh();
-        counter.pulse();
+        if (pulser != null) pulser.run();
     }
 
     private void refresh() {
@@ -469,6 +556,124 @@ public class TasbihActivity extends Activity {
             text.setTextSize(sp(13));
             text.setColor(D_MUTED);
             c.drawText(L.f("tas_rounds", L.num(rounds())), cx, Math.min(h - k.dp(14), cy + r * 1.18f + k.dp(30)), text);
+        }
+
+        @Override
+        public boolean onTouchEvent(MotionEvent e) {
+            if (e.getAction() == MotionEvent.ACTION_DOWN) {
+                tap();
+                return true;
+            }
+            return e.getAction() == MotionEvent.ACTION_UP || super.onTouchEvent(e);
+        }
+    }
+
+    // ================================================================ beads on a string, like a real tasbih
+    final class SpaceCounter extends View {
+        private final Paint bp = new Paint(Paint.ANTI_ALIAS_FLAG), tp = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private float slide, plus;
+        private ValueAnimator anim;
+
+        SpaceCounter(Context c) {
+            super(c);
+            tp.setTextAlign(Paint.Align.CENTER);
+            tp.setTypeface(k.strong);
+        }
+
+        void pulse() {
+            if (anim != null) anim.cancel();
+            anim = ValueAnimator.ofFloat(1f, 0f);
+            anim.setDuration(240);
+            anim.setInterpolator(new DecelerateInterpolator());
+            anim.addUpdateListener(a -> {
+                slide = (float) a.getAnimatedValue();
+                plus = slide;
+                invalidate();
+            });
+            anim.start();
+        }
+
+        @Override
+        protected void onDraw(Canvas c) {
+            float w = getWidth(), h = getHeight(), cx = w / 2f;
+            float s = w / 15f, stringY = h * 0.10f, sag = h * 0.14f;
+            int count = count(), g = goal(), period = g > 0 ? g : 33;
+            int n = (int) (w / s / 2f) + 3;
+
+            // the string
+            Path path = new Path();
+            for (int i = 0; i <= 40; i++) {
+                float x = w * i / 40f, t = (x - cx) / (w / 2f);
+                float y = stringY + sag * (1f - t * t);
+                if (i == 0) path.moveTo(x, y); else path.lineTo(x, y);
+            }
+            bp.setStyle(Paint.Style.STROKE);
+            bp.setStrokeWidth(k.dp(1.4f));
+            bp.setColor(0x88C9DCE8);
+            bp.setShader(null);
+            c.drawPath(path, bp);
+            bp.setStyle(Paint.Style.FILL);
+
+            // beads, from the sides to the middle so the middle one lies on top
+            for (int kk = n; kk >= 0; kk--) {
+                for (int sgn = 0; sgn < 2; sgn++) {
+                    if (sgn == 1 && kk == 0) break;
+                    int slot = sgn == 0 ? kk : -kk;
+                    float x = cx + (slot + slide) * s;
+                    if (x < -s || x > w + s) continue;
+                    float t = (x - cx) / (w / 2f);
+                    float y = stringY + sag * (1f - t * t);
+                    float r = s * (0.32f + 0.2f * (1f - Math.min(1f, t * t)));
+                    boolean marker = Math.floorMod(count + slot, period) == 0;
+                    int c0 = marker ? 0xFFFFC08A : 0xFFEAF6FF, c1 = marker ? 0xFFE8541C : 0xFF6F8FA3, c2 = marker ? 0xFF7A2406 : 0xFF2F4656;
+                    bp.setShader(new RadialGradient(x - r * 0.35f, y - r * 0.4f, r * 1.5f,
+                            new int[]{c0, c1, c2}, new float[]{0f, 0.5f, 1f}, Shader.TileMode.CLAMP));
+                    c.drawCircle(x, y, r, bp);
+                    bp.setShader(null);
+                }
+            }
+
+            // halo on the bead that is counted now
+            float hy = stringY + sag;
+            bp.setStyle(Paint.Style.STROKE);
+            bp.setStrokeWidth(k.dp(1.2f));
+            bp.setColor(0x66FFFFFF);
+            c.drawCircle(cx, hy, s * 0.95f, bp);
+            bp.setStyle(Paint.Style.FILL);
+
+            // the number inside a progress ring
+            float ncy = h * 0.46f, rr = Math.min(w * 0.17f, h * 0.2f);
+            bp.setStyle(Paint.Style.STROKE);
+            bp.setStrokeWidth(k.dp(3));
+            bp.setColor(0x33FFFFFF);
+            RectF oval = new RectF(cx - rr, ncy - rr, cx + rr, ncy + rr);
+            c.drawArc(oval, 0, 360, false, bp);
+            if (g > 0) {
+                bp.setColor(0xFFFFFFFF);
+                bp.setStrokeCap(Paint.Cap.ROUND);
+                c.drawArc(oval, -90, 360f * count / g, false, bp);
+                bp.setStrokeCap(Paint.Cap.BUTT);
+            }
+            bp.setStyle(Paint.Style.FILL);
+            bp.setColor(0x33000000);
+            c.drawCircle(cx, ncy, rr - k.dp(2), bp);
+            tp.setColor(0xFFFFFFFF);
+            tp.setTextSize(rr * (count > 999 ? 0.62f : 0.9f));
+            Paint.FontMetrics fm = tp.getFontMetrics();
+            c.drawText(L.num(count), cx, ncy - (fm.ascent + fm.descent) / 2f - rr * 0.08f, tp);
+            tp.setTextSize(sp(10));
+            tp.setColor(0xAAFFFFFF);
+            c.drawText("/ " + (g > 0 ? L.num(g) : "∞"), cx, ncy + rr * 0.62f, tp);
+            if (plus > 0.02f) {
+                tp.setColor(0xFFFF8A4C);
+                tp.setAlpha((int) (255 * plus));
+                tp.setTextSize(sp(13));
+                c.drawText("+1", cx + rr * 0.95f, ncy - rr * 0.8f - (1f - plus) * k.dp(14), tp);
+                tp.setAlpha(255);
+            }
+            tp.setColor(0xB3FFFFFF);
+            tp.setTextSize(sp(13));
+            c.drawText(L.f("tas_rounds", L.num(rounds())), cx, ncy + rr + k.dp(26), tp);
         }
 
         @Override

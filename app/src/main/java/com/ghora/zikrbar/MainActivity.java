@@ -139,7 +139,7 @@ public class MainActivity extends Activity {
         LinearLayout c = k.card("\u2699", L.t("home_f_t"), L.t("home_f_s"));
         String[][] f = {{"\u06DE", "tilawat", "tl_title"}, {"\uFDF2", "bar", "c_bar_t"}, {L.num(33), "tasbih", "c_tas_t"},
                 {"\u25C9", "face", "c_face_t"}, {"\u2600", "unlock", "c_unl_t"}, {"\u263E", "reminder", "c_rem_t"},
-                {"\u2714", "tasks", "tk_tile"}, {"\u2261", "list", "c_list_t"}, {"\u2726", "more", "c_more_t"}};
+                {"\u2714", "tasks", "tk_tile"}, {L.num(99), "names", "names99"}, {"\u2261", "list", "c_list_t"}, {"\u2726", "more", "c_more_t"}};
         for (int r = 0; r < 2; r++) {
             LinearLayout line = k.row();
             for (int i = 0; i < 5; i++) {
@@ -179,6 +179,7 @@ public class MainActivity extends Activity {
         t.setOnClickListener(v -> {
             if (id.equals("tilawat")) startActivity(new Intent(this, TilawatActivity.class));
             else if (id.equals("tasks")) startActivity(new Intent(this, TasksActivity.class));
+            else if (id.equals("names")) startActivity(new Intent(this, AdhkarActivity.class).putExtra(AdhkarActivity.EXTRA_TAB, AdhkarData.NAMES));
             else startActivity(new Intent(this, SectionActivity.class).putExtra("section", id));
         });
         return t;
