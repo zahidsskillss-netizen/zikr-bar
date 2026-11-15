@@ -982,7 +982,7 @@ public class MainActivity extends Activity {
         HorizontalScrollView hs = new HorizontalScrollView(this);
         hs.setHorizontalScrollBarEnabled(false);
         LinearLayout row = new LinearLayout(this);
-        String[] marks = {"\u25C9", "\u2B2D", "\u25D0", "\u25AD", "\u25CE", "\u2550"};
+        String[] marks = {"\u25C9", "\u2B2D", "\u25D0", "\u25AD", "\u25CE", "\u2550", "\u25EF", "\u25CC", "\u25C8"};
         ppTiles.clear();
         for (int i = 0; i < PeriodicStyles.COUNT; i++) {
             final int st = i;

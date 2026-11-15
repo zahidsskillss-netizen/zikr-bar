@@ -18,8 +18,8 @@ import android.widget.TextView;
 /** Six animated dhikr popups that appear over any app every few minutes (see Prefs.popupEvery). */
 final class PeriodicStyles {
 
-    static final int COUNT = 6;
-    static final String[] KEYS = {"pp_0", "pp_1", "pp_2", "pp_3", "pp_4", "pp_5"};
+    static final int COUNT = 9;
+    static final String[] KEYS = {"pp_0", "pp_1", "pp_2", "pp_3", "pp_4", "pp_5", "pp_6", "pp_7", "pp_8"};
     static final int[] EVERY = {1, 5, 15, 30, 45, 60, 120, 180};
 
     private PeriodicStyles() {}
@@ -32,6 +32,9 @@ final class PeriodicStyles {
             case 3: return glass(c, k, text, screen);
             case 4: return orbit(c, k, text, screen);
             case 5: return ribbon(c, k, text, screen);
+            case 6: return glassTag(c, k, text, screen, 0);
+            case 7: return glassTag(c, k, text, screen, 1);
+            case 8: return glassTag(c, k, text, screen, 2);
             default: return bloom(c, k, text, screen);
         }
     }
@@ -292,6 +295,63 @@ final class PeriodicStyles {
             repeat(s, 1800, -0.2f, 1.2f, a -> shine.setTranslationX(screen.x * (float) a.getAnimatedValue()));
         };
         s.exit = done -> band.animate().translationX(screen.x).setDuration(420)
+                .setInterpolator(new AccelerateInterpolator()).withEndAction(done).start();
+        return s;
+    }
+
+    // 7-9 -------------------------------------------------------------- small glass tags (Ghora Lalezar font)
+    // v: 0 = white glass, 1 = frosted ice, 2 = gold-edged dark glass. The tag grows with the text, so nothing is cut.
+    private static UnlockStyles.Shown glassTag(Context c, Kit k, String text, Point screen, int v) {
+        UnlockStyles.Shown s = new UnlockStyles.Shown();
+        FrameLayout root = new FrameLayout(c);
+        root.setPadding(k.dp(12), k.dp(8), k.dp(12), k.dp(14));
+        int len = text == null ? 0 : text.length();
+        float sp = len > 90 ? 13.5f : len > 50 ? 15f : 17f;
+        TextView t = new TextView(c);
+        t.setText(text);
+        t.setTypeface(Ui.font(c, "ghora_lalezar"));
+        t.setTextSize(sp);
+        t.setGravity(Gravity.CENTER);
+        t.setLineSpacing(0, 1.08f);
+        t.setIncludeFontPadding(false);
+        t.setTextDirection(View.TEXT_DIRECTION_RTL);
+        t.setMaxWidth(screen.x - k.dp(40));
+        t.setPadding(k.dp(15), k.dp(7), k.dp(15), k.dp(9));
+        float r = k.dp(len > 40 ? 18 : 24);
+        GradientDrawable bg;
+        if (v == 0) {
+            bg = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, new int[]{0xF5FFFFFF, 0xDDEFF3F6});
+            bg.setCornerRadius(r);
+            bg.setStroke(k.dp(1), 0xB3FFFFFF);
+            t.setTextColor(0xFF0D3B66);
+        } else if (v == 1) {
+            bg = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, new int[]{0x66FFFFFF, 0x33FFFFFF});
+            bg.setCornerRadius(r);
+            bg.setStroke(k.dp(1), 0xAAFFFFFF);
+            t.setTextColor(0xFFFFFFFF);
+            t.setShadowLayer(k.dp(3), 0, k.dp(1), 0xAA000000);
+        } else {
+            bg = new GradientDrawable(GradientDrawable.Orientation.TL_BR, new int[]{0xB3231A08, 0xB3120D04});
+            bg.setCornerRadius(r);
+            bg.setStroke(Math.round(k.dp(1.2f)), 0xFFD9A63A);
+            t.setTextColor(0xFFFFE08A);
+        }
+        t.setBackground(bg);
+        t.setElevation(k.dp(v == 1 ? 4 : 7));
+        root.addView(t, new FrameLayout.LayoutParams(-2, -2, Gravity.CENTER_HORIZONTAL));
+        s.root = root;
+        s.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
+        s.y = k.dp(28);
+        s.hold = 2600 + Math.min(4000, len * 25);
+        s.enter = () -> {
+            t.setAlpha(0f);
+            t.setScaleX(0.82f);
+            t.setScaleY(0.82f);
+            t.setTranslationY(-k.dp(24));
+            t.animate().alpha(1f).scaleX(1f).scaleY(1f).translationY(0).setDuration(420)
+                    .setInterpolator(new OvershootInterpolator(1.1f)).start();
+        };
+        s.exit = done -> t.animate().alpha(0f).translationY(-k.dp(18)).scaleX(0.92f).scaleY(0.92f).setDuration(300)
                 .setInterpolator(new AccelerateInterpolator()).withEndAction(done).start();
         return s;
     }
