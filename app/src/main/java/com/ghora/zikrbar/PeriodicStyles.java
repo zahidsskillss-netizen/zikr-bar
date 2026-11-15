@@ -26,6 +26,7 @@ final class PeriodicStyles {
 
     static UnlockStyles.Shown build(Context c, int style, String text, Point screen) {
         Kit k = new Kit(c);
+        k.scale = Prefs.popupScale(c);
         switch (style) {
             case 1: return island(c, k, text, screen);
             case 2: return bubble(c, k, text, screen);
@@ -310,12 +311,12 @@ final class PeriodicStyles {
         TextView t = new TextView(c);
         t.setText(text);
         t.setTypeface(Ui.font(c, "ghora_lalezar"));
-        t.setTextSize(sp);
+        t.setTextSize(sp * k.scale);
         t.setGravity(Gravity.CENTER);
         t.setLineSpacing(0, 1.08f);
         t.setIncludeFontPadding(false);
         t.setTextDirection(View.TEXT_DIRECTION_RTL);
-        t.setMaxWidth(screen.x - k.dp(40));
+        t.setMaxWidth(screen.x - Math.round(40 * c.getResources().getDisplayMetrics().density));
         t.setPadding(k.dp(15), k.dp(7), k.dp(15), k.dp(9));
         float r = k.dp(len > 40 ? 18 : 24);
         GradientDrawable bg;

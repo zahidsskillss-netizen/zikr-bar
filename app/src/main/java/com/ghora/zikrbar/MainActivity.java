@@ -25,6 +25,7 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.Switch;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -1009,6 +1010,36 @@ public class MainActivity extends Activity {
         }
         hs.addView(row);
         c.addView(hs, k.matchWrap());
+        c.addView(k.label(L.t("pp_size")), k.topMargin(10));
+        TextView sizeV = k.strong("", 14, GOLD_LINE);
+        sizeV.setGravity(Gravity.CENTER);
+        SeekBar sb = new SeekBar(this);
+        sb.setMax(26); // 50% .. 180%, step 5
+        sb.setProgress(Math.round((Prefs.popupScale(this) * 100f - 50f) / 5f));
+        sizeV.setText(L.num(Math.round(Prefs.popupScale(this) * 100f)) + "%");
+        sb.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar bar, int p, boolean user) {
+                sizeV.setText(L.num(50 + p * 5) + "%");
+                if (user) Prefs.setPopupScale(MainActivity.this, (50 + p * 5) / 100f);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar bar) {}
+
+            @Override
+            public void onStopTrackingTouch(SeekBar bar) {
+                if (Settings.canDrawOverlays(MainActivity.this) && Prefs.running(MainActivity.this)) previewPeriodic();
+            }
+        });
+        LinearLayout sizeRow = new LinearLayout(this);
+        sizeRow.setGravity(Gravity.CENTER_VERTICAL);
+        sizeRow.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+        sizeRow.addView(k.strong("A", 12, INK));
+        sizeRow.addView(sb, new LinearLayout.LayoutParams(0, -2, 1));
+        sizeRow.addView(k.strong("A", 24, INK));
+        c.addView(sizeRow, k.matchWrap());
+        c.addView(sizeV, k.matchWrap());
         c.addView(k.button("\u25B6\u2003" + L.t("us_preview"), false, v -> previewPeriodic()), k.topMargin(12));
         paintPeriodic();
         return c;

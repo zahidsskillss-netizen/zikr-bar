@@ -237,6 +237,8 @@ public final class Prefs {
     static void setPopupOn(Context c, boolean on) { sp(c).edit().putBoolean("pOn", on).apply(); }
     static int popupStyle(Context c) { return Math.max(0, Math.min(PeriodicStyles.COUNT - 1, sp(c).getInt("pStyle", 0))); }
     static void setPopupStyle(Context c, int s) { sp(c).edit().putInt("pStyle", s).apply(); }
+    static float popupScale(Context c) { return Math.max(0.5f, Math.min(1.8f, sp(c).getFloat("pScale", 1f))); }
+    static void setPopupScale(Context c, float v) { sp(c).edit().putFloat("pScale", v).apply(); }
     static int popupEvery(Context c) { return sp(c).getInt("pEvery", 15); }
     static void setPopupEvery(Context c, int m) { sp(c).edit().putInt("pEvery", m).apply(); }
 

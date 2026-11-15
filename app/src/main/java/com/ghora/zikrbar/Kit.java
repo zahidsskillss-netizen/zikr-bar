@@ -52,6 +52,9 @@ final class Kit {
     private final float d;
     final Typeface titr, body, strong, amiri, amiriBold;
 
+    /** 1 = normal; the dhikr popups set this to the size the person picked. */
+    float scale = 1f;
+
     Kit(Context c) {
         this.c = c;
         d = c.getResources().getDisplayMetrics().density;
@@ -63,7 +66,7 @@ final class Kit {
     }
 
     int dp(float v) {
-        return Math.round(v * d);
+        return Math.round(v * d * scale);
     }
 
     // ---------- text ----------
@@ -71,7 +74,7 @@ final class Kit {
         TextView t = new TextView(c);
         t.setText(s);
         t.setTypeface(titr);
-        t.setTextSize(sp);
+        t.setTextSize(sp * scale);
         t.setTextColor(color);
         t.setIncludeFontPadding(false);
         return t;
@@ -81,7 +84,7 @@ final class Kit {
         TextView t = new TextView(c);
         t.setText(s);
         t.setTypeface(body);
-        t.setTextSize(sp);
+        t.setTextSize(sp * scale);
         t.setTextColor(color);
         t.setLineSpacing(0, 1.3f);
         return t;
@@ -98,7 +101,7 @@ final class Kit {
         TextView t = new TextView(c);
         t.setText(s);
         t.setTypeface(amiriBold);
-        t.setTextSize(sp);
+        t.setTextSize(sp * scale);
         t.setTextColor(color);
         t.setGravity(Gravity.CENTER);
         return t;
