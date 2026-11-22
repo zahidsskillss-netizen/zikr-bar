@@ -44,6 +44,7 @@ final class UnlockStyles {
         int y;
         boolean fullWidth;
         long hold = 2300;
+        String text = "";
         Runnable enter;
         Exit exit;
         final List<Animator> loops = new ArrayList<>();
@@ -59,6 +60,12 @@ final class UnlockStyles {
     private UnlockStyles() {}
 
     static Shown build(Context c, int style, String text, Point screen, float mul) {
+        Shown s = build0(c, style, text, screen, mul);
+        s.text = text;
+        return s;
+    }
+
+    private static Shown build0(Context c, int style, String text, Point screen, float mul) {
         Kit k = new Kit(c);
         if (style >= ORB0 && style < ORB0 + ORB_COUNT) return orb(c, k, text, screen, mul, style - ORB0);
         switch (style) {

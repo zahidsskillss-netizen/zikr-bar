@@ -239,6 +239,13 @@ public final class Prefs {
     }
 
     // ---- periodic animated popup (every few minutes, over any app) ----
+    /** Also show each popup as a small heads-up notification (phones such as Infinix/Tecno often hide overlays from other apps). */
+    static boolean headsUp(Context c) {
+        String m = (android.os.Build.MANUFACTURER + " " + android.os.Build.BRAND).toLowerCase(java.util.Locale.ROOT);
+        boolean oem = m.contains("infinix") || m.contains("tecno") || m.contains("itel") || m.contains("transsion");
+        return sp(c).getBoolean("headsUp", oem);
+    }
+    static void setHeadsUp(Context c, boolean on) { sp(c).edit().putBoolean("headsUp", on).apply(); }
     static boolean popupOn(Context c) { return sp(c).getBoolean("pOn", false); }
     static void setPopupOn(Context c, boolean on) { sp(c).edit().putBoolean("pOn", on).apply(); PopupAlarm.schedule(c); }
     static int popupStyle(Context c) { return Math.max(0, Math.min(PeriodicStyles.COUNT - 1, sp(c).getInt("pStyle", 0))); }

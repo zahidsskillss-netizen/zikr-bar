@@ -59,7 +59,9 @@ public class ZikrService extends Service {
     private static final String CHANNEL = "zikr_bar";
     private static final String CHANNEL_REMIND = "zikr_reminder";
     private static final int NOTIF_ID = 1;
+    private static final String CHANNEL_HEADS = "zikr_heads";
     private static final int REMIND_ID = 2;
+    private static final int HEADS_ID = 3;
 
 
     private final Handler handler = new Handler(Looper.getMainLooper());
@@ -190,13 +192,14 @@ public class ZikrService extends Service {
         lastShown = now;
         pollingUnlock = false;
         handler.removeCallbacks(unlockPoll);
-        handler.post(() -> {
+        // let the phone's own unlock animation finish first, otherwise it can swallow the first frames of ours
+        handler.postDelayed(() -> {
             try {
                 showUnlockPopup();
             } catch (RuntimeException e) {
                 removeUnlockPopup();
             }
-        });
+        }, 450);
     }
 
     private void registerUnlockReceiver() {
@@ -244,6 +247,12 @@ public class ZikrService extends Service {
         NotificationChannel rem = new NotificationChannel(CHANNEL_REMIND, L.t("c_rem_t"), NotificationManager.IMPORTANCE_DEFAULT);
         rem.setShowBadge(false);
         nm.createNotificationChannel(rem);
+        NotificationChannel hu = new NotificationChannel(CHANNEL_HEADS, L.t("hl_heads_ch"), NotificationManager.IMPORTANCE_HIGH);
+        hu.setShowBadge(false);
+        hu.setSound(null, null);
+        hu.enableVibration(false);
+        hu.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+        nm.createNotificationChannel(hu);
     }
 
     @Override
@@ -466,7 +475,8 @@ public class ZikrService extends Service {
         android.widget.TextView glyph = k.arabic("\uFDF2", 40, Kit.GOLD);
         glyph.setIncludeFontPadding(false);
         front.addView(glyph);
-        android.widget.TextView zk = k.arabic(Prefs.nextUnlockText(this), 25, Color.WHITE);
+        final String zkText = Prefs.nextUnlockText(this);
+        android.widget.TextView zk = k.arabic(zkText, 25, Color.WHITE);
         zk.setPadding(0, k.dp(10), 0, k.dp(6));
         zk.setLineSpacing(0, 1.12f);
         zk.setMaxLines(4);
@@ -501,6 +511,9 @@ public class ZikrService extends Service {
             return;
         }
         unlockPopup = root;
+        Prefs.stamp(this, "dgShown");
+        headsUp(zkText);
+        diagnose(root);
 
         final android.view.animation.Interpolator out = new android.view.animation.DecelerateInterpolator(2.2f);
         handler.postDelayed(() -> {
@@ -577,6 +590,8 @@ public class ZikrService extends Service {
             return;
         }
         Prefs.stamp(this, "dgShown");
+        headsUp(sh.text);
+        diagnose(sh.root);
         try {
             // keep the CPU awake while the popup is up, so its timers cannot stall and leave it hanging
             android.os.PowerManager pm = getSystemService(android.os.PowerManager.class);
@@ -600,6 +615,45 @@ public class ZikrService extends Service {
         handler.postDelayed(() -> {
             if (unlockPopup == shown) removeUnlockPopup();
         }, 950 + sh.hold + 1800);
+    }
+
+    /** Records whether the popup window really drew and what state it was in, for the diagnostics page. */
+    private void diagnose(final View v) {
+        try {
+            v.getViewTreeObserver().addOnPreDrawListener(new android.view.ViewTreeObserver.OnPreDrawListener() {
+                @Override
+                public boolean onPreDraw() {
+                    Prefs.stamp(ZikrService.this, "dgDraw");
+                    if (v.getViewTreeObserver().isAlive()) v.getViewTreeObserver().removeOnPreDrawListener(this);
+                    return true;
+                }
+            });
+            handler.postDelayed(() -> {
+                if (unlockPopup != v) return;
+                Prefs.sp(this).edit().putString("dgVis", "a=" + Math.round(v.getAlpha() * 100) + " shown=" + v.isShown()
+                        + " win=" + v.getWindowVisibility() + " " + v.getWidth() + "x" + v.getHeight()).apply();
+            }, 700);
+        } catch (RuntimeException ignored) {
+        }
+    }
+
+    /** A heads-up notification with the dhikr, for phones that hide overlay windows while another app is open. */
+    private void headsUp(String text) {
+        if (text == null || text.isEmpty() || !Prefs.headsUp(this)) return;
+        try {
+            Notification n = Ui.notif(this, CHANNEL_HEADS, false)
+                    .setSmallIcon(Icon.createWithBitmap(allahIcon()))
+                    .setContentTitle(text)
+                    .setColor(0xFF1B5E20)
+                    .setAutoCancel(true)
+                    .setTimeoutAfter(7000)
+                    .setCategory(Notification.CATEGORY_REMINDER)
+                    .setVisibility(Notification.VISIBILITY_PUBLIC)
+                    .build();
+            getSystemService(NotificationManager.class).notify(HEADS_ID, n);
+        } catch (RuntimeException e) {
+            Prefs.sp(this).edit().putString("dgErr", "heads: " + e.getClass().getSimpleName()).apply();
+        }
     }
 
     private void removeUnlockPopup() {

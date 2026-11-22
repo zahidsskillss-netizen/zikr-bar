@@ -103,7 +103,32 @@ public class HealthActivity extends Activity {
                 + L.t("hl_d_unlock") + ": " + ago("dgUnlock") + "\n"
                 + L.t("hl_d_restart") + ": " + ago("dgRestart") + "\n"
                 + L.t("hl_d_err") + ": " + Prefs.sp(this).getString("dgErr", "-"), 13.5f, MUTED), k.topMargin(4));
+        d.addView(k.text(L.t("hl_d_draw") + ": " + ago("dgDraw") + "\n" + L.t("hl_d_vis") + ": "
+                + Prefs.sp(this).getString("dgVis", "-"), 13.5f, MUTED), k.topMargin(2));
         root.addView(d);
+
+        LinearLayout t = k.card("▶", L.t("hl_test_t"), L.t("hl_test_s"));
+        android.widget.Switch sw = new android.widget.Switch(this);
+        sw.setText(L.t("hl_heads"));
+        sw.setTextColor(INK);
+        sw.setChecked(Prefs.headsUp(this));
+        sw.setOnCheckedChangeListener((b, on) -> Prefs.setHeadsUp(this, on));
+        t.addView(sw, k.topMargin(6));
+        t.addView(k.button(L.t("hl_test_p"), true, v -> test(ZikrService.ACTION_PREVIEW_PERIODIC)), k.topMargin(10));
+        t.addView(k.button(L.t("hl_test_u"), true, v -> test(ZikrService.ACTION_PREVIEW_UNLOCK)), k.topMargin(8));
+        root.addView(t);
+    }
+
+    /** Shows a popup 6 seconds from now, so the person can leave the app and see whether it appears over other apps. */
+    private void test(String action) {
+        android.widget.Toast.makeText(this, L.t("hl_test_go"), android.widget.Toast.LENGTH_LONG).show();
+        final Context app = getApplicationContext();
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+            try {
+                Ui.startZikrService(app, new Intent(app, ZikrService.class).setAction(action));
+            } catch (RuntimeException ignored) {
+            }
+        }, 6000);
     }
 
     private String ago(String key) {

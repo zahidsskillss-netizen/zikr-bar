@@ -25,6 +25,12 @@ final class PeriodicStyles {
     private PeriodicStyles() {}
 
     static UnlockStyles.Shown build(Context c, int style, String text, Point screen) {
+        UnlockStyles.Shown s = build0(c, style, text, screen);
+        s.text = text;
+        return s;
+    }
+
+    private static UnlockStyles.Shown build0(Context c, int style, String text, Point screen) {
         Kit k = new Kit(c);
         k.scale = Prefs.popupScale(c);
         switch (style) {
