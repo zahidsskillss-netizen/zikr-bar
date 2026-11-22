@@ -5,6 +5,7 @@ import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.SystemClock;
 
 /**
@@ -18,12 +19,16 @@ public class BootReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         String a = intent.getAction();
+        L.init(context);
         if (ACTION_WATCHDOG.equals(a)) {
+            if (ZikrService.live == null && Prefs.running(context)) Prefs.log(context, "watchdog: service was dead, starting");
             ensureRunning(context);
             PopupAlarm.schedule(context);
+            if (Prefs.running(context)) scheduleWatchdog(context);
             Tasks.resumeDue(context);
             return;
         }
+        Prefs.log(context, "system: " + (a == null ? "?" : a.substring(a.lastIndexOf('.') + 1)));
         AdhkarAlarm.scheduleAll(context);
         PrayerAlarm.schedule(context);
         LearnAlarm.schedule(context);
@@ -42,7 +47,9 @@ public class BootReceiver extends BroadcastReceiver {
         if (!Prefs.running(context) || ZikrService.live != null) return;
         try {
             Ui.startZikrService(context, new Intent(context, ZikrService.class));
-        } catch (RuntimeException ignored) {
+        } catch (RuntimeException e) {
+            Prefs.sp(context).edit().putString("dgErr", "restart: " + e.getClass().getSimpleName()).apply();
+            Prefs.log(context, "restart FAILED " + e.getClass().getSimpleName());
             // Android may refuse to start a foreground service from the background; the app restarts it when opened.
         }
     }
@@ -52,13 +59,21 @@ public class BootReceiver extends BroadcastReceiver {
                 PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
-    /** Checks every ~10 minutes that the dhikr service is still alive. */
+    /** Checks every 10 minutes that the dhikr service is still alive. */
     static void scheduleWatchdog(Context c) {
         try {
             AlarmManager am = c.getSystemService(AlarmManager.class);
             if (am == null) return;
-            am.setInexactRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime() + 10 * 60_000L,
-                    10 * 60_000L, pending(c, 77));
+            // a one-shot exact alarm, set again each time: an inexact repeating one may not start the service (Android 12+)
+            long at = SystemClock.elapsedRealtime() + 10 * 60_000L;
+            PendingIntent pi = pending(c, 77);
+            if (Build.VERSION.SDK_INT >= 31 && !am.canScheduleExactAlarms()) {
+                am.setAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, at, pi);
+            } else if (Build.VERSION.SDK_INT >= 23) {
+                am.setExactAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, at, pi);
+            } else {
+                am.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, at, pi);
+            }
         } catch (RuntimeException ignored) {
         }
     }
@@ -68,7 +83,16 @@ public class BootReceiver extends BroadcastReceiver {
         try {
             AlarmManager am = c.getSystemService(AlarmManager.class);
             if (am == null) return;
-            am.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime() + ms, pending(c, 78));
+            // only an exact alarm may start a foreground service from the background (Android 12+)
+            long at = SystemClock.elapsedRealtime() + ms;
+            PendingIntent pi = pending(c, 78);
+            if (Build.VERSION.SDK_INT >= 31 && !am.canScheduleExactAlarms()) {
+                am.setAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, at, pi);
+            } else if (Build.VERSION.SDK_INT >= 23) {
+                am.setExactAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, at, pi);
+            } else {
+                am.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, at, pi);
+            }
         } catch (RuntimeException ignored) {
         }
     }

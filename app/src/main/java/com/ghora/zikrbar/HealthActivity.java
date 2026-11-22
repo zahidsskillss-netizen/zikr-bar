@@ -66,6 +66,22 @@ public class HealthActivity extends Activity {
 
     private void build() {
         root.removeAllViews();
+        long killAt = Prefs.sp(this).getLong("dgKillAt", 0);
+        if (killAt > 0 && System.currentTimeMillis() - killAt < 86_400_000L) {
+            long back = Prefs.sp(this).getLong("dgKillBack", killAt);
+            LinearLayout w = k.card("!", L.t("hl_kill_t"), L.f("hl_kill_s",
+                    new SimpleDateFormat("HH:mm", Locale.US).format(new Date(killAt)),
+                    L.num((int) Math.max(1, (back - killAt) / 60_000L))));
+            TextView ws = k.text(L.t("hl_kill_steps"), 14, INK);
+            ws.setLineSpacing(0, 1.35f);
+            w.addView(ws, k.topMargin(6));
+            w.addView(k.button(L.t("hl_autostart"), true, v -> openAutoStart()), k.topMargin(12));
+            w.addView(k.button(L.t("hl_kill_ok"), false, v -> {
+                Prefs.sp(this).edit().remove("dgKillAt").remove("dgKillBack").apply();
+                build();
+            }), k.topMargin(8));
+            root.addView(w);
+        }
         LinearLayout c = k.card("⚙", L.t("hl_t"), L.t("hl_s"));
         row(c, Settings.canDrawOverlays(this), L.t("hl_overlay"), () ->
                 startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName()))));
@@ -94,7 +110,8 @@ public class HealthActivity extends Activity {
         TextView steps = k.text(L.t("hl_steps"), 14, INK);
         steps.setLineSpacing(0, 1.35f);
         h.addView(steps, k.topMargin(6));
-        h.addView(k.button(L.t("hl_appinfo"), true, v -> appSettings()), k.topMargin(12));
+        h.addView(k.button(L.t("hl_autostart"), true, v -> openAutoStart()), k.topMargin(12));
+        h.addView(k.button(L.t("hl_appinfo"), true, v -> appSettings()), k.topMargin(8));
         root.addView(h);
 
         LinearLayout d = k.card("☰", L.t("hl_diag_t"), L.t("hl_diag_s"));
@@ -165,6 +182,40 @@ public class HealthActivity extends Activity {
         } catch (RuntimeException e) {
             appSettings();
         }
+    }
+
+    /** Opens the phone maker's own "Auto-start" list (Infinix/Tecno/itel, Xiaomi, Oppo/Realme, Vivo, Huawei), else app settings. */
+    private void openAutoStart() {
+        String[][] places = {
+                {"com.transsion.phonemaster", "com.cyin.himgr.autostart.AutoStartActivity"},
+                {"com.transsion.phonemaster", "com.cyin.himgr.applicationmanager.view.activities.AppManagerActivity"},
+                {"com.miui.securitycenter", "com.miui.permcenter.autostart.AutoStartManagementActivity"},
+                {"com.coloros.safecenter", "com.coloros.safecenter.permission.startup.StartupAppListActivity"},
+                {"com.coloros.safecenter", "com.coloros.safecenter.startupapp.StartupAppListActivity"},
+                {"com.oppo.safe", "com.oppo.safe.permission.startup.StartupAppListActivity"},
+                {"com.vivo.permissionmanager", "com.vivo.permissionmanager.activity.BgStartUpManagerActivity"},
+                {"com.iqoo.secure", "com.iqoo.secure.ui.phoneoptimize.BgStartUpManager"},
+                {"com.huawei.systemmanager", "com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity"},
+                {"com.huawei.systemmanager", "com.huawei.systemmanager.optimize.process.ProtectActivity"},
+        };
+        for (String[] p : places) {
+            try {
+                Intent i = new Intent().setComponent(new android.content.ComponentName(p[0], p[1]))
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(i);
+                return;
+            } catch (RuntimeException ignored) {
+            }
+        }
+        try {
+            Intent i = getPackageManager().getLaunchIntentForPackage("com.transsion.phonemaster");
+            if (i != null) {
+                startActivity(i);
+                return;
+            }
+        } catch (RuntimeException ignored) {
+        }
+        appSettings();
     }
 
     private void appSettings() {

@@ -114,6 +114,21 @@ public final class Prefs {
         }
     }
 
+    /**
+     * The alarm beats every minute while the bar is on. If the last beat is much older, the phone stopped the app
+     * in between (memory cleaner, Phone Master, swiping from recents): remember when, for the "keep it working" page.
+     */
+    static void noteGap(Context c) {
+        if (!running(c)) return;
+        long last = sp(c).getLong("dgAlarm", 0);
+        long now = System.currentTimeMillis();
+        long limit = (popupOn(c) ? 4 : 12) * 60_000L;
+        if (last > 0 && now - last > limit && now - last < 3 * 86_400_000L) {
+            sp(c).edit().putLong("dgKillAt", last).putLong("dgKillBack", now).apply();
+            log(c, "STOPPED by phone for " + ((now - last) / 60_000L) + " min");
+        }
+    }
+
     static void stamp(Context c, String key) {
         sp(c).edit().putLong(key, System.currentTimeMillis()).apply();
     }

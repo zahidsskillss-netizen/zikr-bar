@@ -93,6 +93,8 @@ public class ZikrService extends Service {
         if (hr < 6 || hr >= 21) { Prefs.log(this, "skip: hour " + hr); return; }
         if (!Settings.canDrawOverlays(this)) { Prefs.log(this, "skip: no overlay perm"); return; }
         if (unlockPopup != null) { Prefs.log(this, "skip: another popup up"); return; }
+        // the unlock dhikr was just shown: do not put a second one right after it, try again next minute
+        if (now - Prefs.sp(this).getLong("dgShown", 0) < 45_000) { Prefs.log(this, "skip: popup just shown"); return; }
         Prefs.sp(this).edit().putLong("pLast", now).apply();
         Prefs.log(this, "show periodic");
         handler.post(this::showPeriodic);
@@ -235,6 +237,8 @@ public class ZikrService extends Service {
         super.onCreate();
         live = this;
         L.init(this);
+        Prefs.log(this, "service created");
+        Prefs.noteGap(this);
         wm = getSystemService(WindowManager.class);
         if (Build.VERSION.SDK_INT >= 26) createChannels();
 
@@ -309,6 +313,7 @@ public class ZikrService extends Service {
 
     @Override
     public void onDestroy() {
+        Prefs.log(this, "service destroyed");
         try {
             unregisterReceiver(unlockReceiver);
         } catch (RuntimeException ignored) {
@@ -328,6 +333,7 @@ public class ZikrService extends Service {
     @Override
     public void onTaskRemoved(Intent rootIntent) {
         // swiping the app away must not stop the dhikr: ask to be started again right away
+        Prefs.log(this, "removed from recents");
         if (Prefs.running(this)) BootReceiver.restartSoon(this, 1500);
         super.onTaskRemoved(rootIntent);
     }

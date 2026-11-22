@@ -16,6 +16,11 @@
     <uses-permission android:name="android.permission.CAMERA" />
 
     <uses-feature android:name="android.hardware.camera" android:required="false" />
+
+    <!-- so the "Auto-start" button can open Phone Master on Infinix/Tecno/itel -->
+    <queries>
+        <package android:name="com.transsion.phonemaster" />
+    </queries>
     <uses-feature android:name="android.hardware.camera.front" android:required="false" />
 
     <application
