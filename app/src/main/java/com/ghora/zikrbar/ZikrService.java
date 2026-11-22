@@ -61,7 +61,7 @@ public class ZikrService extends Service {
     private static final int NOTIF_ID = 1;
     private static final String CHANNEL_HEADS = "zikr_heads";
     private static final int REMIND_ID = 2;
-    private static final int HEADS_ID = 3;
+    private static final int HEADS_ID = 10;
 
 
     private final Handler handler = new Handler(Looper.getMainLooper());
@@ -637,7 +637,11 @@ public class ZikrService extends Service {
         }
     }
 
-    private final Runnable cancelHeads = () -> getSystemService(NotificationManager.class).cancel(HEADS_ID);
+    private int headsSeq;
+    private final Runnable cancelHeads = () -> {
+        NotificationManager nm = getSystemService(NotificationManager.class);
+        for (int i = 0; i < 4; i++) nm.cancel(HEADS_ID + i);
+    };
 
     /** A heads-up notification with the dhikr, for phones that hide overlay windows while another app is open. */
     private void headsUp(String text) {
@@ -651,7 +655,10 @@ public class ZikrService extends Service {
                     .setCategory(Notification.CATEGORY_REMINDER)
                     .setVisibility(Notification.VISIBILITY_PUBLIC)
                     .build();
-            getSystemService(NotificationManager.class).notify(HEADS_ID, n);
+            NotificationManager nm = getSystemService(NotificationManager.class);
+            nm.cancel(HEADS_ID + headsSeq % 4);
+            headsSeq++;
+            nm.notify(HEADS_ID + headsSeq % 4, n); // a fresh id each time so the phone pops it up again
             handler.removeCallbacks(cancelHeads);
             handler.postDelayed(cancelHeads, 7000);
         } catch (RuntimeException e) {
