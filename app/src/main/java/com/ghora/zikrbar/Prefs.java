@@ -99,6 +99,21 @@ public final class Prefs {
     }
 
     /** Remembers when something last happened (shown on the "keep it working" page). */
+    /** Keeps the last few events (time + text) for the diagnostics page. */
+    static synchronized void log(Context c, String msg) {
+        try {
+            String t = new java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.US).format(new java.util.Date());
+            String old = sp(c).getString("dgLog", "");
+            String[] ls = old.isEmpty() ? new String[0] : old.split("\n");
+            StringBuilder b = new StringBuilder();
+            int from = Math.max(0, ls.length - 17);
+            for (int i = from; i < ls.length; i++) b.append(ls[i]).append('\n');
+            b.append(t).append(' ').append(msg);
+            sp(c).edit().putString("dgLog", b.toString()).apply();
+        } catch (RuntimeException ignored) {
+        }
+    }
+
     static void stamp(Context c, String key) {
         sp(c).edit().putLong(key, System.currentTimeMillis()).apply();
     }

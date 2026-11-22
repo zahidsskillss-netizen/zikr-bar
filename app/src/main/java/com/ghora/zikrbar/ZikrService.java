@@ -85,13 +85,16 @@ public class ZikrService extends Service {
 
     /** Called by the alarm heartbeat (and by the in-app timer): shows the periodic popup when it is due. */
     void popupFromAlarm() {
-        if (!Prefs.popupOn(this)) return;
+        if (!Prefs.popupOn(this)) { Prefs.log(this, "skip: popup off"); return; }
         long now = System.currentTimeMillis();
         long every = Prefs.popupEvery(this) * 60_000L;
-        if (now - Prefs.sp(this).getLong("pLast", 0) < every - 8000) return;
+        if (now - Prefs.sp(this).getLong("pLast", 0) < every - 8000) { Prefs.log(this, "skip: not due"); return; }
         int hr = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
-        if (hr < 6 || hr >= 21 || !Settings.canDrawOverlays(this) || unlockPopup != null) return;
+        if (hr < 6 || hr >= 21) { Prefs.log(this, "skip: hour " + hr); return; }
+        if (!Settings.canDrawOverlays(this)) { Prefs.log(this, "skip: no overlay perm"); return; }
+        if (unlockPopup != null) { Prefs.log(this, "skip: another popup up"); return; }
         Prefs.sp(this).edit().putLong("pLast", now).apply();
+        Prefs.log(this, "show periodic");
         handler.post(this::showPeriodic);
     }
 
@@ -99,7 +102,8 @@ public class ZikrService extends Service {
         try {
             removeUnlockPopup();
             showShown(PeriodicStyles.build(this, Prefs.popupStyle(this), Prefs.periodicText(this), screen()));
-        } catch (RuntimeException ignored) {
+        } catch (RuntimeException e) {
+            Prefs.log(this, "showPeriodic err " + e);
         }
     }
 
@@ -132,6 +136,7 @@ public class ZikrService extends Service {
             if (a == null) return;
             switch (a) {
                 case Intent.ACTION_SCREEN_ON:
+                    Prefs.log(ZikrService.this, "screen on");
                     if (Prefs.unlockPopup(ZikrService.this)) startUnlockPolling();
                     break;
                 case Intent.ACTION_SCREEN_OFF:
@@ -186,9 +191,10 @@ public class ZikrService extends Service {
 
     private void unlocked() {
         Prefs.stamp(this, "dgUnlock");
+        Prefs.log(this, "unlocked event, popup=" + Prefs.unlockPopup(this));
         if (!Prefs.unlockPopup(this)) return;
         long now = android.os.SystemClock.elapsedRealtime();
-        if (now - lastShown < 2500) return; // USER_PRESENT and our own check both fire: show once
+        if (now - lastShown < 2500) { Prefs.log(this, "unlock dup ignored"); return; } // USER_PRESENT and our own check both fire: show once
         lastShown = now;
         pollingUnlock = false;
         handler.removeCallbacks(unlockPoll);
@@ -587,9 +593,11 @@ public class ZikrService extends Service {
             wm.addView(sh.root, p);
         } catch (RuntimeException e) {
             Prefs.sp(this).edit().putString("dgErr", "overlay: " + e.getClass().getSimpleName()).apply();
+            Prefs.log(this, "overlay FAILED " + e);
             return;
         }
         Prefs.stamp(this, "dgShown");
+        Prefs.log(this, "overlay added, text=" + (sh.text == null ? 0 : sh.text.length()) + " heads=" + Prefs.headsUp(this));
         headsUp(sh.text);
         diagnose(sh.root);
         try {
@@ -667,6 +675,7 @@ public class ZikrService extends Service {
     }
 
     private void removeUnlockPopup() {
+        if (unlockPopup != null) Prefs.log(this, "popup removed");
         if (styled != null) {
             styled.stopLoops();
             styled = null;

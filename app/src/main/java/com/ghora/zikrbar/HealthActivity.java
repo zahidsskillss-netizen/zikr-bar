@@ -105,6 +105,7 @@ public class HealthActivity extends Activity {
                 + L.t("hl_d_err") + ": " + Prefs.sp(this).getString("dgErr", "-"), 13.5f, MUTED), k.topMargin(4));
         d.addView(k.text(L.t("hl_d_draw") + ": " + ago("dgDraw") + "\n" + L.t("hl_d_vis") + ": "
                 + Prefs.sp(this).getString("dgVis", "-"), 13.5f, MUTED), k.topMargin(2));
+        d.addView(k.text(L.t("hl_log") + ":\n" + Prefs.sp(this).getString("dgLog", "-"), 12f, MUTED), k.topMargin(8));
         root.addView(d);
 
         LinearLayout t = k.card("▶", L.t("hl_test_t"), L.t("hl_test_s"));

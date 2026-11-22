@@ -22,6 +22,7 @@ public class PopupAlarm extends BroadcastReceiver {
         if (!ACTION.equals(intent.getAction())) return;
         L.init(c);
         Prefs.stamp(c, "dgAlarm");
+        Prefs.log(c, "alarm run=" + Prefs.running(c) + " svc=" + (ZikrService.live != null) + " pop=" + Prefs.popupOn(c));
         if (Prefs.running(c)) {
             ZikrService s = ZikrService.live;
             if (s == null) {
