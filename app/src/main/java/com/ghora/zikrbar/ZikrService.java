@@ -637,6 +637,8 @@ public class ZikrService extends Service {
         }
     }
 
+    private final Runnable cancelHeads = () -> getSystemService(NotificationManager.class).cancel(HEADS_ID);
+
     /** A heads-up notification with the dhikr, for phones that hide overlay windows while another app is open. */
     private void headsUp(String text) {
         if (text == null || text.isEmpty() || !Prefs.headsUp(this)) return;
@@ -646,11 +648,12 @@ public class ZikrService extends Service {
                     .setContentTitle(text)
                     .setColor(0xFF1B5E20)
                     .setAutoCancel(true)
-                    .setTimeoutAfter(7000)
                     .setCategory(Notification.CATEGORY_REMINDER)
                     .setVisibility(Notification.VISIBILITY_PUBLIC)
                     .build();
             getSystemService(NotificationManager.class).notify(HEADS_ID, n);
+            handler.removeCallbacks(cancelHeads);
+            handler.postDelayed(cancelHeads, 7000);
         } catch (RuntimeException e) {
             Prefs.sp(this).edit().putString("dgErr", "heads: " + e.getClass().getSimpleName()).apply();
         }
