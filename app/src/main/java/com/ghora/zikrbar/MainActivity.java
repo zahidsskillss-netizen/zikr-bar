@@ -79,6 +79,10 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        if (Prefs.running(this) && !Prefs.sp(this).getBoolean("healthAsked", false)) {
+            Prefs.sp(this).edit().putBoolean("healthAsked", true).apply();
+            startActivity(new Intent(this, HealthActivity.class));
+        }
         if (getIntent().getBooleanExtra("power_on", false)) {
             getIntent().removeExtra("power_on");
             if (!Prefs.running(this)) startBar();
@@ -1148,8 +1152,15 @@ public class MainActivity extends Activity {
         c.addView(navRow(k.badge("ﷲ", 38), L.t("nav_about"), L.t("nav_about_s"), InfoActivity.PAGE_ABOUT));
         ImageView ph = k.photo(38);
         c.addView(navRow(ph, L.t("nav_dev"), L.t("dev_name") + " · " + L.t("ghora"), InfoActivity.PAGE_DEV));
+        c.addView(navHealth());
         c.addView(k.button(L.t("share_btn"), true, v -> InfoActivity.share(this)), k.topMargin(12));
         return c;
+    }
+
+    private View navHealth() {
+        LinearLayout r = (LinearLayout) navRow(k.badge("\u2699", 38), L.t("hl_t"), L.t("hl_s"), 0);
+        r.setOnClickListener(v -> startActivity(new Intent(this, HealthActivity.class)));
+        return r;
     }
 
     private View navRow(View icon, String title, String sub, int page) {

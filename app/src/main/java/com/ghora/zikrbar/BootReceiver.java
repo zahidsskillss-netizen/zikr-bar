@@ -20,6 +20,7 @@ public class BootReceiver extends BroadcastReceiver {
         String a = intent.getAction();
         if (ACTION_WATCHDOG.equals(a)) {
             ensureRunning(context);
+            PopupAlarm.schedule(context);
             Tasks.resumeDue(context);
             return;
         }
@@ -29,6 +30,7 @@ public class BootReceiver extends BroadcastReceiver {
         AnnounceAlarm.scheduleAll(context);
         if (!Prefs.running(context) && AnnounceAlarm.isOn(context, AnnounceAlarm.POWER) && Prefs.sp(context).getBoolean("barOffByHand", false)) AnnounceAlarm.barStopped(context);
         Tasks.scheduleAll(context);
+        PopupAlarm.schedule(context);
         Tasks.resumeDue(context);
         if ((Intent.ACTION_BOOT_COMPLETED.equals(a) || Intent.ACTION_MY_PACKAGE_REPLACED.equals(a)) && Prefs.running(context)) {
             ensureRunning(context);

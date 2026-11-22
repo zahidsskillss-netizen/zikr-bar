@@ -95,6 +95,12 @@ public final class Prefs {
 
     static void setRunning(Context c, boolean r) {
         sp(c).edit().putBoolean("running", r).apply();
+        PopupAlarm.schedule(c);
+    }
+
+    /** Remembers when something last happened (shown on the "keep it working" page). */
+    static void stamp(Context c, String key) {
+        sp(c).edit().putLong(key, System.currentTimeMillis()).apply();
     }
 
     // ---- floating tasbih ----
@@ -234,13 +240,13 @@ public final class Prefs {
 
     // ---- periodic animated popup (every few minutes, over any app) ----
     static boolean popupOn(Context c) { return sp(c).getBoolean("pOn", false); }
-    static void setPopupOn(Context c, boolean on) { sp(c).edit().putBoolean("pOn", on).apply(); }
+    static void setPopupOn(Context c, boolean on) { sp(c).edit().putBoolean("pOn", on).apply(); PopupAlarm.schedule(c); }
     static int popupStyle(Context c) { return Math.max(0, Math.min(PeriodicStyles.COUNT - 1, sp(c).getInt("pStyle", 0))); }
     static void setPopupStyle(Context c, int s) { sp(c).edit().putInt("pStyle", s).apply(); }
     static float popupScale(Context c) { return Math.max(0.5f, Math.min(1.8f, sp(c).getFloat("pScale", 1f))); }
     static void setPopupScale(Context c, float v) { sp(c).edit().putFloat("pScale", v).apply(); }
     static int popupEvery(Context c) { return sp(c).getInt("pEvery", 15); }
-    static void setPopupEvery(Context c, int m) { sp(c).edit().putInt("pEvery", m).apply(); }
+    static void setPopupEvery(Context c, int m) { sp(c).edit().putInt("pEvery", m).putLong("pLast", 0).apply(); PopupAlarm.schedule(c); }
 
     // ---- dhikr popup when the phone is unlocked ----
     static boolean unlockPopup(Context c) {

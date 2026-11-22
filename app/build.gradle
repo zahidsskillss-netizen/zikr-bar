@@ -10,8 +10,8 @@ android {
         applicationId 'com.ghora.zikrbar'
         minSdk 23
         targetSdk 34
-        versionCode 41
-        versionName '4.3.2'
+        versionCode 42
+        versionName '4.4.0'
     }
 
     // Fixed key so every new build installs as an update over the old one

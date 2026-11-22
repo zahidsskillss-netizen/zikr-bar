@@ -53,6 +53,7 @@ public class ZikrService extends Service {
     static final String ACTION_TOGGLE_TASBIH = "com.ghora.zikrbar.TOGGLE_TASBIH";
     static final String ACTION_SHOW_TASBIH = "com.ghora.zikrbar.SHOW_TASBIH";
     static final String ACTION_PREVIEW_UNLOCK = "com.ghora.zikrbar.PREVIEW_UNLOCK";
+    static final String ACTION_POPUP_NOW = "com.ghora.zikrbar.POPUP_NOW";
     static final String ACTION_PREVIEW_PERIODIC = "com.ghora.zikrbar.PREVIEW_PERIODIC";
 
     private static final String CHANNEL = "zikr_bar";
@@ -74,12 +75,23 @@ public class ZikrService extends Service {
         @Override
         public void run() {
             if (Prefs.popupOn(ZikrService.this)) {
-                int hr = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
-                if (hr >= 6 && hr < 21 && Settings.canDrawOverlays(ZikrService.this) && unlockPopup == null) showPeriodic();
+                popupFromAlarm();
                 handler.postDelayed(this, Prefs.popupEvery(ZikrService.this) * 60_000L);
             }
         }
     };
+
+    /** Called by the alarm heartbeat (and by the in-app timer): shows the periodic popup when it is due. */
+    void popupFromAlarm() {
+        if (!Prefs.popupOn(this)) return;
+        long now = System.currentTimeMillis();
+        long every = Prefs.popupEvery(this) * 60_000L;
+        if (now - Prefs.sp(this).getLong("pLast", 0) < every - 8000) return;
+        int hr = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
+        if (hr < 6 || hr >= 21 || !Settings.canDrawOverlays(this) || unlockPopup != null) return;
+        Prefs.sp(this).edit().putLong("pLast", now).apply();
+        handler.post(this::showPeriodic);
+    }
 
     private void showPeriodic() {
         try {
@@ -171,6 +183,7 @@ public class ZikrService extends Service {
     }
 
     private void unlocked() {
+        Prefs.stamp(this, "dgUnlock");
         if (!Prefs.unlockPopup(this)) return;
         long now = android.os.SystemClock.elapsedRealtime();
         if (now - lastShown < 2500) return; // USER_PRESENT and our own check both fire: show once
@@ -243,6 +256,8 @@ public class ZikrService extends Service {
             if (on) Prefs.setMini(this, 0, Prefs.miniY(this));
         } else if (ACTION_PREVIEW_UNLOCK.equals(action)) {
             if (Settings.canDrawOverlays(this)) handler.postDelayed(this::showUnlockPopup, 120);
+        } else if (ACTION_POPUP_NOW.equals(action)) {
+            handler.postDelayed(this::popupFromAlarm, 800);
         } else if (ACTION_PREVIEW_PERIODIC.equals(action)) {
             if (Settings.canDrawOverlays(this)) handler.postDelayed(this::showPeriodic, 120);
         } else if (ACTION_SHOW_TASBIH.equals(action)) {
@@ -263,6 +278,7 @@ public class ZikrService extends Service {
         }
         Prefs.setRunning(this, true);
         BootReceiver.scheduleWatchdog(this);
+        PopupAlarm.schedule(this);
         registerUnlockReceiver();
         if (Prefs.lastZikr(this) == 0) Prefs.setLastZikr(this, System.currentTimeMillis());
 
@@ -510,6 +526,9 @@ public class ZikrService extends Service {
                         if (unlockPopup == shown) removeUnlockPopup();
                     }).start();
         }, 2150);
+        handler.postDelayed(() -> {
+            if (unlockPopup == shown) removeUnlockPopup();
+        }, 4200);
     }
 
     /** One of the newer glass designs (see UnlockStyles). */
@@ -554,7 +573,15 @@ public class ZikrService extends Service {
         try {
             wm.addView(sh.root, p);
         } catch (RuntimeException e) {
+            Prefs.sp(this).edit().putString("dgErr", "overlay: " + e.getClass().getSimpleName()).apply();
             return;
+        }
+        Prefs.stamp(this, "dgShown");
+        try {
+            // keep the CPU awake while the popup is up, so its timers cannot stall and leave it hanging
+            android.os.PowerManager pm = getSystemService(android.os.PowerManager.class);
+            if (pm != null) pm.newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "zikr:popup").acquire(sh.hold + 6000);
+        } catch (RuntimeException ignored) {
         }
         unlockPopup = sh.root;
         styled = sh;
@@ -569,6 +596,10 @@ public class ZikrService extends Service {
                 if (unlockPopup == shown) removeUnlockPopup();
             });
         }, 950 + sh.hold);
+        // if an exit animation was stalled or cancelled by the phone, still remove the popup
+        handler.postDelayed(() -> {
+            if (unlockPopup == shown) removeUnlockPopup();
+        }, 950 + sh.hold + 1800);
     }
 
     private void removeUnlockPopup() {
