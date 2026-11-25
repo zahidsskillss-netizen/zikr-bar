@@ -121,6 +121,15 @@ public class AnnounceService extends Service {
         col.setBackground(bg);
         col.setElevation(dp(14));
 
+        if (kind == AnnounceAlarm.ASMA_AM || kind == AnnounceAlarm.ASMA_PM) {
+            TextView ia = k.arabic("\u0623\u064E\u0639\u064F\u0648\u0630\u064F \u0628\u0650\u0627\u0644\u0644\u064E\u0651\u0647\u0650 \u0645\u0650\u0646\u064E \u0627\u0644\u0634\u064E\u0651\u064A\u0652\u0637\u064E\u0627\u0646\u0650 \u0627\u0644\u0631\u064E\u0651\u062C\u0650\u064A\u0645\u0650", 17, 0xFFC9F5DB);
+            ia.setGravity(Gravity.CENTER);
+            col.addView(ia);
+            TextView bs = k.arabic("\u0628\u0650\u0633\u0652\u0645\u0650 \u0627\u0644\u0644\u064E\u0651\u0647\u0650 \u0627\u0644\u0631\u064E\u0651\u062D\u0652\u0645\u064E\u0670\u0646\u0650 \u0627\u0644\u0631\u064E\u0651\u062D\u0650\u064A\u0645\u0650", 20, 0xFFF3C24A);
+            bs.setGravity(Gravity.CENTER);
+            bs.setPadding(0, dp(2), 0, dp(8));
+            col.addView(bs);
+        }
         LinearLayout top = new LinearLayout(this);
         top.setGravity(Gravity.CENTER_VERTICAL);
         TextView title = k.title(AnnounceAlarm.title(kind), 17, 0xFFF3C24A);

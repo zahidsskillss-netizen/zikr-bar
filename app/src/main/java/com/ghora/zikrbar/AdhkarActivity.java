@@ -314,6 +314,7 @@ public class AdhkarActivity extends Activity {
         pb.setMargins(k.dp(30), k.dp(8), k.dp(30), 0);
         h.addView(progBar, pb);
 
+        if (cat == AdhkarData.MORNING || cat == AdhkarData.EVENING) root.addView(basmalaBlock(false));
         TextView hint = k.text(L.t("adhkar_tap"), 13, MUTED);
         hint.setGravity(Gravity.CENTER);
         hint.setPadding(k.dp(22), k.dp(14), k.dp(22), 0);
@@ -345,7 +346,8 @@ public class AdhkarActivity extends Activity {
     }
 
     /**
-     * Morning and evening adhkar: the short ones first; long ones and ones said many times go to the bottom.
+     * Morning and evening adhkar: the short ones first, then the list turns around by one place every day,
+     * so yesterday's first dhikr goes to the end and the next one comes to the top.
      * (Other categories keep the order of the book, as the order matters there.)
      */
     private Integer[] displayOrder() {
@@ -358,6 +360,15 @@ public class AdhkarActivity extends Activity {
                 score[i] = it.text.length() + (it.times - 1) * 25;
             }
             java.util.Arrays.sort(o, (a, b) -> Integer.compare(score[a], score[b])); // stable
+            int n = o.length;
+            if (n > 1) {
+                java.util.Calendar cal = java.util.Calendar.getInstance();
+                int day = cal.get(java.util.Calendar.YEAR) * 366 + cal.get(java.util.Calendar.DAY_OF_YEAR);
+                int shift = day % n;
+                Integer[] r = new Integer[n];
+                for (int i = 0; i < n; i++) r[i] = o[(i + shift) % n];
+                o = r;
+            }
         }
         return o;
     }
@@ -608,8 +619,27 @@ public class AdhkarActivity extends Activity {
         return book;
     }
 
+    /** Isti'adha and basmala, written at the top where the names are read (isti'adha only when asked). */
+    private View basmalaBlock(boolean istiadha) {
+        LinearLayout b = new LinearLayout(this);
+        b.setOrientation(LinearLayout.VERTICAL);
+        b.setGravity(Gravity.CENTER_HORIZONTAL);
+        b.setPadding(k.dp(16), k.dp(16), k.dp(16), k.dp(2));
+        if (istiadha) {
+            TextView a = k.arabic("\u0623\u064E\u0639\u064F\u0648\u0630\u064F \u0628\u0650\u0627\u0644\u0644\u064E\u0651\u0647\u0650 \u0645\u0650\u0646\u064E \u0627\u0644\u0634\u064E\u0651\u064A\u0652\u0637\u064E\u0627\u0646\u0650 \u0627\u0644\u0631\u064E\u0651\u062C\u0650\u064A\u0645\u0650", 20, GREEN);
+            a.setGravity(Gravity.CENTER);
+            b.addView(a);
+        }
+        TextView m = k.arabic("\u0628\u0650\u0633\u0652\u0645\u0650 \u0627\u0644\u0644\u064E\u0651\u0647\u0650 \u0627\u0644\u0631\u064E\u0651\u062D\u0652\u0645\u064E\u0670\u0646\u0650 \u0627\u0644\u0631\u064E\u0651\u062D\u0650\u064A\u0645\u0650", 24, GOLD_LINE);
+        m.setGravity(Gravity.CENTER);
+        m.setPadding(0, k.dp(6), 0, 0);
+        b.addView(m);
+        return b;
+    }
+
     private void buildNames() {
         header(L.t("names99"), null);
+        root.addView(basmalaBlock(true));
         TextView sub = k.text(L.t("names_s"), 14, MUTED);
         sub.setGravity(Gravity.CENTER);
         sub.setPadding(k.dp(20), k.dp(16), k.dp(20), k.dp(4));

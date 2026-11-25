@@ -139,47 +139,71 @@ public class MainActivity extends Activity {
 
     // ============================ home list and feature pages ============================
 
-    /** The home page: one button for each feature; each opens its own page where it is managed. */
+    /** The home page: one small tab for each feature (icon, name and a sample); each opens its own page. */
     private View featuresCard() {
         LinearLayout c = k.card("\u2699", L.t("home_f_t"), L.t("home_f_s"));
-        String[][] f = {{"\u06DE", "tilawat", "tl_title"}, {"\uFDF2", "bar", "c_bar_t"}, {L.num(33), "tasbih", "c_tas_t"},
-                {"\u25C9", "face", "c_face_t"}, {"\u2600", "unlock", "c_unl_t"}, {"\u263E", "reminder", "c_rem_t"},
-                {"\u2714", "tasks", "tk_tile"}, {L.num(99), "names", "names99"}, {"\u2261", "list", "c_list_t"}, {"\u2726", "more", "c_more_t"}};
-        for (int r = 0; r < 2; r++) {
+        String first = "\u0633\u064F\u0628\u0652\u062D\u064E\u0627\u0646\u064E \u0627\u0644\u0644\u0651\u064E\u0647\u0650";
+        try {
+            java.util.List<String> l = Prefs.list(this);
+            if (!l.isEmpty() && l.get(0) != null && !l.get(0).isEmpty()) first = l.get(0);
+        } catch (RuntimeException ignored) {
+        }
+        // icon, id, title, sample (the adhkar tab comes first, then the tasbih, then the eyes-and-mouth dhikr)
+        String[][] f = {
+                {"\uD83D\uDCDD", "list", "c_list_t", first},
+                {"\uD83D\uDCFF", "tasbih", "c_tas_t", "\u0633\u064F\u0628\u0652\u062D\u064E\u0627\u0646\u064E \u0627\u0644\u0644\u0651\u064E\u0647\u0650 \u0663\u0663"},
+                {"\uD83D\uDC44", "face", "c_face_t", "\u0627\u0644\u0652\u062D\u064E\u0645\u0652\u062F\u064F \u0644\u0650\u0644\u0651\u064E\u0647\u0650"},
+                {"\uFDF2", "bar", "c_bar_t", "\u0644\u064E\u0627 \u0625\u0650\u0644\u064E\u0647\u064E \u0625\u0650\u0644\u0651\u064E\u0627 \u0627\u0644\u0644\u0651\u064E\u0647\u064F"},
+                {"\uD83D\uDD13", "unlock", "c_unl_t", "\u0627\u0644\u0644\u0651\u064E\u0647\u064F \u0623\u064E\u0643\u0652\u0628\u064E\u0631\u064F"},
+                {"\uD83D\uDD14", "reminder", "c_rem_t", "\u0641\u064E\u0627\u0630\u0652\u0643\u064F\u0631\u064F\u0648\u0646\u0650\u064A \u0623\u064E\u0630\u0652\u0643\u064F\u0631\u0652\u0643\u064F\u0645\u0652"},
+                {"\uD83D\uDCD6", "tilawat", "tl_title", "\u0648\u064E\u0631\u064E\u062A\u0651\u0650\u0644\u0650 \u0627\u0644\u0652\u0642\u064F\u0631\u0652\u0622\u0646\u064E"},
+                {L.num(99), "names", "names99", "\u0627\u0644\u0631\u0651\u064E\u062D\u0652\u0645\u064E\u0670\u0646\u064F \u0627\u0644\u0631\u0651\u064E\u062D\u0650\u064A\u0645\u064F"},
+                {"\u2705", "tasks", "tk_tile", "\u0648\u064E\u0623\u064E\u0642\u0650\u064A\u0645\u064F\u0648\u0627 \u0627\u0644\u0635\u0651\u064E\u0644\u064E\u0627\u0629\u064E"},
+                {"\u2699\uFE0F", "more", "c_more_t", "\u0631\u064E\u0628\u0651\u064E\u0646\u064E\u0627 \u062A\u064E\u0642\u064E\u0628\u0651\u064E\u0644\u0652 \u0645\u0650\u0646\u0651\u064E\u0627"}};
+        for (int i = 0; i < f.length; i += 2) {
             LinearLayout line = k.row();
-            for (int i = 0; i < 5; i++) {
-                int idx = r * 5 + i;
-                if (idx < f.length) {
-                    LinearLayout.LayoutParams tp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
-                    tp.setMargins(k.dp(3), k.dp(3), k.dp(3), k.dp(3));
-                    line.addView(sectionTile(f[idx][0], f[idx][1], L.t(f[idx][2])), tp);
+            for (int j = 0; j < 2; j++) {
+                LinearLayout.LayoutParams tp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
+                tp.setMargins(k.dp(3), k.dp(3), k.dp(3), k.dp(3));
+                if (i + j < f.length) {
+                    String[] t = f[i + j];
+                    line.addView(sectionTile(t[0], t[1], L.t(t[2]), t[3]), tp);
                 } else {
-                    line.addView(new View(this), new LinearLayout.LayoutParams(0, 1, 1));
+                    line.addView(new View(this), tp);
                 }
             }
-            c.addView(line, k.topMargin(r == 0 ? 8 : 0));
+            c.addView(line, k.topMargin(i == 0 ? 8 : 0));
         }
         return c;
     }
 
-    private View sectionTile(String glyph, String id, String title) {
+    private View sectionTile(String glyph, String id, String title, String sample) {
         LinearLayout t = new LinearLayout(this);
-        t.setOrientation(LinearLayout.VERTICAL);
-        t.setGravity(Gravity.CENTER_HORIZONTAL);
-        t.setPadding(k.dp(4), k.dp(12), k.dp(4), k.dp(10));
+        t.setOrientation(LinearLayout.HORIZONTAL);
+        t.setGravity(Gravity.CENTER_VERTICAL);
+        t.setPadding(k.dp(8), k.dp(8), k.dp(8), k.dp(8));
         t.setBackground(new RippleDrawable(ColorStateList.valueOf(0x201B5E20), k.rounded(0x14FFFFFF, 16, 0x22000000), null));
-        t.addView(k.badge(glyph, 42));
-        TextView n = k.strong(title, 9.5f, INK);
-        n.setGravity(Gravity.CENTER);
-        n.setPadding(0, k.dp(8), 0, 0);
-        n.setMaxLines(2);
-        t.addView(n);
+        TextView badge = k.badge(glyph, 38);
+        t.addView(badge);
+        LinearLayout col = new LinearLayout(this);
+        col.setOrientation(LinearLayout.VERTICAL);
+        col.setPaddingRelative(k.dp(8), 0, 0, 0);
+        TextView n = k.strong(title, 12.5f, INK);
+        n.setMaxLines(1);
+        n.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        col.addView(n);
+        TextView ex = k.arabic(sample, 12, MUTED);
+        ex.setTextDirection(View.TEXT_DIRECTION_RTL);
+        ex.setGravity(Gravity.START);
+        ex.setMaxLines(1);
+        ex.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        col.addView(ex);
         TextView s = k.text("", 10.5f, MUTED);
-        s.setGravity(Gravity.CENTER);
         s.setMaxLines(1);
         s.setEllipsize(android.text.TextUtils.TruncateAt.END);
         s.setVisibility(View.GONE);
-        t.addView(s);
+        col.addView(s);
+        t.addView(col, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
         subs.put(id, s);
         t.setOnClickListener(v -> {
             if (id.equals("tilawat")) startActivity(new Intent(this, TilawatActivity.class));
